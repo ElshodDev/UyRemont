@@ -11,6 +11,9 @@ import ProfilePage from './pages/ProfilePage';
 import MasterSetupPage from './pages/MasterSetupPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
+import CallMasterPage from './pages/CallMasterPage';
+import MasterWorkPage from './pages/MasterWorkPage';
+import RulesPage from './pages/RulesPage';
 
 export default function App() {
   const navigate = useNavigate();
@@ -30,6 +33,9 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/call" element={<RequireAuth roles={['client']}><CallMasterPage /></RequireAuth>} />
+        <Route path="/master/work" element={<RequireAuth roles={['master']}><MasterWorkPage /></RequireAuth>} />
+        <Route path="/rules" element={<RulesPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
         <Route path="/orders/:id" element={<RequireAuth><OrderDetailPage /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />

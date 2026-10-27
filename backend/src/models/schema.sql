@@ -249,3 +249,80 @@ DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 CREATE TRIGGER update_orders_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================
+-- 10. TEZKOR CHAQIRUV (TAXI REJIMI)
+-- Mijoz usta chaqiradi, tizim eng yaqin onlayn ustaga navbat bilan taklif yuboradi
+-- =============================================
+
+-- Har bir mutaxassislik uchun ustaning chiqish (chaqiruv) narxi
+ALTER TABLE specializations ADD COLUMN IF NOT EXISTS call_fee DECIMAL(10, 2) NOT NULL DEFAULT 50000;
+UPDATE specializations SET call_fee = CASE vertical
+        WHEN 'auto' THEN 80000
+        WHEN 'appliance' THEN 60000
+        WHEN 'gadget' THEN 40000
+        ELSE 50000
+    END
+WHERE call_fee = 50000;
+
+-- Ustaning liniyadagi holati, joylashuvi va takliflar statistikasi
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS is_online BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS location_updated_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS offers_total INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS offers_accepted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS missed_offers_streak INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS cancelled_jobs INTEGER NOT NULL DEFAULT 0;
+
+-- Mijoz reytingi (ustalar baholaydi)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS client_rating DECIMAL(3, 2) NOT NULL DEFAULT 5.00;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS client_ratings_count INTEGER NOT NULL DEFAULT 0;
+
+-- Buyurtma: katalog (oddiy) yoki tezkor chaqiruv
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS mode VARCHAR(10) NOT NULL DEFAULT 'catalog';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS call_fee DECIMAL(10, 2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS final_price DECIMAL(12, 2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS search_radius_km NUMERIC(5, 1);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS search_started_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS arrived_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS started_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by VARCHAR(10);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancel_reason TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS late_cancel BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_rating_by_master INTEGER
+    CHECK (client_rating_by_master BETWEEN 1 AND 5);
+
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN (
+    'pending', 'searching', 'accepted', 'arrived', 'in_progress', 'completed', 'cancelled', 'expired'
+));
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_mode_check;
+ALTER TABLE orders ADD CONSTRAINT orders_mode_check CHECK (mode IN ('catalog', 'instant'));
+
+-- Ustalarga yuborilgan takliflar (har bir buyurtma bir ustaga faqat bir marta taklif qilinadi)
+CREATE TABLE IF NOT EXISTS dispatch_offers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    master_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(10) NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'cancelled')),
+    distance_km NUMERIC(6, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    responded_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE (order_id, master_id)
+);
+
+-- Bir buyurtmada va bir ustada bir vaqtda faqat bitta faol taklif
+CREATE UNIQUE INDEX IF NOT EXISTS idx_dispatch_one_pending_per_order ON dispatch_offers(order_id) WHERE status = 'pending';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_dispatch_one_pending_per_master ON dispatch_offers(master_id) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_dispatch_offers_expires ON dispatch_offers(expires_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_master_profiles_online ON master_profiles(is_online) WHERE is_online = TRUE;
+CREATE INDEX IF NOT EXISTS idx_orders_searching ON orders(search_started_at) WHERE status = 'searching';
+CREATE INDEX IF NOT EXISTS idx_orders_mode_status ON orders(mode, status);

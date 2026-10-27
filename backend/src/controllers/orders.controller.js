@@ -5,6 +5,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
+const { emitOrderUpdate } = require('../services/dispatch.service');
 const {
     assertUuid,
     optionalString,
@@ -13,7 +14,7 @@ const {
     parsePagination,
 } = require('../utils/validators');
 
-const STATUSES = ['pending', 'accepted', 'in_progress', 'completed', 'cancelled'];
+const STATUSES = ['pending', 'searching', 'accepted', 'arrived', 'in_progress', 'completed', 'cancelled', 'expired'];
 
 /**
  * Ruxsat etilgan holat o'zgarishlari: joriy holat -> yangi holat -> kim bajarishi mumkin
@@ -27,10 +28,29 @@ const TRANSITIONS = {
     cancelled: {},
 };
 
+/**
+ * Tezkor chaqiruv (taxi rejimi): bosqichlarni faqat usta o'tkazadi.
+ * Qabul qilish va bekor qilish /api/dispatch orqali bajariladi.
+ */
+const INSTANT_TRANSITIONS = {
+    accepted: { arrived: ['master'] },
+    arrived: { in_progress: ['master'] },
+    in_progress: { completed: ['master'] },
+};
+
+// Holat o'zgarganda belgilanadigan vaqt ustuni
+const STATUS_TIMESTAMPS = {
+    accepted: 'accepted_at',
+    arrived: 'arrived_at',
+    in_progress: 'started_at',
+    completed: 'completed_at',
+    cancelled: 'cancelled_at',
+};
+
 const ORDER_SELECT = `
     SELECT
         o.*,
-        c.name as client_name, c.avatar_url as client_avatar,
+        c.name as client_name, c.avatar_url as client_avatar, c.client_rating,
         m.name as master_name, m.avatar_url as master_avatar,
         s.name_uz as specialization_name, s.icon as specialization_icon,
         r.rating as review_rating, r.comment as review_comment
@@ -56,7 +76,7 @@ const canViewOrder = (order, user) => {
 const loadPhones = async (order, user) => {
     const showPhones = user.role === 'admin'
         || ((order.client_id === user.id || order.master_id === user.id)
-            && ['accepted', 'in_progress', 'completed'].includes(order.status));
+            && ['accepted', 'arrived', 'in_progress', 'completed'].includes(order.status));
     if (!showPhones) return {};
 
     const result = await query(
@@ -214,7 +234,7 @@ const getOpenOrders = async (req, res, next) => {
         // Ustaning mutaxassisliklariga mos yoki mutaxassislik ko'rsatilmagan buyurtmalar
         const result = await query(
             `${ORDER_SELECT}
-             WHERE o.status = 'pending' AND o.master_id IS NULL AND o.client_id <> $1
+             WHERE o.mode = 'catalog' AND o.status = 'pending' AND o.master_id IS NULL AND o.client_id <> $1
                AND (
                    o.specialization_id IS NULL
                    OR NOT EXISTS (
@@ -282,11 +302,23 @@ const getOrderById = async (req, res, next) => {
             )
             : { rows: [] };
 
+        // Tezkor buyurtmada yo'ldagi ustaning so'nggi joylashuvi (jonli kuzatuv uchun)
+        let masterLocation = {};
+        if (isParticipant && order.mode === 'instant' && order.master_id
+            && ['accepted', 'arrived'].includes(order.status)) {
+            const location = await query(
+                'SELECT lat as master_lat, lng as master_lng, location_updated_at as master_location_at FROM master_profiles WHERE user_id = $1',
+                [order.master_id]
+            );
+            masterLocation = location.rows[0] || {};
+        }
+
         res.status(200).json({
             success: true,
             data: {
                 ...order,
                 ...(await loadPhones(order, req.user)),
+                ...masterLocation,
                 messages: messagesResult.rows,
             },
         });
@@ -324,6 +356,11 @@ const updateOrderStatus = async (req, res, next) => {
         }
 
         const order = orderResult.rows[0];
+
+        if (order.mode === 'instant') {
+            return await updateInstantStatus(req, res, order, status);
+        }
+
         const isOpenOrder = order.status === 'pending' && !order.master_id;
 
         // Kim ekanligini aniqlash: buyurtma egasi yoki biriktirilgan usta
@@ -337,15 +374,15 @@ const updateOrderStatus = async (req, res, next) => {
             return res.status(403).json({ success: false, message: 'Ruxsat yo\'q' });
         }
 
-        const allowedActors = TRANSITIONS[order.status][status];
+        const allowedActors = (TRANSITIONS[order.status] || {})[status];
         const transitionAllowed = actor === 'admin'
-            ? order.status !== status && Object.keys(TRANSITIONS[order.status]).length > 0
+            ? order.status !== status && Object.keys(TRANSITIONS[order.status] || {}).length > 0
             : Boolean(allowedActors && allowedActors.includes(actor));
 
         // Ochiq buyurtmani faqat usta qabul qilib, o'ziga biriktira oladi
         const adminAcceptsOpen = actor === 'admin' && isOpenOrder && status === 'accepted';
 
-        if (!transitionAllowed || adminAcceptsOpen) {
+        if (!transitionAllowed || adminAcceptsOpen || !TRANSITIONS[status]) {
             return res.status(400).json({
                 success: false,
                 message: 'Buyurtmani bu holatga o\'tkazib bo\'lmaydi',
@@ -358,6 +395,7 @@ const updateOrderStatus = async (req, res, next) => {
         const result = await query(
             `UPDATE orders
              SET status = $1, master_id = CASE WHEN $4::boolean THEN $5::uuid ELSE master_id END
+                 ${STATUS_TIMESTAMPS[status] ? `, ${STATUS_TIMESTAMPS[status]} = NOW()` : ''}
              WHERE id = $2 AND status = $3
                AND (NOT $4::boolean OR master_id IS NULL)
              RETURNING *`,
@@ -372,10 +410,7 @@ const updateOrderStatus = async (req, res, next) => {
         }
 
         const updated = result.rows[0];
-        const io = req.app.get('io');
-        if (io) {
-            io.to(`order_${id}`).emit('order_updated', { order_id: id, status: updated.status });
-        }
+        emitOrderUpdate(updated);
 
         res.status(200).json({
             success: true,
@@ -385,6 +420,54 @@ const updateOrderStatus = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+};
+
+/**
+ * Tezkor buyurtma bosqichlari: yetib keldi -> ish boshlandi -> yakunlandi (yakuniy narx bilan)
+ */
+const updateInstantStatus = async (req, res, order, status) => {
+    const isMaster = order.master_id === req.user.id;
+    const allowed = (INSTANT_TRANSITIONS[order.status] || {})[status];
+
+    if (!isMaster || !allowed) {
+        return res.status(isMaster || order.client_id === req.user.id ? 400 : 403).json({
+            success: false,
+            message: status === 'cancelled'
+                ? 'Tezkor buyurtmani bekor qilish uchun "Bekor qilish" tugmasidan foydalaning'
+                : 'Bu bosqichni faqat usta o\'tkaza oladi',
+        });
+    }
+
+    let finalPrice = null;
+    if (status === 'completed') {
+        finalPrice = optionalNumber(req.body.final_price, { min: 0, max: 10000000000, field: 'Yakuniy narx' });
+        if (finalPrice === null) {
+            throw new HttpError(400, 'Yakuniy narxni kiriting (chiqish narxi bilan birga)');
+        }
+    }
+
+    const result = await query(
+        `UPDATE orders
+         SET status = $1, ${STATUS_TIMESTAMPS[status]} = NOW(),
+             final_price = COALESCE($4, final_price)
+         WHERE id = $2 AND status = $3
+         RETURNING *`,
+        [status, order.id, order.status, finalPrice]
+    );
+
+    if (result.rows.length === 0) {
+        return res.status(409).json({
+            success: false,
+            message: 'Buyurtma holati allaqachon o\'zgargan. Sahifani yangilang',
+        });
+    }
+
+    emitOrderUpdate(result.rows[0]);
+    res.status(200).json({
+        success: true,
+        message: 'Buyurtma holati yangilandi',
+        data: result.rows[0],
+    });
 };
 
 module.exports = {
