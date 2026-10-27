@@ -29,11 +29,11 @@ const getStats = async (req, res, next) => {
             query(
                 `SELECT
                     COUNT(*)::int as total,
-                    COUNT(*) FILTER (WHERE status = 'pending')::int as pending,
+                    COUNT(*) FILTER (WHERE status IN ('pending', 'searching'))::int as pending,
                     COUNT(*) FILTER (WHERE status = 'accepted')::int as accepted,
-                    COUNT(*) FILTER (WHERE status = 'in_progress')::int as in_progress,
+                    COUNT(*) FILTER (WHERE status IN ('arrived', 'in_progress'))::int as in_progress,
                     COUNT(*) FILTER (WHERE status = 'completed')::int as completed,
-                    COUNT(*) FILTER (WHERE status = 'cancelled')::int as cancelled,
+                    COUNT(*) FILTER (WHERE status IN ('cancelled', 'expired'))::int as cancelled,
                     COALESCE(SUM(budget) FILTER (WHERE status = 'completed'), 0) as completed_budget
                  FROM orders`
             ),
@@ -45,6 +45,18 @@ const getStats = async (req, res, next) => {
                  GROUP BY d ORDER BY d`
             ),
         ]);
+
+        const live = await query(
+            `SELECT
+                (SELECT COUNT(*)::int FROM master_profiles mp JOIN users u ON u.id = mp.user_id
+                 WHERE mp.is_online = TRUE AND u.is_active = TRUE) as online_masters,
+                (SELECT COUNT(*)::int FROM orders WHERE mode = 'instant' AND status = 'searching') as searching,
+                (SELECT COUNT(*)::int FROM orders WHERE mode = 'instant' AND status IN ('accepted', 'arrived', 'in_progress')) as active_jobs,
+                (SELECT COUNT(*)::int FROM orders WHERE mode = 'instant' AND status = 'expired'
+                   AND created_at::date = CURRENT_DATE) as expired_today,
+                (SELECT COALESCE(SUM(final_price), 0) FROM orders WHERE mode = 'instant' AND status = 'completed'
+                   AND completed_at::date = CURRENT_DATE) as instant_revenue_today`
+        );
 
         const unverified = await query(
             `SELECT COUNT(*)::int as total FROM master_profiles mp
@@ -59,6 +71,7 @@ const getStats = async (req, res, next) => {
                 orders: ordersResult.rows[0],
                 reviews: reviewsResult.rows[0],
                 unverified_masters: unverified.rows[0].total,
+                live: live.rows[0],
                 orders_last_7_days: dailyResult.rows,
             },
         });

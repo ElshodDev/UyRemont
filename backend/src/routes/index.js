@@ -7,12 +7,14 @@ const mastersRoutes = require('./masters.routes');
 const ordersRoutes = require('./orders.routes');
 const reviewsRoutes = require('./reviews.routes');
 const adminRoutes = require('./admin.routes');
+const dispatchRoutes = require('./dispatch.routes');
 
 router.use('/auth', authRoutes);
 router.use('/masters', mastersRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/reviews', reviewsRoutes);
 router.use('/admin', adminRoutes);
+router.use('/dispatch', dispatchRoutes);
 
 // Salomatlikni tekshirish (Health check) - ma'lumotlar bazasi ulanishi bilan
 router.get('/health', async (req, res) => {

@@ -49,6 +49,9 @@ const initChatSocket = (io) => {
     io.on('connection', (socket) => {
         const currentUser = socket.user;
 
+        // Shaxsiy xona: takliflar, buyurtma holati va usta joylashuvi shu yerga yuboriladi
+        socket.join(`user_${currentUser.id}`);
+
         // Buyurtma bo'yicha chat xonasiga kirish
         socket.on('join_order_chat', async ({ order_id } = {}) => {
             try {

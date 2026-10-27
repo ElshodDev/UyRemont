@@ -17,6 +17,9 @@ export default function OrderListItem({ order, viewerRole, action }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
+              {order.mode === 'instant' && (
+                <span className="text-[10px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-md">⚡ TEZKOR</span>
+              )}
               <h3 className="font-bold text-slate-900 truncate">{order.title}</h3>
               {order.specialization_name && (
                 <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
@@ -38,7 +41,7 @@ export default function OrderListItem({ order, viewerRole, action }) {
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-slate-500">
           <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{[order.district, order.address].filter(Boolean).join(', ')}</span>
-          <span className="flex items-center gap-1"><Wallet className="w-3 h-3" />{formatPrice(order.budget)}</span>
+          <span className="flex items-center gap-1"><Wallet className="w-3 h-3" />{formatPrice(order.final_price || order.budget || order.call_fee)}</span>
           <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(order.created_at)}</span>
         </div>
       </Link>

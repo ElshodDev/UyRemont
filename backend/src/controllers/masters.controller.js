@@ -487,7 +487,7 @@ const deletePortfolioItem = async (req, res, next) => {
 const getSpecializations = async (req, res, next) => {
     try {
         const result = await query(
-            `SELECT id, slug, name_uz, name_ru, icon, vertical
+            `SELECT id, slug, name_uz, name_ru, icon, vertical, call_fee
              FROM specializations WHERE is_active = TRUE ORDER BY id`
         );
 

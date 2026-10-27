@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Filter, Megaphone, Wrench } from 'lucide-react';
+import { Search, MapPin, Filter, Megaphone, Wrench, Zap } from 'lucide-react';
 import MasterCard, { MasterCardSkeleton } from '../components/MasterCard';
 import MasterProfileModal from '../components/MasterProfileModal';
 import OrderModal from '../components/OrderModal';
@@ -138,6 +138,21 @@ export default function HomePage() {
     });
   };
 
+  // Tezkor chaqiruv: tanlangan mutaxassislik bilan /call sahifasiga
+  const callMaster = () => {
+    requireAuth((current) => {
+      if (current.role !== 'client') {
+        toast.error(current.role === 'master'
+          ? 'Usta chaqirish uchun profilingizda mijoz rejimiga o\'ting'
+          : 'Administrator hisobidan usta chaqirib bo\'lmaydi');
+        return;
+      }
+      const params = new URLSearchParams({ vertical: activeVertical });
+      if (selectedSpec !== 'all') params.set('spec', selectedSpec);
+      navigate(`/call?${params.toString()}`);
+    });
+  };
+
   const resetFilters = () => {
     setSearchQuery('');
     setFilter({ spec: null, district: null, q: null });
@@ -215,13 +230,22 @@ export default function HomePage() {
             </div>
           </div>
 
-          <button
-            onClick={() => startOrder(null)}
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-xs sm:text-sm font-semibold transition"
-          >
-            <Megaphone className="w-4 h-4" />
-            Usta tanlamasdan buyurtma qoldirish
-          </button>
+          <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <button
+              onClick={callMaster}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-sm font-extrabold shadow-lg shadow-orange-900/30 transition"
+            >
+              <Zap className="w-4 h-4" />
+              Usta chaqirish — eng yaqini keladi
+            </button>
+            <button
+              onClick={() => startOrder(null)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-xs sm:text-sm font-semibold transition"
+            >
+              <Megaphone className="w-4 h-4" />
+              Usta tanlamasdan buyurtma qoldirish
+            </button>
+          </div>
         </div>
       </section>
 

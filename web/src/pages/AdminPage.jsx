@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle,
-  UserCheck, Wrench, Star, TrendingUp
+  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -54,7 +54,7 @@ function StatsTab() {
 
   const { users, orders, reviews } = stats;
   const statusRows = [
-    ['Kutilmoqda', orders.pending],
+    ['Kutilmoqda / qidirilmoqda', orders.pending],
     ['Qabul qilingan', orders.accepted],
     ['Bajarilmoqda', orders.in_progress],
     ['Yakunlangan', orders.completed],
@@ -69,6 +69,24 @@ function StatsTab() {
         <StatCard icon={ClipboardList} label="Buyurtmalar" value={orders.total} hint={`${orders.completed} ta yakunlangan`} tone="emerald" />
         <StatCard icon={Star} label="O'rtacha reyting" value={formatRating(reviews.average)} hint={`${reviews.total} ta sharh`} tone="slate" />
       </div>
+
+      {stats.live && (
+        <div>
+          <h3 className="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2"><Zap className="w-4 h-4 text-orange-500" /> Tezkor chaqiruv — jonli</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard icon={Power} label="Liniyadagi ustalar" value={stats.live.online_masters} tone="emerald" />
+            <StatCard icon={Radar} label="Usta qidirilmoqda" value={stats.live.searching} tone="amber" />
+            <StatCard icon={Wrench} label="Faol ishlar" value={stats.live.active_jobs} />
+            <StatCard
+              icon={TrendingUp}
+              label="Bugungi aylanma"
+              value={formatPrice(stats.live.instant_revenue_today)}
+              hint={`${stats.live.expired_today} ta chaqiruvga usta topilmadi`}
+              tone="slate"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-5">

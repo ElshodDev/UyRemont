@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
 import ReviewForm from '../components/ReviewForm';
+import InstantOrderPanel from '../components/InstantOrderPanel';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
@@ -96,6 +97,8 @@ export default function OrderDetailPage() {
   const isParticipant = order.client_id === user.id || order.master_id === user.id || user.role === 'admin';
   const canReview = order.client_id === user.id && order.status === 'completed' && !order.review_rating && order.master_id;
   const stepIndex = STEPS.findIndex((s) => s.id === order.status);
+  const isInstant = order.mode === 'instant';
+  const showChat = isParticipant && (!isInstant || Boolean(order.master_id));
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
@@ -105,6 +108,9 @@ export default function OrderDetailPage() {
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
+          {isInstant ? (
+            <InstantOrderPanel order={order} user={user} reload={load} />
+          ) : (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
@@ -170,7 +176,9 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
+          )}
 
+          {(!isInstant || order.master_id) && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2">
             <h3 className="font-bold text-slate-900 text-sm mb-1">Ishtirokchilar</h3>
             <ContactCard label="Mijoz" name={order.client_name} phone={order.client_phone} />
@@ -179,6 +187,7 @@ export default function OrderDetailPage() {
               <p className="text-[11px] text-slate-400">Telefon raqamlar usta buyurtmani qabul qilgandan keyin ko'rinadi.</p>
             )}
           </div>
+          )}
 
           {canReview && <ReviewForm orderId={order.id} onCreated={load} />}
 
@@ -192,7 +201,7 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="lg:col-span-2">
-          {isParticipant ? (
+          {showChat ? (
             <OrderChat
               orderId={order.id}
               initialMessages={order.messages}
@@ -201,7 +210,7 @@ export default function OrderDetailPage() {
             />
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-500">
-              Chat buyurtmani qabul qilgandan keyin ochiladi.
+              {isInstant ? 'Usta topilgach u bilan shu yerda yozishishingiz mumkin.' : 'Chat buyurtmani qabul qilgandan keyin ochiladi.'}
             </div>
           )}
         </div>

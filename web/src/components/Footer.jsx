@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
@@ -9,8 +10,9 @@ export default function Footer() {
           <span className="font-bold text-white text-base">Usta24</span>
           <span>— Uy, Avto va Texnika ustalari SuperApp platformasi</span>
         </div>
-        <div>
-          © {new Date().getFullYear()} Usta24 Marketplace. Barcha huquqlar himoyalangan.
+        <div className="flex items-center gap-4 flex-wrap justify-center">
+          <Link to="/rules" className="text-slate-300 hover:text-white font-semibold">Ishlash qoidalari</Link>
+          <span>© {new Date().getFullYear()} Usta24 Marketplace. Barcha huquqlar himoyalangan.</span>
         </div>
       </div>
     </footer>

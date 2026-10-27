@@ -94,3 +94,21 @@ INSERT INTO portfolio_items (id, master_id, image_url, description) VALUES
 ('d0000000-0000-0000-0000-000000000005', 'b0000000-0000-0000-0000-000000000011', 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=80', 'Motor kapital ta''miri'),
 ('d0000000-0000-0000-0000-000000000006', 'b0000000-0000-0000-0000-000000000014', 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&auto=format&fit=crop&q=80', 'Konditsioner montaji')
 ON CONFLICT DO NOTHING;
+
+-- 5. Ustalarning ish joyi (tuman markazi atrofida) - tezkor chaqiruv xaritasi uchun
+UPDATE master_profiles mp
+SET lat = d.lat + ((('x' || substr(md5(mp.id::text), 1, 4))::bit(16)::int - 32768) / 32768.0) * 0.008,
+    lng = d.lng + ((('x' || substr(md5(mp.id::text), 5, 4))::bit(16)::int - 32768) / 32768.0) * 0.008
+FROM (VALUES
+    ('Chilonzor', 41.2756, 69.2034),
+    ('Yunusobod', 41.3640, 69.2855),
+    ('Mirzo Ulug''bek', 41.3385, 69.3346),
+    ('Yakkasaroy', 41.2830, 69.2580),
+    ('Mirobod', 41.2930, 69.2830),
+    ('Sergeli', 41.2280, 69.2200),
+    ('Uchtepa', 41.2950, 69.1800),
+    ('Shayxontohur', 41.3270, 69.2300),
+    ('Olmazor', 41.3500, 69.2200),
+    ('Yashnobod', 41.2950, 69.3500)
+) AS d(district, lat, lng)
+WHERE mp.district = d.district AND mp.lat IS NULL;

@@ -9,6 +9,7 @@ const routes = require('./src/routes');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
 const { apiLimiter } = require('./src/middleware/rateLimit');
 const { initChatSocket } = require('./src/socket/chat.socket');
+const { startDispatcher } = require('./src/services/dispatch.service');
 const { UPLOAD_DIR } = require('./src/middleware/upload');
 
 const app = express();
@@ -73,6 +74,7 @@ if (require.main === module) {
         process.exit(1);
     }
     server.listen(PORT, () => {
+        startDispatcher(io);
         console.log(`🚀 UyRemont Backend Server ${PORT}-portda ishga tushdi`);
         console.log(`🔗 API manzili: http://localhost:${PORT}/api`);
     });
