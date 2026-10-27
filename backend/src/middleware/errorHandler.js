@@ -2,22 +2,34 @@
 // UyRemont - Global Xato Handler Middleware
 // =============================================
 
+const multer = require('multer');
+
+/**
+ * Controllerlarda tashlanadigan, foydalanuvchiga ko'rsatsa bo'ladigan xato
+ */
+class HttpError extends Error {
+    constructor(statusCode, message) {
+        super(message);
+        this.statusCode = statusCode;
+        this.expose = true;
+    }
+}
+
 /**
  * 404 - Topilmadi xatosi
  */
 const notFound = (req, res, next) => {
-    const error = new Error(`Yo'l topilmadi - ${req.originalUrl}`);
-    res.status(404);
-    next(error);
+    next(new HttpError(404, `Yo'l topilmadi - ${req.originalUrl}`));
 };
 
 /**
  * Global xato handler
  * Barcha xatolarni ushlab, standart formatda qaytaradi
  */
+// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-    // Status kodini aniqlash
-    let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+    const isProduction = process.env.NODE_ENV === 'production';
+    let statusCode = err.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
     let message = err.message;
 
     // PostgreSQL xatolari
@@ -35,6 +47,20 @@ const errorHandler = (err, req, res, next) => {
         message = 'Noto\'g\'ri ID format';
     }
 
+    // Noto'g'ri JSON body
+    if (err.type === 'entity.parse.failed') {
+        statusCode = 400;
+        message = 'So\'rov formati noto\'g\'ri (JSON)';
+    }
+
+    // Fayl yuklash xatolari
+    if (err instanceof multer.MulterError) {
+        statusCode = 400;
+        message = err.code === 'LIMIT_FILE_SIZE'
+            ? 'Rasm hajmi 5 MB dan oshmasligi kerak'
+            : 'Faylni yuklashda xatolik';
+    }
+
     // JWT xatolari
     if (err.name === 'JsonWebTokenError') {
         statusCode = 401;
@@ -46,29 +72,24 @@ const errorHandler = (err, req, res, next) => {
         message = 'Token muddati tugagan';
     }
 
-    // Validation xatolari
-    if (err.name === 'ValidationError') {
-        statusCode = 400;
+    // Kutilmagan xatolar tafsilotini production da yashirish
+    if (statusCode >= 500 && isProduction) {
+        message = 'Serverda xatolik yuz berdi. Keyinroq urinib ko\'ring';
     }
 
-    // Xatoni loglash (production da minimal)
-    if (process.env.NODE_ENV !== 'production') {
+    if (statusCode >= 500) {
         console.error('❌ Xato:', {
             message: err.message,
-            stack: err.stack,
+            stack: isProduction ? undefined : err.stack,
             url: req.originalUrl,
             method: req.method,
         });
-    } else {
-        console.error(`❌ ${statusCode} - ${message} - ${req.originalUrl}`);
     }
 
     res.status(statusCode).json({
         success: false,
         message,
-        // Development rejimida stack traceni ko'rsatish
-        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
     });
 };
 
-module.exports = { notFound, errorHandler };
+module.exports = { notFound, errorHandler, HttpError };

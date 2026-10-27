@@ -3,7 +3,8 @@
 // =============================================
 
 const { v4: uuidv4 } = require('uuid');
-const { query } = require('../config/database');
+const { query, withTransaction } = require('../config/database');
+const { assertUuid, optionalString, parsePagination } = require('../utils/validators');
 
 /**
  * Sharh qo'shish
@@ -13,17 +14,11 @@ const { query } = require('../config/database');
 const createReview = async (req, res, next) => {
     try {
         const clientId = req.user.id;
-        const { order_id, rating, comment } = req.body;
+        const order_id = assertUuid(req.body.order_id, 'Buyurtma topilmadi');
+        const rating = Number(req.body.rating);
+        const comment = optionalString(req.body.comment, { max: 1000, field: 'Sharh' });
 
-        // Tekshirish
-        if (!order_id || !rating) {
-            return res.status(400).json({
-                success: false,
-                message: 'Buyurtma ID va reyting majburiy',
-            });
-        }
-
-        if (rating < 1 || rating > 5) {
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
             return res.status(400).json({
                 success: false,
                 message: 'Reyting 1 dan 5 gacha bo\'lishi kerak',
@@ -32,7 +27,7 @@ const createReview = async (req, res, next) => {
 
         // Buyurtmani tekshirish
         const orderResult = await query(
-            'SELECT * FROM orders WHERE id = $1 AND client_id = $2 AND status = \'completed\'',
+            'SELECT * FROM orders WHERE id = $1 AND client_id = $2 AND status = \'completed\' AND master_id IS NOT NULL',
             [order_id, clientId]
         );
 
@@ -58,36 +53,38 @@ const createReview = async (req, res, next) => {
             });
         }
 
-        // Sharhni saqlash
-        const reviewResult = await query(
-            `INSERT INTO reviews (id, order_id, client_id, master_id, rating, comment)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING *`,
-            [uuidv4(), order_id, clientId, order.master_id, parseInt(rating), comment]
-        );
+        // Sharhni saqlash va ustaning o'rtacha reytingini yangilash
+        const review = await withTransaction(async (client) => {
+            const reviewResult = await client.query(
+                `INSERT INTO reviews (id, order_id, client_id, master_id, rating, comment)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 RETURNING *`,
+                [uuidv4(), order_id, clientId, order.master_id, rating, comment]
+            );
 
-        // Ustaning o'rtacha reytingini yangilash
-        await query(
-            `UPDATE master_profiles mp
-             SET 
-                rating = (
-                    SELECT AVG(r.rating)::DECIMAL(3,2)
-                    FROM reviews r
-                    WHERE r.master_id = $1
-                ),
-                reviews_count = (
-                    SELECT COUNT(*)
-                    FROM reviews r
-                    WHERE r.master_id = $1
-                )
-             WHERE mp.user_id = $1`,
-            [order.master_id]
-        );
+            await client.query(
+                `UPDATE master_profiles mp
+                 SET
+                    rating = (
+                        SELECT AVG(r.rating)::DECIMAL(3,2)
+                        FROM reviews r
+                        WHERE r.master_id = $1
+                    ),
+                    reviews_count = (
+                        SELECT COUNT(*)
+                        FROM reviews r
+                        WHERE r.master_id = $1
+                    )
+                 WHERE mp.user_id = $1`,
+                [order.master_id]
+            );
+            return reviewResult.rows[0];
+        });
 
         res.status(201).json({
             success: true,
             message: 'Sharh qo\'shildi',
-            data: reviewResult.rows[0],
+            data: review,
         });
     } catch (error) {
         next(error);
@@ -100,9 +97,8 @@ const createReview = async (req, res, next) => {
  */
 const getMasterReviews = async (req, res, next) => {
     try {
-        const { masterId } = req.params;
-        const { page = 1, limit = 10 } = req.query;
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const masterId = assertUuid(req.params.masterId, 'Usta topilmadi');
+        const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 10 });
 
         const result = await query(
             `SELECT 
@@ -113,7 +109,7 @@ const getMasterReviews = async (req, res, next) => {
              WHERE r.master_id = $1
              ORDER BY r.created_at DESC
              LIMIT $2 OFFSET $3`,
-            [masterId, parseInt(limit), offset]
+            [masterId, limit, offset]
         );
 
         // Umumiy soni
@@ -139,8 +135,8 @@ const getMasterReviews = async (req, res, next) => {
                 total: parseInt(countResult.rows[0].total),
                 rating_distribution: ratingDistResult.rows,
                 pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
+                    page,
+                    limit,
                     total: parseInt(countResult.rows[0].total),
                 },
             },
