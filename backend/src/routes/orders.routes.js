@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     createOrder,
     getOrders,
+    getOpenOrders,
     getOrderById,
     updateOrderStatus,
 } = require('../controllers/orders.controller');
@@ -14,8 +15,11 @@ router.use(authenticate);
 // Buyurtma yaratish (faqat mijozlar)
 router.post('/', authorize('client'), createOrder);
 
-// Buyurtmalar ro'yxati (mijoz yoki usta uchun mos ravishda)
+// Buyurtmalar ro'yxati (mijoz, usta yoki admin uchun mos ravishda)
 router.get('/', getOrders);
+
+// Ustalar uchun ochiq buyurtmalar (:id dan oldin turishi shart)
+router.get('/open', authorize('master'), getOpenOrders);
 
 // Buyurtma tafsilotlari
 router.get('/:id', getOrderById);
