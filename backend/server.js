@@ -11,6 +11,7 @@ const { apiLimiter } = require('./src/middleware/rateLimit');
 const { initChatSocket } = require('./src/socket/chat.socket');
 const { startDispatcher } = require('./src/services/dispatch.service');
 const { UPLOAD_DIR } = require('./src/middleware/upload');
+const { checkDatabase, describeTarget } = require('./src/config/database');
 
 const app = express();
 const server = http.createServer(app);
@@ -70,13 +71,35 @@ const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
     if (!process.env.JWT_SECRET) {
-        console.error('❌ JWT_SECRET o\'rnatilmagan. backend/.env faylini tekshiring (.env.example ga qarang)');
+        console.error('❌ JWT_SECRET o\'rnatilmagan. Loyiha papkasida "npm run setup" ni ishga tushiring yoki backend/.env ni to\'ldiring');
         process.exit(1);
     }
-    server.listen(PORT, () => {
-        startDispatcher(io);
+
+    server.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+            console.error(`❌ ${PORT}-port band. Backend boshqa oynada allaqachon ishlayotgan bo'lishi mumkin - o'sha oynani yoping`);
+            console.error('   yoki backend/.env da boshqa PORT belgilang (masalan PORT=5001).');
+        } else {
+            console.error('❌ Serverni ishga tushirib bo\'lmadi:', error.message);
+        }
+        process.exit(1);
+    });
+
+    server.listen(PORT, async () => {
         console.log(`🚀 UyRemont Backend Server ${PORT}-portda ishga tushdi`);
         console.log(`🔗 API manzili: http://localhost:${PORT}/api`);
+
+        const db = await checkDatabase();
+        if (!db.ok) {
+            console.error(`❌ Ma'lumotlar bazasiga ulanib bo'lmadi (${describeTarget()}): ${db.message}`);
+            console.error('   backend/.env dagi DATABASE_URL ni tekshiring yoki loyiha papkasida "npm run setup" ni ishga tushiring.');
+        } else if (!db.schemaReady) {
+            console.error(`⚠️ Baza ulandi (${describeTarget()}), lekin jadvallar yaratilmagan. backend papkasida "npm run db:seed" ni ishga tushiring.`);
+        } else {
+            console.log(`🗄️  Ma'lumotlar bazasi ulandi: ${describeTarget()}`);
+        }
+
+        startDispatcher(io);
     });
 }
 

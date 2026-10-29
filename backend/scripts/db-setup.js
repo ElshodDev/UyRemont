@@ -10,7 +10,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { pool } = require('../src/config/database');
+const { pool, describeDbError, describeTarget } = require('../src/config/database');
 const { normalizePhone } = require('../src/utils/validators');
 
 const MODELS_DIR = path.join(__dirname, '..', 'src', 'models');
@@ -39,12 +39,21 @@ const ensureAdmin = async (client) => {
 
 const main = async () => {
     if (!process.env.DATABASE_URL) {
-        console.error('❌ DATABASE_URL o\'rnatilmagan. backend/.env faylini yarating (.env.example ga qarang)');
+        console.error('❌ DATABASE_URL o\'rnatilmagan. Loyiha papkasida "npm run setup" ni ishga tushiring yoki backend/.env ni to\'ldiring');
         process.exit(1);
     }
 
     const withSeed = process.argv.includes('--seed');
-    const client = await pool.connect();
+    let client;
+    try {
+        client = await pool.connect();
+    } catch (error) {
+        console.error(`❌ Ma'lumotlar bazasiga ulanib bo'lmadi (${describeTarget()}): ${describeDbError(error)}`);
+        await pool.end();
+        process.exitCode = 1;
+        return;
+    }
+    console.log(`🔌 Ulandi: ${describeTarget()}`);
     try {
         await client.query('BEGIN');
         await runSqlFile(client, 'schema.sql');
@@ -54,7 +63,7 @@ const main = async () => {
         console.log('🎉 Ma\'lumotlar bazasi tayyor');
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('❌ Xatolik:', error.message);
+        console.error('❌ Xatolik:', describeDbError(error));
         process.exitCode = 1;
     } finally {
         client.release();
