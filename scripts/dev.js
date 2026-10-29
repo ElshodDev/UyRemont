@@ -70,7 +70,8 @@ SERVICES.forEach((service) => {
     const prefix = `${service.color}[${service.name}]\x1b[0m `;
     // Telefon rejimida sayt Wi-Fi tarmog'idagi boshqa qurilmalarga ham ochiladi
     const npmArgs = phoneMode && service.name === 'web' ? ['run', 'dev', '--', '--host'] : ['run', 'dev'];
-    const child = spawn('npm', npmArgs, {
+    // Windows da npm.cmd shell orqali ishga tushadi; buyruq bitta qator qilib beriladi (DEP0190 ogohlantirishisiz)
+    const child = spawn(isWindows ? `npm ${npmArgs.join(' ')}` : 'npm', isWindows ? [] : npmArgs, {
         cwd: service.cwd,
         shell: isWindows,
         detached: !isWindows,
@@ -108,12 +109,33 @@ const printQr = (url) => {
     }
 };
 
+/**
+ * Tunnel ishlamasa: shu Wi-Fi dagi telefondan ochish uchun manzil va QR kod
+ */
+const printLanFallback = (reason) => {
+    const lan = lanUrls();
+    const line = '='.repeat(64);
+    console.log(`\n${line}`);
+    console.log(`⚠️ HTTPS havola yaratilmadi: ${reason}`);
+    if (lan.length === 0) {
+        console.log('   Kompyuter hech qaysi tarmoqqa ulanmagan. Wi-Fi yoki internetni tekshiring.');
+    } else {
+        console.log('📱 Telefon shu Wi-Fi tarmog\'ida bo\'lsa, shu manzilni oching:');
+        console.log(`\n   ${lan[0]}\n`);
+        printQr(lan[0]);
+        lan.slice(1).forEach((u) => console.log(`   yoki: ${u}`));
+        console.log('   Bu manzil HTTPS emas: GPS ishlamaydi, joylashuvni xaritada qo\'lda belgilang.');
+        console.log('   Windows "Brandmauer" ruxsat so\'rasa, "Shaxsiy tarmoqlar" uchun ruxsat bering.');
+    }
+    console.log(`${line}\n`);
+};
+
 const startTunnel = async () => {
     let cloudflared;
     try {
         cloudflared = require('cloudflared');
     } catch {
-        console.error('❌ Telefon rejimi uchun paket topilmadi. Loyiha papkasida "npm install" ni bajaring.');
+        printLanFallback('paketlar o\'rnatilmagan (loyiha papkasida "npm install" ni bajaring)');
         return;
     }
 
@@ -123,14 +145,16 @@ const startTunnel = async () => {
         try {
             await cloudflared.install(cloudflared.bin);
         } catch (error) {
-            console.error(`❌ cloudflared ni yuklab bo'lmadi: ${error.message}`);
+            printLanFallback(`cloudflared ni yuklab bo'lmadi (${error.code || error.message}). Internet ulanishini tekshiring`);
             return;
         }
     }
 
     console.log('🌐 Telefon uchun HTTPS havola tayyorlanmoqda...');
+    let ready = false;
     tunnel = cloudflared.Tunnel.quick(`http://localhost:${WEB_PORT}`);
     tunnel.once('url', (url) => {
+        ready = true;
         const line = '='.repeat(64);
         console.log(`\n${line}`);
         console.log('📱 TELEFONDAN OCHISH (istalgan internet, GPS ham ishlaydi):');
@@ -144,9 +168,14 @@ const startTunnel = async () => {
         console.log('   Havola har safar ishga tushirganda yangilanadi.');
         console.log(`${line}\n`);
     });
-    tunnel.on('error', (error) => console.error('❌ Tunnel xatosi:', error.message));
+    tunnel.on('error', (error) => {
+        if (!ready) printLanFallback(error.message);
+        else console.error('❌ Tunnel xatosi:', error.message);
+    });
     tunnel.on('exit', (code) => {
-        if (!shuttingDown) console.error(`⚠️ Telefon havolasi to'xtadi (kod ${code}). "npm run dev:phone" ni qayta ishga tushiring.`);
+        if (shuttingDown) return;
+        if (!ready) printLanFallback(`cloudflared to'xtadi (kod ${code}). Internet ulanishini tekshiring`);
+        else console.error(`⚠️ Telefon havolasi to'xtadi (kod ${code}). "npm run dev:phone" ni qayta ishga tushiring.`);
     });
 };
 
