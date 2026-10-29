@@ -31,14 +31,16 @@ const fail = (message) => {
 };
 
 /**
- * Buyruqni ishga tushirish (Windows da npm.cmd uchun shell kerak)
+ * Buyruqni ishga tushirish.
+ * Windows da shell faqat npm (npm.cmd) uchun kerak; node.exe ni shell orqali chaqirib bo'lmaydi,
+ * chunki uning yo'lida bo'sh joy bor ("C:\Program Files\nodejs\node.exe").
  */
 const run = (command, commandArgs, cwd) => {
     const result = spawnSync(command, commandArgs, {
         cwd,
         // stdin berilmaydi: aks holda npm foydalanuvchi kiritgan matnni "yutib" yuboradi
         stdio: ['ignore', 'inherit', 'inherit'],
-        shell: process.platform === 'win32',
+        shell: process.platform === 'win32' && command === 'npm',
     });
     return result.status === 0;
 };
