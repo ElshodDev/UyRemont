@@ -34,7 +34,8 @@ export default function ReviewForm({ orderId, onCreated }) {
       <textarea
         rows="3"
         maxLength={1000}
-        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm"
+        className="input"
+        aria-label="Sharh"
         placeholder="Ish sifati, o'z vaqtida kelgani, narxi haqida..."
         value={comment}
         onChange={(e) => setComment(e.target.value)}
@@ -42,7 +43,7 @@ export default function ReviewForm({ orderId, onCreated }) {
       <button
         type="submit"
         disabled={submitting}
-        className="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 disabled:opacity-70 inline-flex items-center gap-2"
+        className="btn bg-amber-500 text-white hover:bg-amber-600 px-5 font-bold"
       >
         {submitting ? <Spinner className="w-4 h-4 text-white" /> : 'Sharh qoldirish'}
       </button>

@@ -13,7 +13,7 @@ import { api } from '../lib/api';
 
 function Stat({ icon: Icon, label, value, hint }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4">
+    <div className="card p-4">
       <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1"><Icon className="w-3.5 h-3.5" /> {label}</span>
       <p className="text-xl font-black text-slate-900 mt-1 tabular-nums">{value}</p>
       {hint && <p className="text-[11px] text-slate-400">{hint}</p>}
@@ -60,11 +60,11 @@ export default function MasterWorkPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Ish rejimi</p>
-            <h1 className="text-3xl font-black mt-1">{isOnline ? 'Siz liniyadasiz' : 'Siz oflayndasiz'}</h1>
+            <h1 className="text-3xl font-black mt-1">{isOnline ? 'Siz ishdasiz' : 'Siz dam olyapsiz'}</h1>
             <p className="text-sm text-white/80 mt-1 max-w-md">
               {isOnline
                 ? 'Yaqin atrofdagi tezkor chaqiruvlar sizga signal bilan keladi. Taklifga javob berish vaqti cheklangan.'
-                : 'Liniyaga chiqing — tizim sizga eng yaqin mijozlarning chaqiruvlarini yuboradi.'}
+                : '«Ishga chiqish» tugmasini bosing — tizim sizga eng yaqin mijozlarning chaqiruvlarini yuboradi.'}
             </p>
           </div>
           <button
@@ -76,7 +76,7 @@ export default function MasterWorkPage() {
             aria-pressed={isOnline}
           >
             {toggling ? <Spinner className="w-6 h-6" /> : <Power className="w-8 h-8 mb-1" />}
-            {isOnline ? 'Liniyadan chiqish' : 'Liniyaga chiqish'}
+            {isOnline ? 'Ishni to\'xtatish' : 'Ishga chiqish'}
           </button>
         </div>
         {state.missed_offers_streak > 0 && config && (
@@ -89,7 +89,7 @@ export default function MasterWorkPage() {
 
       {!req.can_go_online && (
         <div className="bg-white rounded-2xl border border-red-200 p-5">
-          <h2 className="font-bold text-slate-900 mb-2">Liniyaga chiqish uchun:</h2>
+          <h2 className="font-bold text-slate-900 mb-2">Ishga chiqish uchun:</h2>
           <ul className="space-y-1.5">
             <Requirement ok={req.verified}>Profil administrator tomonidan tasdiqlangan</Requirement>
             <Requirement ok={req.has_specializations}>
@@ -130,7 +130,7 @@ export default function MasterWorkPage() {
         <Stat icon={XCircle} label="Voz kechilgan ishlar" value={state.cancelled_jobs} />
       </div>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5">
+      <section className="card p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <div>
             <h2 className="font-bold text-slate-900 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Joylashuvim</h2>
@@ -138,7 +138,7 @@ export default function MasterWorkPage() {
               {gps.status === 'ok' && 'GPS orqali aniqlanmoqda'}
               {gps.status === 'locating' && 'GPS qidirilmoqda...'}
               {gps.status === 'error' && `${gps.error}. Xaritani bosib joyingizni belgilang.`}
-              {gps.status === 'idle' && (manualLocation ? 'Xaritada belgilangan joy' : 'Liniyaga chiqqanda joylashuv aniqlanadi. GPS ishlamasa, xaritada belgilang.')}
+              {gps.status === 'idle' && (manualLocation ? 'Xaritada belgilangan joy' : 'Ishga chiqqanda joylashuv aniqlanadi. GPS ishlamasa, xaritada belgilang.')}
             </p>
           </div>
           {manualLocation && (
@@ -155,7 +155,7 @@ export default function MasterWorkPage() {
         />
       </section>
 
-      <Link to="/rules" className="flex items-center justify-between bg-white rounded-2xl border border-slate-200 p-4 hover:bg-slate-50">
+      <Link to="/rules" className="flex items-center justify-between card p-4 hover:bg-slate-50">
         <span className="flex items-center gap-2 text-sm font-bold text-slate-800"><BookOpen className="w-4 h-4 text-blue-600" /> Ishlash qoidalari</span>
         <ArrowRight className="w-4 h-4 text-slate-400" />
       </Link>

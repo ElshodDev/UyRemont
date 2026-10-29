@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, Send } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
+import PhotoPicker from './PhotoPicker';
 import { specializationLabel } from './MasterCard';
 import { api } from '../lib/api';
 import { districtsList } from '../data/catalog';
@@ -10,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatPhone } from '../lib/format';
 
-const inputClass = 'w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500';
+const inputClass = 'input';
 
 /**
  * Buyurtma berish: master berilsa shu ustaga, aks holda tanlangan sohadagi barcha ustalarga ochiq
@@ -30,6 +31,8 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
+  const [photoIds, setPhotoIds] = useState([]);
+  const [photosBusy, setPhotosBusy] = useState(false);
 
   const specOptions = useMemo(
     () => (master?.specializations?.length ? master.specializations : specializations),
@@ -50,6 +53,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
           master_id: master?.id,
           specialization_id: form.specialization_id ? Number(form.specialization_id) : undefined,
           budget: form.budget || undefined,
+          photo_ids: photoIds,
           scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : undefined
         }
       });
@@ -77,13 +81,13 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} labelledBy="order-modal-title">
       {created ? (
         <div className="text-center py-6">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-1">Buyurtma Qabul Qilindi!</h3>
+          <h3 id="order-modal-title" className="text-xl font-bold text-slate-900 mb-1">Buyurtma qabul qilindi!</h3>
           <p className="text-xs text-slate-500 mb-6">
             {master
               ? <>Usta <strong>{master.name}</strong> buyurtmani qabul qilgach, uning holati va chat shu yerda ko'rinadi.</>
@@ -100,7 +104,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
                 href={telegramShareUrl()}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2.5 px-4 bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-sky-600 transition"
+                className="btn w-full bg-sky-500 text-white font-bold hover:bg-sky-600"
               >
                 <Send className="w-4 h-4" />
                 Telegram orqali yuborish
@@ -111,14 +115,14 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="btn btn-secondary w-full"
             >
               Yopish
             </button>
             <Link
               to={`/orders/${created.id}`}
               onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 inline-flex items-center justify-center"
+              className="btn btn-primary w-full font-bold"
             >
               Buyurtmani ko'rish
             </Link>
@@ -126,7 +130,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
         </div>
       ) : (
         <div>
-          <h3 className="text-lg font-bold text-slate-900 mb-1">
+          <h3 id="order-modal-title" className="text-lg font-bold text-slate-900 mb-1 pr-10">
             {master ? 'Buyurtma berish' : 'Ochiq buyurtma qoldirish'}
           </h3>
           <p className="text-xs text-slate-500 mb-4">
@@ -139,11 +143,12 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
             <div className="mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">{error}</div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {specOptions.length > 0 && (
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Xizmat turi {master ? '' : '*'}</label>
+                <label className="label" htmlFor="order-field-1">Xizmat turi {master ? '' : '*'}</label>
                 <select
+                  id="order-field-1"
                   className={inputClass}
                   required={!master}
                   value={form.specialization_id}
@@ -158,8 +163,9 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
             )}
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Nima qilish kerak? *</label>
+              <label className="label" htmlFor="order-field-2">Nima qilish kerak? *</label>
               <input
+                id="order-field-2"
                 required
                 minLength={3}
                 maxLength={200}
@@ -171,8 +177,9 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Batafsil tavsif</label>
+              <label className="label" htmlFor="order-field-3">Batafsil tavsif</label>
               <textarea
+                id="order-field-3"
                 rows="3"
                 maxLength={2000}
                 placeholder="Muammo, o'lchamlar, materiallar bor-yo'qligi..."
@@ -184,15 +191,16 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Tuman</label>
-                <select className={inputClass} value={form.district} onChange={update('district')}>
+                <label className="label" htmlFor="order-field-4">Tuman</label>
+                <select id="order-field-4" className={inputClass} value={form.district} onChange={update('district')}>
                   <option value="">Tanlang...</option>
                   {districtsList.slice(1).map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Manzil *</label>
+                <label className="label" htmlFor="order-field-5">Manzil *</label>
                 <input
+                  id="order-field-5"
                   required
                   minLength={3}
                   maxLength={500}
@@ -206,8 +214,9 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Byudjet (so'm)</label>
+                <label className="label" htmlFor="order-field-6">Byudjet (so'm)</label>
                 <input
+                  id="order-field-6"
                   type="number"
                   min="0"
                   step="1000"
@@ -218,8 +227,9 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Qulay vaqt</label>
+                <label className="label" htmlFor="order-field-7">Qulay vaqt</label>
                 <input
+                  id="order-field-7"
                   type="datetime-local"
                   className={inputClass}
                   value={form.scheduled_at}
@@ -228,14 +238,19 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400">
+            <div>
+              <span className="label">Rasm (ixtiyoriy)</span>
+              <PhotoPicker onChange={setPhotoIds} onBusyChange={setPhotosBusy} />
+            </div>
+
+            <p className="hint">
               Aloqa uchun raqamingiz ({formatPhone(user?.phone)}) usta buyurtmani qabul qilgandan keyin ko'rinadi.
             </p>
 
             <button
               type="submit"
-              disabled={submitting}
-              className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition mt-2 disabled:opacity-70 inline-flex items-center justify-center gap-2"
+              disabled={submitting || photosBusy}
+              className="btn btn-primary w-full min-h-12 font-bold shadow-md shadow-blue-500/20 mt-2"
             >
               {submitting ? <Spinner className="w-4 h-4 text-white" /> : 'Buyurtmani tasdiqlash'}
             </button>

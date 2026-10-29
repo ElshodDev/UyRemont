@@ -23,7 +23,7 @@ export default function MasterProfileModal({ masterId, onClose, onOrder }) {
   }, [masterId]);
 
   return (
-    <Modal onClose={onClose} size="lg">
+    <Modal onClose={onClose} size="lg" labelledBy="master-profile-title">
       {!master && !error && (
         <div className="py-16 flex justify-center"><Spinner className="w-6 h-6 text-blue-600" label="Yuklanmoqda..." /></div>
       )}
@@ -34,7 +34,7 @@ export default function MasterProfileModal({ masterId, onClose, onOrder }) {
           <div className="flex items-center gap-4 mb-4 pr-8">
             <Avatar src={master.avatar_url} name={master.name} className="w-20 h-20 rounded-2xl text-3xl flex-shrink-0" />
             <div className="min-w-0">
-              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-1.5">
+              <h3 id="master-profile-title" className="text-xl font-bold text-slate-900 flex items-center gap-1.5">
                 <span className="truncate">{master.name}</span>
                 {master.is_verified && <ShieldCheck className="w-5 h-5 text-blue-600 flex-shrink-0" title="Tasdiqlangan" />}
               </h3>
@@ -117,7 +117,7 @@ export default function MasterProfileModal({ masterId, onClose, onOrder }) {
               </div>
               <a
                 href={`tel:${master.phone}`}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-blue-700"
+                className="btn btn-sm btn-primary min-h-11"
               >
                 <Phone className="w-3.5 h-3.5" />
                 Qo'ng'iroq
@@ -128,7 +128,7 @@ export default function MasterProfileModal({ masterId, onClose, onOrder }) {
           <div className="mt-6">
             <button
               onClick={() => onOrder(master)}
-              className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20"
+              className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20"
             >
               Ushbu ustaga buyurtma berish
             </button>

@@ -8,7 +8,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-const codeInputClass = 'w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-center tracking-[0.4em] font-mono font-bold';
+const codeInputClass = 'input min-h-12 text-center tracking-[0.4em] font-mono font-bold';
 
 function TwoFactorSetup({ onClose, onEnabled }) {
   const toast = useToast();
@@ -72,7 +72,7 @@ function TwoFactorSetup({ onClose, onEnabled }) {
           <button
             type="submit"
             disabled={loading || code.length !== 6}
-            className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 disabled:opacity-60 inline-flex items-center justify-center"
+            className="btn btn-primary w-full font-bold min-h-12"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Tasdiqlash va yoqish'}
           </button>
@@ -123,7 +123,7 @@ function TwoFactorDisable({ onClose, onDisabled }) {
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 disabled:opacity-60 inline-flex items-center justify-center"
+          className="btn btn-danger w-full font-bold min-h-12"
         >
           {loading ? <Spinner className="w-4 h-4 text-white" /> : 'O\'chirish'}
         </button>
@@ -172,7 +172,7 @@ function DeleteAccountDialog({ onClose, onDeleted }) {
         <button
           onClick={remove}
           disabled={!understood || loading}
-          className="py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50 inline-flex items-center justify-center"
+          className="btn btn-danger font-bold"
         >
           {loading ? <Spinner className="w-4 h-4 text-white" /> : 'O\'chirish'}
         </button>
@@ -212,7 +212,7 @@ export default function SecuritySettings() {
   };
 
   return (
-    <section id="xavfsizlik" ref={sectionRef} className="scroll-mt-24 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-4">
+    <section id="xavfsizlik" ref={sectionRef} className="scroll-mt-24 card p-5 sm:p-6 space-y-4">
       <h3 className="font-bold text-slate-900 flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> Xavfsizlik</h3>
 
       <div className={`p-4 rounded-xl border ${user.totp_enabled ? 'bg-emerald-50 border-emerald-200' : user.role === 'admin' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
@@ -244,7 +244,7 @@ export default function SecuritySettings() {
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={() => setDialog('logoutAll')}
-          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 inline-flex items-center justify-center gap-2"
+          className="btn btn-secondary flex-1 px-4"
         >
           <LogOut className="w-4 h-4" /> Barcha qurilmalardan chiqish
         </button>

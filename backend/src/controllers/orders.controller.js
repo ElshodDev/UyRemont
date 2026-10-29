@@ -3,10 +3,11 @@
 // =============================================
 
 const { randomUUID: uuidv4 } = require('crypto');
-const { query } = require('../config/database');
+const { query, withTransaction } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { emitOrderUpdate } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
+const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
 const {
     assertUuid,
     optionalString,
@@ -108,6 +109,7 @@ const createOrder = async (req, res, next) => {
         const specializationId = optionalNumber(req.body.specialization_id, {
             min: 1, max: 100000, integer: true, field: 'Mutaxassislik',
         });
+        const photoIds = parsePhotoIds(req.body.photo_ids);
 
         let scheduledAt = null;
         if (req.body.scheduled_at) {
@@ -139,18 +141,22 @@ const createOrder = async (req, res, next) => {
             throw new HttpError(400, 'Ustani yoki mutaxassislikni tanlang');
         }
 
-        // Buyurtmani saqlash
-        const result = await query(
-            `INSERT INTO orders (id, client_id, master_id, specialization_id, title, description, address, district, budget, scheduled_at, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
-             RETURNING *`,
-            [uuidv4(), clientId, masterId, specializationId, title, description, address, district, budget, scheduledAt]
-        );
+        // Buyurtmani saqlash va rasmlarni biriktirish
+        const order = await withTransaction(async (client) => {
+            const result = await client.query(
+                `INSERT INTO orders (id, client_id, master_id, specialization_id, title, description, address, district, budget, scheduled_at, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
+                 RETURNING *`,
+                [uuidv4(), clientId, masterId, specializationId, title, description, address, district, budget, scheduledAt]
+            );
+            const photos = await attachPhotos(client, { orderId: result.rows[0].id, userId: clientId, photoIds });
+            return { ...result.rows[0], photos };
+        });
 
         res.status(201).json({
             success: true,
             message: 'Buyurtma yaratildi',
-            data: result.rows[0],
+            data: order,
         });
     } catch (error) {
         next(error);
@@ -320,6 +326,7 @@ const getOrderById = async (req, res, next) => {
                 ...order,
                 ...(await loadPhones(order, req.user)),
                 ...masterLocation,
+                photos: await listPhotoIds(id),
                 messages: messagesResult.rows,
             },
         });

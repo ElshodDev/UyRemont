@@ -18,9 +18,10 @@ const MAX_INPUT_PIXELS = 40 * 1000 * 1000;
 
 /**
  * @param {Buffer} buffer - multer memoryStorage dan kelgan fayl
+ * @param {{ dir?: string }} options - saqlash papkasi (sukut bo'yicha ochiq /uploads)
  * @returns {Promise<{ fileName: string, filePath: string, url: string }>}
  */
-const saveUploadedImage = async (buffer) => {
+const saveUploadedImage = async (buffer, { dir = UPLOAD_DIR } = {}) => {
     let metadata;
     try {
         metadata = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
@@ -32,7 +33,7 @@ const saveUploadedImage = async (buffer) => {
     }
 
     const fileName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.webp`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const filePath = path.join(dir, fileName);
 
     // rotate() EXIF dagi burilishni qo'llaydi; sharp metadata ni sukut bo'yicha saqlamaydi
     await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })

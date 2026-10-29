@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle,
-  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, KeyRound
+  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, Tag
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
 import OrdersPage from './OrdersPage';
+import AdminPricesTab from './AdminPricesTab';
+import TwoFactorRequired, { isTwoFactorError } from '../components/TwoFactorRequired';
 import { api } from '../lib/api';
 import { formatDate, formatPhone, formatPrice, formatRating, ROLE_LABELS } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +19,7 @@ const TABS = [
   { id: 'stats', label: 'Statistika', icon: LayoutDashboard },
   { id: 'users', label: 'Foydalanuvchilar', icon: Users },
   { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList },
+  { id: 'prices', label: 'Narxlar', icon: Tag },
   { id: 'audit', label: 'Jurnal', icon: ScrollText }
 ];
 
@@ -26,28 +29,12 @@ const AUDIT_ACTIONS = {
   'user.role': 'Rolini o\'zgartirdi',
   'user.verify': 'Usta tasdiqini o\'zgartirdi',
   'order.cancel': 'Tezkor chaqiruvni bekor qildi',
-  'order.status': 'Buyurtma holatini o\'zgartirdi'
+  'order.status': 'Buyurtma holatini o\'zgartirdi',
+  'price.create': 'Narx qo\'shdi',
+  'price.update': 'Narxni o\'zgartirdi',
+  'price.delete': 'Narxni o\'chirdi',
+  'price.call_fee': 'Chiqish narxini o\'zgartirdi'
 };
-
-const isTwoFactorError = (error) => error?.data?.code === '2FA_REQUIRED';
-
-/**
- * 2FA majburiy, lekin administrator uni hali yoqmagan
- */
-function TwoFactorRequired() {
-  return (
-    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-      <KeyRound className="w-10 h-10 text-amber-600 mx-auto mb-3" />
-      <h3 className="font-bold text-slate-900 mb-1">Ikki bosqichli kirishni yoqing</h3>
-      <p className="text-sm text-slate-600 mb-4 max-w-md mx-auto">
-        Xavfsizlik uchun admin panelga faqat 2FA yoqilgan administratorlar kira oladi.
-      </p>
-      <Link to="/profile#xavfsizlik" className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">
-        Profil → Xavfsizlik
-      </Link>
-    </div>
-  );
-}
 
 function AuditTab() {
   const [entries, setEntries] = useState(null);
@@ -65,9 +52,9 @@ function AuditTab() {
   if (!entries) return <PageLoader />;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="card overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-100 text-xs text-slate-500">
-        Administratorlarning so'nggi amallari (bloklash, rol, tasdiqlash, buyurtmalar). Jurnal o'chirilmaydi.
+        Administratorlarning so'nggi amallari (bloklash, rol, tasdiqlash, buyurtmalar, narxlar). Jurnal o'chirilmaydi.
       </div>
       {entries.length === 0 ? (
         <p className="p-8 text-center text-sm text-slate-400">Hozircha amallar yo'q</p>
@@ -104,7 +91,7 @@ function StatCard({ icon: Icon, label, value, hint, tone = 'blue' }) {
     slate: 'bg-slate-100 text-slate-600'
   };
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+    <div className="card p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-500">{label}</span>
         <span className={`p-2 rounded-xl ${tones[tone]}`}><Icon className="w-4 h-4" /></span>
@@ -152,7 +139,7 @@ function StatsTab() {
         <div>
           <h3 className="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2"><Zap className="w-4 h-4 text-orange-500" /> Tezkor chaqiruv — jonli</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard icon={Power} label="Liniyadagi ustalar" value={stats.live.online_masters} tone="emerald" />
+            <StatCard icon={Power} label="Ishdagi ustalar" value={stats.live.online_masters} tone="emerald" />
             <StatCard icon={Radar} label="Usta qidirilmoqda" value={stats.live.searching} tone="amber" />
             <StatCard icon={Wrench} label="Faol ishlar" value={stats.live.active_jobs} />
             <StatCard
@@ -167,7 +154,7 @@ function StatsTab() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="card p-5">
           <h3 className="font-bold text-slate-900 text-sm mb-3">Buyurtmalar holati</h3>
           <table className="w-full text-sm">
             <tbody>
@@ -184,7 +171,7 @@ function StatsTab() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="card p-5">
           <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-blue-600" /> Oxirgi 7 kun
           </h3>
@@ -292,7 +279,7 @@ function UsersTab() {
       {(state === 'ready' || state === 'more') && (
         <>
           <p className="text-xs text-slate-500 mb-2">Jami: {pagination?.total ?? 0}</p>
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[760px]">
                 <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
@@ -389,7 +376,7 @@ function UsersTab() {
               <button
                 onClick={() => load(pagination.page + 1)}
                 disabled={state === 'more'}
-                className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                className="btn btn-secondary px-6"
               >
                 {state === 'more' ? <Spinner className="w-4 h-4" /> : 'Ko\'proq ko\'rsatish'}
               </button>
@@ -448,7 +435,8 @@ export default function AdminPage() {
           <button
             key={id}
             onClick={() => setSearchParams(id === 'stats' ? {} : { section: id }, { replace: true })}
-            className={`px-4 py-2.5 text-sm font-bold whitespace-nowrap inline-flex items-center gap-2 border-b-2 -mb-px transition ${
+            aria-current={tab === id ? 'page' : undefined}
+            className={`px-4 min-h-11 text-sm font-bold whitespace-nowrap inline-flex items-center gap-2 border-b-2 -mb-px transition ${
               tab === id ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -460,6 +448,7 @@ export default function AdminPage() {
       {tab === 'stats' && <StatsTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'orders' && <OrdersPage embedded />}
+      {tab === 'prices' && <AdminPricesTab />}
       {tab === 'audit' && <AuditTab />}
     </main>
   );

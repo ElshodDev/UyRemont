@@ -8,6 +8,7 @@ const ordersRoutes = require('./orders.routes');
 const reviewsRoutes = require('./reviews.routes');
 const adminRoutes = require('./admin.routes');
 const dispatchRoutes = require('./dispatch.routes');
+const { getPrices } = require('../controllers/prices.controller');
 
 router.use('/auth', authRoutes);
 router.use('/masters', mastersRoutes);
@@ -15,6 +16,8 @@ router.use('/orders', ordersRoutes);
 router.use('/reviews', reviewsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/dispatch', dispatchRoutes);
+// Taxminiy narxlar (ommaviy)
+router.get('/prices', getPrices);
 
 // Salomatlikni tekshirish (Health check) - ma'lumotlar bazasi ulanishi bilan
 router.get('/health', async (req, res) => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin, Navigation, Star, Wallet, Zap } from 'lucide-react';
 import Spinner from './Spinner';
+import OrderPhotos from './OrderPhotos';
 import { formatPrice, formatRating } from '../lib/format';
 
 /**
@@ -57,7 +58,7 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[55] bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="alertdialog" aria-modal="true">
+    <div className="fixed inset-0 z-[55] bg-ink/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="alertdialog" aria-modal="true" aria-labelledby="offer-title">
       <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
         <div className="h-1.5 bg-slate-100">
           <div
@@ -65,7 +66,7 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
             style={{ width: `${(left / total) * 100}%` }}
           />
         </div>
-        <div className="p-6">
+        <div className="p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6">
           <div className="flex items-center justify-between mb-4">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
               <Zap className="w-3.5 h-3.5" /> Yangi buyurtma
@@ -73,10 +74,15 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
             <span className={`text-2xl font-black tabular-nums ${left <= 5 ? 'text-red-600' : 'text-slate-900'}`}>{left}s</span>
           </div>
 
-          <h3 className="text-xl font-extrabold text-slate-900">
+          <h3 id="offer-title" className="text-xl font-extrabold text-slate-900">
             {offer.specialization_icon} {offer.title}
           </h3>
           {offer.description && <p className="text-sm text-slate-600 mt-1 line-clamp-3">{offer.description}</p>}
+          {offer.photos?.length > 0 && (
+            <div className="mt-3">
+              <OrderPhotos orderId={offer.order_id} photoIds={offer.photos} thumbClassName="w-16 h-16" />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
             <div className="p-3 rounded-xl bg-slate-50">
@@ -102,14 +108,14 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
             <button
               onClick={() => act('decline')}
               disabled={Boolean(busy)}
-              className="py-3.5 rounded-2xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 disabled:opacity-60"
+              className="btn btn-secondary min-h-14 rounded-2xl font-bold"
             >
               {busy === 'decline' ? <Spinner className="w-4 h-4" /> : 'Rad etish'}
             </button>
             <button
               onClick={() => act('accept')}
               disabled={Boolean(busy) || left === 0}
-              className="col-span-2 py-3.5 rounded-2xl bg-emerald-600 text-white font-extrabold text-base hover:bg-emerald-700 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              className="btn btn-success btn-lg col-span-2"
             >
               {busy === 'accept' ? <Spinner className="w-5 h-5 text-white" /> : 'Qabul qilish'}
             </button>

@@ -47,14 +47,14 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
       {warning && <p className="text-xs p-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-3">{warning}</p>}
       <div className="space-y-2 mb-4">
         {reasons.map((r) => (
-          <label key={r} className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-sm ${reason === r ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
+          <label key={r} className={`flex items-center gap-2 min-h-11 px-3 rounded-xl border cursor-pointer text-sm ${reason === r ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
             <input type="radio" className="accent-blue-600" checked={reason === r} onChange={() => setReason(r)} />
             {r}
           </label>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={onClose} disabled={loading} className="py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700">Ortga</button>
+        <button onClick={onClose} disabled={loading} className="btn btn-secondary">Ortga</button>
         <button
           onClick={async () => {
             setLoading(true);
@@ -65,7 +65,7 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
             }
           }}
           disabled={loading}
-          className="py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 inline-flex items-center justify-center"
+          className="btn btn-danger font-bold"
         >
           {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Bekor qilish'}
         </button>
@@ -86,7 +86,8 @@ function CompleteDialog({ callFee, onConfirm, onClose }) {
         min="0"
         step="1000"
         autoFocus
-        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-lg font-bold"
+        className="input text-lg font-bold"
+        aria-label="Yakuniy summa (so'm)"
         value={price}
         onChange={(e) => setPrice(e.target.value)}
       />
@@ -101,7 +102,7 @@ function CompleteDialog({ callFee, onConfirm, onClose }) {
           }
         }}
         disabled={loading || price === '' || Number(price) < 0}
-        className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-60 inline-flex items-center justify-center"
+        className="btn btn-success w-full min-h-12 font-bold"
       >
         {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Yakunlash'}
       </button>
@@ -114,7 +115,7 @@ function RateClientForm({ orderId, onDone }) {
   const [rating, setRating] = useState(5);
   const [loading, setLoading] = useState(false);
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+    <div className="card-pad">
       <h3 className="font-bold text-slate-900 text-sm">Mijozni baholang</h3>
       <p className="text-xs text-slate-500 mb-2">Mijoz reytingi boshqa ustalarga taklifni qabul qilishda yordam beradi.</p>
       <div className="flex items-center gap-3">
@@ -133,7 +134,7 @@ function RateClientForm({ orderId, onDone }) {
             }
           }}
           disabled={loading}
-          className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600"
+          className="btn bg-amber-500 text-white font-bold hover:bg-amber-600"
         >
           {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Baholash'}
         </button>
@@ -256,7 +257,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
     searching: {
       tone: 'from-amber-500 to-orange-500',
       title: 'Usta qidirilmoqda...',
-      text: `Yaqin atrofdagi liniyadagi ustalarga navbat bilan taklif yuborilmoqda${radius ? ` · radius ${radius} km` : ''}`,
+      text: `Yaqin atrofdagi bo'sh ustalarga navbat bilan taklif yuborilmoqda${radius ? ` · radius ${radius} km` : ''}`,
       extra: `Qidiruv: ${formatDuration(now - new Date(order.search_started_at || order.created_at))}`
     },
     accepted: {
@@ -299,7 +300,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
     expired: {
       tone: 'from-slate-600 to-slate-700',
       title: 'Bo\'sh usta topilmadi',
-      text: 'Hozircha yaqin atrofda liniyadagi usta yo\'q. Birozdan keyin qayta urinib ko\'ring yoki oddiy buyurtma qoldiring.',
+      text: 'Hozircha yaqin atrofda bo\'sh usta yo\'q. Birozdan keyin qayta urinib ko\'ring yoki oddiy buyurtma qoldiring.',
       extra: null
     }
   }[order.status];
@@ -356,7 +357,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
         zoom={order.status === 'searching' ? 12 : 14}
       />
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="card p-5">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
@@ -387,38 +388,38 @@ export default function InstantOrderPanel({ order, user, reload }) {
               href={navigationUrl(order.lat, order.lng)}
               target="_blank"
               rel="noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 inline-flex items-center gap-2"
+              className="btn btn-dark font-bold"
             >
               <Navigation className="w-4 h-4" /> Navigator
             </a>
           )}
           {isMaster && order.status === 'accepted' && (
-            <button disabled={busy} onClick={() => setStatus('arrived')} className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-60">
+            <button disabled={busy} onClick={() => setStatus('arrived')} className="btn btn-primary font-bold">
               Yetib keldim
             </button>
           )}
           {isMaster && order.status === 'arrived' && (
-            <button disabled={busy} onClick={() => setStatus('in_progress')} className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-60">
+            <button disabled={busy} onClick={() => setStatus('in_progress')} className="btn btn-primary font-bold">
               Ishni boshlash
             </button>
           )}
           {isMaster && order.status === 'in_progress' && (
-            <button disabled={busy} onClick={() => setDialog('complete')} className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-60">
+            <button disabled={busy} onClick={() => setDialog('complete')} className="btn btn-success font-bold">
               Ishni yakunlash
             </button>
           )}
           {((isClient && ['searching', 'accepted', 'arrived'].includes(order.status))
             || (isMaster && ['accepted', 'arrived'].includes(order.status))) && config && (
-            <button onClick={() => setDialog('cancel')} className="px-4 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 inline-flex items-center gap-2">
+            <button onClick={() => setDialog('cancel')} className="btn btn-secondary border-red-200 text-red-600 hover:bg-red-50 font-bold">
               <XCircle className="w-4 h-4" /> Bekor qilish
             </button>
           )}
           {isClient && order.status === 'expired' && (
             <>
-              <button disabled={busy} onClick={retry} className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold disabled:opacity-60">
+              <button disabled={busy} onClick={retry} className="btn btn-accent">
                 Qayta chaqirish
               </button>
-              <Link to="/" className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+              <Link to="/" className="btn btn-secondary">
                 Katalogdan usta tanlash
               </Link>
             </>

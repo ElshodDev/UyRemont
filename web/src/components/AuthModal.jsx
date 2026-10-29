@@ -5,7 +5,7 @@ import Spinner from './Spinner';
 import { api } from '../lib/api';
 import { formatPhone } from '../lib/format';
 
-const inputClass = 'w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm';
+const inputClass = 'input min-h-12';
 
 /**
  * Telefon raqam + SMS kod orqali kirish (3 bosqich: raqam -> kod -> ism)
@@ -174,7 +174,7 @@ export default function AuthModal({ onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading || !acceptTerms}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-70 inline-flex items-center justify-center gap-2"
+            className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Kod olish'}
           </button>
@@ -206,7 +206,7 @@ export default function AuthModal({ onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading || code.length !== 6}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Tasdiqlash'}
           </button>
@@ -250,7 +250,7 @@ export default function AuthModal({ onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading || totpCode.length !== 6}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Kirish'}
           </button>
@@ -277,7 +277,7 @@ export default function AuthModal({ onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading || name.trim().length < 2}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Davom etish'}
           </button>

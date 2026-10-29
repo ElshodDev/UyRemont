@@ -10,7 +10,7 @@ export default function NotFoundPage() {
         title="Sahifa topilmadi"
         description="Siz qidirgan sahifa mavjud emas yoki ko'chirilgan."
         action={(
-          <Link to="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
+          <Link to="/" className="btn btn-primary px-4">
             Bosh sahifaga qaytish
           </Link>
         )}

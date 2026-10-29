@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
 import ReviewForm from '../components/ReviewForm';
 import InstantOrderPanel from '../components/InstantOrderPanel';
+import OrderPhotos from '../components/OrderPhotos';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
@@ -22,9 +23,9 @@ const STEPS = [
 ];
 
 const TONES = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-  success: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-  danger: 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
+  primary: 'btn-primary',
+  success: 'btn-success',
+  danger: 'btn-secondary border-red-200 text-red-600 hover:bg-red-50'
 };
 
 function ContactCard({ label, name, phone }) {
@@ -36,7 +37,7 @@ function ContactCard({ label, name, phone }) {
         {phone && <span className="text-xs text-slate-600">{formatPhone(phone)}</span>}
       </div>
       {phone && (
-        <a href={`tel:${phone}`} className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700" aria-label="Qo'ng'iroq">
+        <a href={`tel:${phone}`} className="w-11 h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center justify-center flex-shrink-0" aria-label={`${name || ''} raqamiga qo'ng'iroq qilish`}>
           <Phone className="w-4 h-4" />
         </a>
       )}
@@ -102,7 +103,7 @@ export default function OrderDetailPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
-      <Link to="/orders" className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-4">
+      <Link to="/orders" className="inline-flex items-center gap-1 min-h-11 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-2">
         <ArrowLeft className="w-4 h-4" /> Buyurtmalar
       </Link>
 
@@ -111,7 +112,7 @@ export default function OrderDetailPage() {
           {isInstant ? (
             <InstantOrderPanel order={order} user={user} reload={load} />
           ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+          <div className="card p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
                 {order.specialization_name && (
@@ -168,7 +169,7 @@ export default function OrderDetailPage() {
                     key={action.status}
                     disabled={updating}
                     onClick={() => (action.confirm ? setPendingAction(action) : changeStatus(action))}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-60 inline-flex items-center gap-2 ${TONES[action.tone]}`}
+                    className={`btn font-bold ${TONES[action.tone]}`}
                   >
                     {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : action.label}
                   </button>
@@ -178,8 +179,17 @@ export default function OrderDetailPage() {
           </div>
           )}
 
+          {order.photos?.length > 0 && (
+            <div className="card-pad">
+              <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-blue-600" /> Muammo rasmlari
+              </h3>
+              <OrderPhotos orderId={order.id} photoIds={order.photos} thumbClassName="w-24 h-24 sm:w-28 sm:h-28" />
+            </div>
+          )}
+
           {(!isInstant || order.master_id) && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2">
+          <div className="card-pad space-y-2">
             <h3 className="font-bold text-slate-900 text-sm mb-1">Ishtirokchilar</h3>
             <ContactCard label="Mijoz" name={order.client_name} phone={order.client_phone} />
             <ContactCard label="Usta" name={order.master_name || 'Hali biriktirilmagan'} phone={order.master_phone} />
@@ -192,7 +202,7 @@ export default function OrderDetailPage() {
           {canReview && <ReviewForm orderId={order.id} onCreated={load} />}
 
           {order.review_rating && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <div className="card-pad">
               <h3 className="font-bold text-slate-900 text-sm mb-2">Mijoz sharhi</h3>
               <StarRating value={order.review_rating} />
               {order.review_comment && <p className="text-sm text-slate-600 mt-2">{order.review_comment}</p>}
@@ -209,7 +219,7 @@ export default function OrderDetailPage() {
               onOrderUpdated={load}
             />
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-500">
+            <div className="card p-6 text-center text-sm text-slate-500">
               {isInstant ? 'Usta topilgach u bilan shu yerda yozishishingiz mumkin.' : 'Chat buyurtmani qabul qilgandan keyin ochiladi.'}
             </div>
           )}

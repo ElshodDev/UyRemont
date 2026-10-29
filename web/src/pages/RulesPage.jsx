@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, User, Wrench, Zap, Radar, Car, Home, CheckCircle, Star } from 'lucide-react';
+import { BookOpen, User, Wrench, Zap, Radar, Car, Home, CheckCircle, Star, PlayCircle } from 'lucide-react';
 import { PageLoader } from '../components/Spinner';
+import { openOnboarding } from '../components/Onboarding';
 import { ErrorState } from '../components/EmptyState';
 import { api } from '../lib/api';
 
 const FLOW = [
   { icon: Zap, title: 'Chaqiruv', text: 'Mijoz xizmat turini va manzilni tanlaydi, chiqish narxini oldindan ko\'radi.' },
-  { icon: Radar, title: 'Qidiruv', text: 'Tizim eng yaqin liniyadagi ustaga taklif yuboradi. Rad etilsa yoki javob bo\'lmasa — keyingi ustaga.' },
+  { icon: Radar, title: 'Qidiruv', text: 'Tizim eng yaqin bo\'sh (ish rejimidagi) ustaga taklif yuboradi. Rad etilsa yoki javob bo\'lmasa — keyingi ustaga.' },
   { icon: Car, title: 'Usta yo\'lda', text: 'Mijoz ustani xaritada jonli kuzatadi va taxminiy yetib kelish vaqtini ko\'radi.' },
   { icon: Home, title: 'Yetib keldi', text: 'Usta muammoni ko\'rib, ish narxini mijoz bilan kelishadi va ishni boshlaydi.' },
   { icon: CheckCircle, title: 'Yakun', text: 'Usta yakuniy summani kiritadi, to\'lov ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.' },
@@ -38,11 +39,11 @@ export default function RulesPage() {
     'Ish tugagach ustani halol baholang — bu boshqa mijozlarga yordam beradi.'
   ];
   const masterRules = [
-    `Tezkor chaqiruvlar faqat liniyadagi${config.require_verified ? ', administrator tasdiqlagan' : ''} ustalarga yuboriladi.`,
-    `Reyting ${config.min_rating} dan past bo'lsa (kamida ${config.min_reviews_for_rating} ta sharhdan keyin) liniyaga chiqib bo'lmaydi.`,
-    `Taklifga javob berish uchun ${config.offer_timeout_sec} soniya beriladi. Ketma-ket ${config.max_missed_offers} ta taklifga javob bermasangiz, liniyadan avtomatik chiqarilasiz.`,
+    `Tezkor chaqiruvlar faqat ish rejimini yoqqan${config.require_verified ? ', administrator tasdiqlagan' : ''} ustalarga yuboriladi.`,
+    `Reyting ${config.min_rating} dan past bo'lsa (kamida ${config.min_reviews_for_rating} ta sharhdan keyin) ishga chiqib bo'lmaydi.`,
+    `Taklifga javob berish uchun ${config.offer_timeout_sec} soniya beriladi. Ketma-ket ${config.max_missed_offers} ta taklifga javob bermasangiz, ish rejimingiz avtomatik o'chiriladi.`,
     'Rad etish ham javob hisoblanadi, lekin qabul qilish foizingizga ta\'sir qiladi.',
-    'Liniyada bo\'lganingizda joylashuvingiz har 15 soniyada yangilanadi. GPS ishlamasa, xaritada joyingizni belgilang.',
+    'Ish rejimida joylashuvingiz har 15 soniyada yangilanadi. GPS ishlamasa, xaritada joyingizni belgilang.',
     `Joylashuvi ${config.location_stale_min} daqiqadan ko'p yangilanmagan ustaga takliflar yuborilmaydi.`,
     'Faol ish bor paytda yangi tezkor takliflar kelmaydi.',
     'Qabul qilingan chaqiruvdan voz kechsangiz, sabab ko\'rsatiladi va statistikada qayd etiladi; chaqiruv boshqa ustaga beriladi.',
@@ -60,8 +61,13 @@ export default function RulesPage() {
         </div>
       </div>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
-        <h2 className="font-bold text-slate-900 mb-4">Qanday ishlaydi</h2>
+      <section className="card p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-bold text-slate-900">Qanday ishlaydi</h2>
+          <button type="button" onClick={openOnboarding} className="btn btn-sm btn-soft">
+            <PlayCircle className="w-4 h-4" /> Qisqa tanishtiruv
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FLOW.map(({ icon: Icon, title, text }, i) => (
             <div key={title} className="flex gap-3">
@@ -79,13 +85,13 @@ export default function RulesPage() {
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <section className="card p-5 sm:p-6">
           <h2 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><User className="w-5 h-5 text-blue-600" /> Mijozlar uchun</h2>
           <ol className="space-y-2.5 text-sm text-slate-700 list-decimal pl-5">
             {clientRules.map((rule) => <li key={rule}>{rule}</li>)}
           </ol>
         </section>
-        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+        <section className="card p-5 sm:p-6">
           <h2 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Wrench className="w-5 h-5 text-emerald-600" /> Ustalar uchun</h2>
           <ol className="space-y-2.5 text-sm text-slate-700 list-decimal pl-5">
             {masterRules.map((rule) => <li key={rule}>{rule}</li>)}

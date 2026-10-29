@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="hidden md:block bg-slate-900 text-slate-400 py-10 mt-auto border-t border-slate-800 text-xs">
+    <footer className="hidden md:block bg-ink text-white/60 py-10 mt-auto border-t border-white/10 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
         <div className="flex items-center gap-2 flex-wrap justify-center">
           <span className="text-xl">🛠️</span>
@@ -11,9 +11,10 @@ export default function Footer() {
           <span>— Uy, Avto va Texnika ustalari SuperApp platformasi</span>
         </div>
         <div className="flex items-center gap-4 flex-wrap justify-center">
-          <Link to="/rules" className="text-slate-300 hover:text-white font-semibold">Ishlash qoidalari</Link>
-          <Link to="/terms" className="text-slate-300 hover:text-white">Shartlar</Link>
-          <Link to="/privacy" className="text-slate-300 hover:text-white">Maxfiylik</Link>
+          <Link to="/prices" className="text-white/80 hover:text-white font-semibold">Narxlar</Link>
+          <Link to="/rules" className="text-white/80 hover:text-white font-semibold">Ishlash qoidalari</Link>
+          <Link to="/terms" className="text-white/80 hover:text-white">Shartlar</Link>
+          <Link to="/privacy" className="text-white/80 hover:text-white">Maxfiylik</Link>
           <span>© {new Date().getFullYear()} Usta24 Marketplace. Barcha huquqlar himoyalangan.</span>
         </div>
       </div>

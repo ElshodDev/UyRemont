@@ -123,7 +123,8 @@ const buildOfferPayload = async (offerId) => {
         `SELECT d.id as offer_id, d.order_id, d.expires_at, d.distance_km,
                 o.title, o.description, o.address, o.district, o.lat, o.lng, o.call_fee,
                 s.name_uz as specialization_name, s.icon as specialization_icon,
-                c.name as client_name, c.client_rating, c.client_ratings_count
+                c.name as client_name, c.client_rating, c.client_ratings_count,
+                COALESCE((SELECT array_agg(p.id ORDER BY p.created_at) FROM order_photos p WHERE p.order_id = o.id), '{}') as photos
          FROM dispatch_offers d
          JOIN orders o ON o.id = d.order_id
          JOIN users c ON c.id = o.client_id
@@ -271,7 +272,7 @@ const tick = async ({ force = false } = {}) => {
                 emitToUser(masterId, 'offer_closed', { offer_id: id, reason: 'expired' });
                 if (forcedOffline) {
                     emitToUser(masterId, 'dispatch_offline', {
-                        reason: `Ketma-ket ${config.MAX_MISSED_OFFERS} ta buyurtmaga javob bermaganingiz uchun liniyadan chiqarildingiz`,
+                        reason: `Ketma-ket ${config.MAX_MISSED_OFFERS} ta buyurtmaga javob bermaganingiz uchun ish rejimingiz o'chirildi`,
                     });
                 }
             } else if (item.offerId) {

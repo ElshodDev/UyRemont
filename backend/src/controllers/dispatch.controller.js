@@ -23,6 +23,7 @@ const {
     getIo,
 } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
+const { parsePhotoIds, attachPhotos } = require('./photos.controller');
 
 const ACTIVE_INSTANT_STATUSES = ['searching', 'accepted', 'arrived', 'in_progress'];
 const CLIENT_CANCEL_REASONS = ['Rejalar o\'zgardi', 'Usta uzoq kutdirmoqda', 'Usta bilan kelisha olmadik', 'Xato buyurtma berdim', 'Boshqa sabab'];
@@ -137,6 +138,7 @@ const createInstantOrder = async (req, res, next) => {
         const district = optionalString(req.body.district, { max: 100, field: 'Tuman' });
         const description = optionalString(req.body.description, { max: 2000, field: 'Tavsif' });
         const customTitle = optionalString(req.body.title, { max: 200, field: 'Sarlavha' });
+        const photoIds = parsePhotoIds(req.body.photo_ids);
 
         const spec = await query(
             'SELECT id, name_uz, call_fee FROM specializations WHERE id = $1 AND is_active = TRUE',
@@ -159,24 +161,29 @@ const createInstantOrder = async (req, res, next) => {
             });
         }
 
-        const result = await query(
-            `INSERT INTO orders (
-                id, client_id, specialization_id, title, description, address, district,
-                lat, lng, mode, status, call_fee, search_radius_km, search_started_at
-             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'instant', 'searching', $10, $11, NOW())
-             RETURNING *`,
-            [
-                uuidv4(), clientId, specializationId, customTitle || `${spec.rows[0].name_uz} chaqiruvi`,
-                description, address, district, lat, lng, spec.rows[0].call_fee, config.SEARCH_RADII_KM[0],
-            ]
-        );
+        // Rasmlar dispetcher taklif yuborishidan oldin biriktiriladi
+        const order = await withTransaction(async (client) => {
+            const result = await client.query(
+                `INSERT INTO orders (
+                    id, client_id, specialization_id, title, description, address, district,
+                    lat, lng, mode, status, call_fee, search_radius_km, search_started_at
+                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'instant', 'searching', $10, $11, NOW())
+                 RETURNING *`,
+                [
+                    uuidv4(), clientId, specializationId, customTitle || `${spec.rows[0].name_uz} chaqiruvi`,
+                    description, address, district, lat, lng, spec.rows[0].call_fee, config.SEARCH_RADII_KM[0],
+                ]
+            );
+            const photos = await attachPhotos(client, { orderId: result.rows[0].id, userId: clientId, photoIds });
+            return { ...result.rows[0], photos };
+        });
 
         triggerDispatch();
 
         res.status(201).json({
             success: true,
             message: 'Usta qidirilmoqda',
-            data: result.rows[0],
+            data: order,
         });
     } catch (error) {
         next(error);
@@ -386,7 +393,7 @@ const setOnline = async (req, res, next) => {
                 if (!requirements.verified) reasons.push('profilingiz administrator tomonidan tasdiqlanmagan');
                 if (!requirements.has_specializations) reasons.push('mutaxassislik tanlanmagan');
                 if (!requirements.rating_ok) reasons.push(`reytingingiz ${config.MIN_RATING} dan past`);
-                throw new HttpError(403, `Liniyaga chiqib bo'lmaydi: ${reasons.join(', ')}`);
+                throw new HttpError(403, `Ishga chiqib bo'lmaydi: ${reasons.join(', ')}`);
             }
             const { lat, lng } = parseLocation(req.body);
             await query(
@@ -412,7 +419,7 @@ const setOnline = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: online ? 'Siz liniyadasiz. Buyurtmalar kutilmoqda' : 'Liniyadan chiqdingiz',
+            message: online ? 'Siz ishdasiz. Buyurtmalar kutilmoqda' : 'Ish rejimi o\'chirildi',
             data: { is_online: online },
         });
     } catch (error) {

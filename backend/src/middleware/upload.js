@@ -10,6 +10,10 @@ const multer = require('multer');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+// Buyurtma rasmlari (uy ichi, muammo joyi) ochiq emas: faqat ruxsat tekshirilgan API orqali beriladi
+const ORDER_PHOTO_DIR = process.env.ORDER_PHOTO_DIR || path.join(__dirname, '..', '..', 'private_uploads', 'orders');
+fs.mkdirSync(ORDER_PHOTO_DIR, { recursive: true });
+
 // Birinchi bosqich: brauzer aytgan turi. Haqiqiy tarkib keyin sharp bilan tekshiriladi
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -27,4 +31,4 @@ const uploadImage = multer({
     },
 });
 
-module.exports = { uploadImage, UPLOAD_DIR, MAX_UPLOAD_BYTES };
+module.exports = { uploadImage, UPLOAD_DIR, ORDER_PHOTO_DIR, MAX_UPLOAD_BYTES };

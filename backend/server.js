@@ -60,7 +60,7 @@ app.use('/api', apiLimiter, routes);
 app.get('/', (req, res) => {
     res.json({
         name: 'UyRemont API',
-        version: '1.1.0',
+        version: require('./package.json').version,
         status: 'online',
         docs: '/api/health'
     });
