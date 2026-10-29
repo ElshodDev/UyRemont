@@ -30,6 +30,8 @@ module.exports = {
     REQUIRE_VERIFIED: process.env.DISPATCH_REQUIRE_VERIFIED !== 'false',
     // Yetib kelish vaqtini taxminlash uchun shahar ichidagi o'rtacha tezlik
     CITY_SPEED_KMH: 25,
-    // Dispetcher qadami
+    // Dispetcher qadami (faqat qidiruvdagi chaqiruv yoki faol taklif bo'lganda)
     TICK_MS: 2000,
+    // Ish bo'lmaganda bazani tekshirish oralig'i: bulutli baza (Neon) "uxlab" qolishi mumkin bo'lsin
+    IDLE_CHECK_MS: 10 * 60 * 1000,
 };

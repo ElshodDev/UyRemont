@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const connectionString = process.env.DATABASE_URL;
+const SLOW_QUERY_MS = Number(process.env.SLOW_QUERY_MS) || 1000;
 
 /**
  * SSL faqat bulutli bazalar uchun yoqiladi.
@@ -107,8 +108,8 @@ const query = async (text, params) => {
     try {
         const res = await pool.query(text, params);
         const duration = Date.now() - start;
-        // Sekin so'rovlarni loglash (100ms dan ko'p)
-        if (duration > 100) {
+        // Sekin so'rovlarni loglash (bulutli bazada tarmoq kechikishi ~200ms bo'lgani uchun chegara 1 soniya)
+        if (duration > SLOW_QUERY_MS) {
             console.log('⚠️ Sekin so\'rov:', { duration, rows: res.rowCount });
         }
         return res;

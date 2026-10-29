@@ -13,6 +13,9 @@ let timer = null;
 let ticking = false;
 let tickRequested = false;
 let lastError = { message: null, at: 0 };
+// Qidiruvdagi chaqiruv va faol taklif bo'lmasa dispetcher bazaga har 2 soniyada murojaat qilmaydi
+let idle = false;
+let lastIdleCheck = 0;
 
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
@@ -221,7 +224,8 @@ const dispatchOrder = async (client, order) => {
 /**
  * Dispetcher qadami: muddati o'tgan takliflar va qidiruvdagi buyurtmalar
  */
-const tick = async () => {
+const tick = async ({ force = false } = {}) => {
+    if (!force && idle && Date.now() - lastIdleCheck < config.IDLE_CHECK_MS) return;
     if (ticking) {
         tickRequested = true;
         return;
@@ -251,6 +255,13 @@ const tick = async () => {
                 const outcome = await dispatchOrder(client, order);
                 if (outcome) notifications.push({ order, ...outcome });
             }
+
+            const work = await client.query(
+                `SELECT EXISTS (SELECT 1 FROM orders WHERE mode = 'instant' AND status = 'searching')
+                     OR EXISTS (SELECT 1 FROM dispatch_offers WHERE status = 'pending') as busy`
+            );
+            idle = !work.rows[0].busy;
+            lastIdleCheck = Date.now();
         });
 
         // Xabarlar tranzaksiya muvaffaqiyatli yakunlangandan keyin yuboriladi
@@ -288,7 +299,7 @@ const tick = async () => {
         ticking = false;
         if (tickRequested) {
             tickRequested = false;
-            setImmediate(tick);
+            setImmediate(() => tick({ force: true }));
         }
     }
 };
@@ -296,7 +307,10 @@ const tick = async () => {
 /**
  * Darhol navbatdan tashqari qadam (yangi buyurtma, rad etish va h.k.)
  */
-const triggerDispatch = () => setImmediate(tick);
+const triggerDispatch = () => {
+    idle = false;
+    setImmediate(() => tick({ force: true }));
+};
 
 /**
  * Faol taklifni bekor qilish (buyurtma bekor qilinganda)
@@ -314,7 +328,7 @@ const cancelPendingOffers = async (client, orderId) => {
 const startDispatcher = (socketServer) => {
     io = socketServer;
     if (timer) return;
-    timer = setInterval(tick, config.TICK_MS);
+    timer = setInterval(() => tick(), config.TICK_MS);
     timer.unref();
     triggerDispatch();
 };
