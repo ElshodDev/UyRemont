@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Phone, ShieldCheck, User, ArrowLeft } from 'lucide-react';
+import { Phone, ShieldCheck, User, ArrowLeft, KeyRound } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 import { api } from '../lib/api';
@@ -21,6 +21,9 @@ export default function AuthModal({ onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendIn, setResendIn] = useState(0);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [challenge, setChallenge] = useState(null);
+  const [totpCode, setTotpCode] = useState('');
 
   useEffect(() => {
     if (resendIn <= 0) return undefined;
@@ -57,9 +60,13 @@ export default function AuthModal({ onClose, onSuccess }) {
     try {
       const { data } = await api('/auth/verify-otp', {
         method: 'POST',
-        body: { phone: normalizedPhone, code }
+        body: { phone: normalizedPhone, code, accept_terms: acceptTerms }
       });
-      if (!data.user.name) {
+      if (data.requires_2fa) {
+        // Ikki bosqichli kirish: authenticator ilovasidagi kod
+        setChallenge(data.challenge_token);
+        setStep('totp');
+      } else if (!data.user.name) {
         // Yangi foydalanuvchidan ism so'raladi
         setSession(data);
         setStep('name');
@@ -68,6 +75,27 @@ export default function AuthModal({ onClose, onSuccess }) {
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyTotp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const { data } = await api('/auth/2fa/verify', {
+        method: 'POST',
+        body: { challenge_token: challenge, code: totpCode }
+      });
+      onSuccess(data.token, data.user);
+    } catch (err) {
+      setError(err.message);
+      if (err.status === 401 || err.status === 429) {
+        setStep('phone');
+        setChallenge(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -96,12 +124,13 @@ export default function AuthModal({ onClose, onSuccess }) {
         </div>
         <div>
           <h3 className="text-lg font-bold text-slate-900">
-            {step === 'name' ? 'Tanishib olaylik' : 'Tizimga kirish'}
+            {step === 'name' ? 'Tanishib olaylik' : step === 'totp' ? 'Ikki bosqichli kirish' : 'Tizimga kirish'}
           </h3>
           <p className="text-xs text-slate-500">
             {step === 'phone' && 'Telefon raqamingizga SMS kod yuboramiz'}
             {step === 'code' && `${formatPhone(normalizedPhone)} raqamiga kod yuborildi`}
             {step === 'name' && 'Ustalar sizni qanday chaqirsin?'}
+            {step === 'totp' && 'Authenticator ilovasidagi 6 xonali kodni kiriting'}
           </p>
         </div>
       </div>
@@ -127,9 +156,24 @@ export default function AuthModal({ onClose, onSuccess }) {
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
+          <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer">
+            <input
+              type="checkbox"
+              required
+              className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+            />
+            <span>
+              <a href="/terms" target="_blank" rel="noreferrer" className="text-blue-600 font-semibold hover:underline">Foydalanish shartlari</a>
+              {' '}va{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="text-blue-600 font-semibold hover:underline">Maxfiylik siyosati</a>
+              ga roziman, shaxsiy ma'lumotlarimni qayta ishlashga rozilik beraman
+            </span>
+          </label>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !acceptTerms}
             className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-70 inline-flex items-center justify-center gap-2"
           >
             {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Kod olish'}
@@ -183,6 +227,34 @@ export default function AuthModal({ onClose, onSuccess }) {
               {resendIn > 0 ? `Qayta yuborish (${resendIn})` : 'Qayta yuborish'}
             </button>
           </div>
+        </form>
+      )}
+
+      {step === 'totp' && (
+        <form onSubmit={verifyTotp} className="space-y-3">
+          <label className="text-xs font-semibold text-slate-700 block">Authenticator kodi</label>
+          <div className="relative">
+            <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              required
+              maxLength={6}
+              className={`${inputClass} pl-9 tracking-[0.4em] font-mono font-bold`}
+              placeholder="••••••"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || totpCode.length !== 6}
+            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
+          >
+            {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Kirish'}
+          </button>
+          <p className="text-[11px] text-slate-400">Telefoningizni yo'qotgan bo'lsangiz, administrator bilan bog'laning.</p>
         </form>
       )}
 

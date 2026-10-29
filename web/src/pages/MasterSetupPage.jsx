@@ -34,8 +34,8 @@ function PortfolioManager() {
   const upload = async (e) => {
     e.preventDefault();
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Rasm hajmi 5 MB dan oshmasligi kerak');
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('Rasm hajmi 8 MB dan oshmasligi kerak');
       return;
     }
     const body = new FormData();
@@ -74,7 +74,7 @@ function PortfolioManager() {
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
       <h2 className="font-bold text-slate-900 mb-1">Portfolio</h2>
-      <p className="text-xs text-slate-500 mb-4">Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 5 MB gacha).</p>
+      <p className="text-xs text-slate-500 mb-4">Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 8 MB gacha). Rasmdagi joylashuv (GPS) ma'lumotlari avtomatik o'chiriladi.</p>
 
       <form onSubmit={upload} className="flex flex-col sm:flex-row gap-2 mb-5">
         <input

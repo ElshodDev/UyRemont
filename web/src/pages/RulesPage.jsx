@@ -93,6 +93,11 @@ export default function RulesPage() {
         </section>
       </div>
 
+      <p className="text-center text-xs text-slate-400">
+        Batafsil: <Link to="/terms" className="text-blue-600 hover:underline">Foydalanish shartlari</Link> va{' '}
+        <Link to="/privacy" className="text-blue-600 hover:underline">Maxfiylik siyosati</Link>
+      </p>
+
       <div className="text-center">
         <Link to="/call" className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold shadow-lg shadow-orange-500/25">
           <Zap className="w-5 h-5" /> Usta chaqirish

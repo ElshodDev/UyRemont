@@ -4,7 +4,7 @@
 // Holat bazada saqlanadi, shuning uchun server qayta ishga tushsa ham qidiruv davom etadi.
 // =============================================
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction, describeDbError } = require('../config/database');
 const config = require('../config/dispatch');
 

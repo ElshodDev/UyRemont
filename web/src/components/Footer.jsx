@@ -12,6 +12,8 @@ export default function Footer() {
         </div>
         <div className="flex items-center gap-4 flex-wrap justify-center">
           <Link to="/rules" className="text-slate-300 hover:text-white font-semibold">Ishlash qoidalari</Link>
+          <Link to="/terms" className="text-slate-300 hover:text-white">Shartlar</Link>
+          <Link to="/privacy" className="text-slate-300 hover:text-white">Maxfiylik</Link>
           <span>© {new Date().getFullYear()} Usta24 Marketplace. Barcha huquqlar himoyalangan.</span>
         </div>
       </div>

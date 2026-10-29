@@ -131,6 +131,12 @@ const configureEnv = async () => {
         console.log('   ✅ JWT_SECRET mavjud');
     }
 
+    // Sinov rejimi: SMS sozlanmaguncha kirish kodi ekranda ko'rinadi (real ishga tushirishda false)
+    if (getEnv(lines, 'OTP_DEV_MODE') === undefined && !getEnv(lines, 'ESKIZ_EMAIL')) {
+        lines = setEnv(lines, 'OTP_DEV_MODE', 'true');
+        console.log('   ✅ OTP_DEV_MODE=true (sinov rejimi: kirish kodi ekranda ko\'rinadi; real ishga tushirishda false qiling)');
+    }
+
     // DATABASE_URL: buyruqda berilgan, joylashtirilgan yoki mavjud qiymat
     const current = getEnv(lines, 'DATABASE_URL');
     const fromArg = args.find((a) => a.startsWith('--db='));

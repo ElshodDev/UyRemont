@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle,
-  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power
+  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, KeyRound
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -16,8 +16,85 @@ import { useToast } from '../context/ToastContext';
 const TABS = [
   { id: 'stats', label: 'Statistika', icon: LayoutDashboard },
   { id: 'users', label: 'Foydalanuvchilar', icon: Users },
-  { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList }
+  { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList },
+  { id: 'audit', label: 'Jurnal', icon: ScrollText }
 ];
+
+const AUDIT_ACTIONS = {
+  'user.block': 'Foydalanuvchini blokladi',
+  'user.unblock': 'Blokdan chiqardi',
+  'user.role': 'Rolini o\'zgartirdi',
+  'user.verify': 'Usta tasdiqini o\'zgartirdi',
+  'order.cancel': 'Tezkor chaqiruvni bekor qildi',
+  'order.status': 'Buyurtma holatini o\'zgartirdi'
+};
+
+const isTwoFactorError = (error) => error?.data?.code === '2FA_REQUIRED';
+
+/**
+ * 2FA majburiy, lekin administrator uni hali yoqmagan
+ */
+function TwoFactorRequired() {
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+      <KeyRound className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+      <h3 className="font-bold text-slate-900 mb-1">Ikki bosqichli kirishni yoqing</h3>
+      <p className="text-sm text-slate-600 mb-4 max-w-md mx-auto">
+        Xavfsizlik uchun admin panelga faqat 2FA yoqilgan administratorlar kira oladi.
+      </p>
+      <Link to="/profile#xavfsizlik" className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700">
+        Profil → Xavfsizlik
+      </Link>
+    </div>
+  );
+}
+
+function AuditTab() {
+  const [entries, setEntries] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(() => {
+    setError(null);
+    api('/admin/audit').then(({ data }) => setEntries(data)).catch(setError);
+  }, []);
+
+  useEffect(load, [load]);
+
+  if (isTwoFactorError(error)) return <TwoFactorRequired />;
+  if (error) return <ErrorState message={error.message} onRetry={load} />;
+  if (!entries) return <PageLoader />;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-100 text-xs text-slate-500">
+        Administratorlarning so'nggi amallari (bloklash, rol, tasdiqlash, buyurtmalar). Jurnal o'chirilmaydi.
+      </div>
+      {entries.length === 0 ? (
+        <p className="p-8 text-center text-sm text-slate-400">Hozircha amallar yo'q</p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {entries.map((entry) => (
+            <li key={entry.id} className="px-4 py-3 text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+              <span className="text-xs text-slate-400 sm:w-36 flex-shrink-0">{formatDate(entry.created_at)}</span>
+              <span className="flex-1 min-w-0">
+                <strong className="text-slate-900">{entry.admin_name || formatPhone(entry.admin_phone) || 'Admin'}</strong>
+                {' '}{AUDIT_ACTIONS[entry.action] || entry.action}
+                {entry.target_phone && <> · <span className="text-slate-700">{entry.target_name || formatPhone(entry.target_phone)}</span></>}
+                {entry.target_order_id && (
+                  <> · <Link to={`/orders/${entry.target_order_id}`} className="text-blue-600 hover:underline">buyurtma</Link></>
+                )}
+                {entry.details && (
+                  <span className="block text-[11px] text-slate-400 font-mono truncate">{JSON.stringify(entry.details)}</span>
+                )}
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">{entry.ip}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function StatCard({ icon: Icon, label, value, hint, tone = 'blue' }) {
   const tones = {
@@ -40,16 +117,17 @@ function StatCard({ icon: Icon, label, value, hint, tone = 'blue' }) {
 
 function StatsTab() {
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const load = useCallback(() => {
-    setError('');
-    api('/admin/stats').then(({ data }) => setStats(data)).catch((err) => setError(err.message));
+    setError(null);
+    api('/admin/stats').then(({ data }) => setStats(data)).catch(setError);
   }, []);
 
   useEffect(load, [load]);
 
-  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (isTwoFactorError(error)) return <TwoFactorRequired />;
+  if (error) return <ErrorState message={error.message} onRetry={load} />;
   if (!stats) return <PageLoader />;
 
   const { users, orders, reviews } = stats;
@@ -147,7 +225,7 @@ function UsersTab() {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [state, setState] = useState('loading');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null);
 
@@ -159,7 +237,7 @@ function UsersTab() {
       setPagination(response.pagination);
       setState('ready');
     } catch (err) {
-      setError(err.message);
+      setError(err);
       setState('error');
     }
   }, [query, role, status]);
@@ -209,7 +287,7 @@ function UsersTab() {
       </div>
 
       {state === 'loading' && <PageLoader />}
-      {state === 'error' && <ErrorState message={error} onRetry={() => load(1)} />}
+      {state === 'error' && (isTwoFactorError(error) ? <TwoFactorRequired /> : <ErrorState message={error?.message} onRetry={() => load(1)} />)}
 
       {(state === 'ready' || state === 'more') && (
         <>
@@ -382,6 +460,7 @@ export default function AdminPage() {
       {tab === 'stats' && <StatsTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'orders' && <OrdersPage embedded />}
+      {tab === 'audit' && <AuditTab />}
     </main>
   );
 }

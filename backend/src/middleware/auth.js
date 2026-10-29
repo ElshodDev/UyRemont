@@ -4,6 +4,42 @@
 
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
+const { ADMIN_REQUIRE_2FA } = require('../config/security');
+
+/**
+ * Token va foydalanuvchi holatini tekshirish (HTTP va Socket.io uchun umumiy)
+ * @returns {Promise<{ user?: object, status?: number, message?: string }>}
+ */
+const resolveUserFromToken = async (token) => {
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        return {
+            status: 401,
+            message: error.name === 'TokenExpiredError' ? 'Token muddati tugagan' : 'Noto\'g\'ri token',
+        };
+    }
+
+    // 2FA bosqichidagi vaqtinchalik token bilan tizimga kirib bo'lmaydi
+    if (decoded.purpose) return { status: 401, message: 'Noto\'g\'ri token' };
+
+    const result = await query(
+        `SELECT id, phone, role, name, avatar_url, is_active, token_version, deleted_at, totp_enabled
+         FROM users WHERE id = $1`,
+        [decoded.userId]
+    );
+    const user = result.rows[0];
+
+    if (!user || user.deleted_at) return { status: 401, message: 'Foydalanuvchi topilmadi' };
+    // "Barcha qurilmalardan chiqish" yoki bloklashdan keyin eski tokenlar ishlamaydi
+    if ((decoded.tv ?? 0) !== user.token_version) {
+        return { status: 401, message: 'Sessiya tugagan. Qaytadan kiring' };
+    }
+    if (!user.is_active) return { status: 403, message: 'Hisobingiz bloklangan' };
+
+    return { user };
+};
 
 /**
  * JWT tokenni tekshiruvchi middleware
@@ -11,7 +47,6 @@ const { query } = require('../config/database');
  */
 const authenticate = async (req, res, next) => {
     try {
-        // Tokenni headerdan olish
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -21,50 +56,22 @@ const authenticate = async (req, res, next) => {
             });
         }
 
-        const token = authHeader.split(' ')[1];
+        const { user, status, message } = await resolveUserFromToken(authHeader.split(' ')[1]);
+        if (!user) return res.status(status).json({ success: false, message });
 
-        // Tokenni tekshirish
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Foydalanuvchini bazadan olish
-        const result = await query(
-            'SELECT id, phone, role, name, avatar_url, is_active FROM users WHERE id = $1',
-            [decoded.userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: 'Foydalanuvchi topilmadi',
-            });
-        }
-
-        const user = result.rows[0];
-
-        // Faollik tekshirish
-        if (!user.is_active) {
+        // 2FA majburiy bo'lsa, uni yoqmagan administrator faqat hisob sozlamalariga kira oladi
+        if (user.role === 'admin' && ADMIN_REQUIRE_2FA && !user.totp_enabled
+            && !req.originalUrl.startsWith('/api/auth')) {
             return res.status(403).json({
                 success: false,
-                message: 'Hisobingiz bloklangan',
+                code: '2FA_REQUIRED',
+                message: 'Administrator uchun ikki bosqichli kirishni (2FA) yoqing: Profil → Xavfsizlik',
             });
         }
 
-        // req.user ga foydalanuvchi ma\'lumotlarini qo\'yish
         req.user = user;
         next();
     } catch (error) {
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
-                success: false,
-                message: 'Noto\'g\'ri token',
-            });
-        }
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: 'Token muddati tugagan',
-            });
-        }
         next(error);
     }
 };
@@ -93,4 +100,4 @@ const authorize = (...roles) => {
     };
 };
 
-module.exports = { authenticate, authorize };
+module.exports = { authenticate, authorize, resolveUserFromToken };

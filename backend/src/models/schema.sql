@@ -326,3 +326,33 @@ CREATE INDEX IF NOT EXISTS idx_dispatch_offers_expires ON dispatch_offers(expire
 CREATE INDEX IF NOT EXISTS idx_master_profiles_online ON master_profiles(is_online) WHERE is_online = TRUE;
 CREATE INDEX IF NOT EXISTS idx_orders_searching ON orders(search_started_at) WHERE status = 'searching';
 CREATE INDEX IF NOT EXISTS idx_orders_mode_status ON orders(mode, status);
+
+-- =============================================
+-- 11. XAVFSIZLIK
+-- =============================================
+
+-- Sessiyalarni bekor qilish: token_version oshirilsa barcha eski tokenlar yaroqsiz bo'ladi
+ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
+-- Hisob o'chirilganda shaxsiy ma'lumotlar anonimlashtiriladi
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
+-- Foydalanish shartlari va maxfiylik siyosatiga rozilik
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version VARCHAR(20);
+-- Ikki bosqichli kirish (TOTP); maxfiy kalit shifrlangan holda saqlanadi
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_counter BIGINT;
+
+-- Administrator amallari jurnali
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(50) NOT NULL,
+    target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    target_order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    details JSONB,
+    ip VARCHAR(64),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_otp_phone_created ON otp_codes(phone, created_at DESC);

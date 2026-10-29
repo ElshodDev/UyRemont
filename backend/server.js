@@ -12,6 +12,8 @@ const { initChatSocket } = require('./src/socket/chat.socket');
 const { startDispatcher } = require('./src/services/dispatch.service');
 const { UPLOAD_DIR } = require('./src/middleware/upload');
 const { checkDatabase, describeTarget } = require('./src/config/database');
+const { validateSecurityConfig } = require('./src/config/security');
+const { isSmsConfigured } = require('./src/services/sms.service');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,7 +35,11 @@ const io = new Server(server, {
 
 // Controllerlar real-time hodisa yuborishi uchun
 app.set('io', io);
-app.set('trust proxy', 1);
+// Qaysi proksi-serverlarning X-Forwarded-For sarlavhasiga ishonish (so'rovlar chegarasi uchun haqiqiy IP).
+// Sukut bo'yicha faqat shu kompyuterdagi proksi (Vite, Nginx). To'g'ridan-to'g'ri internetga ochilganda
+// ishonish shart emas, aks holda IP soxtalashtirilib, cheklovlardan o'tib ketish mumkin.
+const trustProxy = process.env.TRUST_PROXY || 'loopback';
+app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
 
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -70,8 +76,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
-    if (!process.env.JWT_SECRET) {
-        console.error('❌ JWT_SECRET o\'rnatilmagan. Loyiha papkasida "npm run setup" ni ishga tushiring yoki backend/.env ni to\'ldiring');
+    // Xavfli sozlamalar bilan server ishga tushmaydi
+    const security = validateSecurityConfig({ smsConfigured: isSmsConfigured() });
+    security.warnings.forEach((warning) => console.warn(`⚠️ Xavfsizlik: ${warning}`));
+    if (security.errors.length > 0) {
+        security.errors.forEach((error) => console.error(`❌ Xavfsizlik: ${error}`));
         process.exit(1);
     }
 
