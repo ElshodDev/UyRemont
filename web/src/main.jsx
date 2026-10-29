@@ -8,6 +8,13 @@ import { DispatchProvider } from './context/DispatchContext.jsx'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
 
+// Ilovani telefonga o'rnatish (PWA) va oflayn sahifa uchun
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

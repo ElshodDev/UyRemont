@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import BottomNav from './components/BottomNav';
+import InstallPrompt from './components/InstallPrompt';
 import CalculatorModal from './components/CalculatorModal';
 import RequireAuth from './components/RequireAuth';
 import HomePage from './pages/HomePage';
@@ -28,7 +30,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col pb-bottom-nav">
       <Header onOpenCalculator={() => setShowCalcModal(true)} />
 
       <Routes>
@@ -46,6 +48,8 @@ export default function App() {
       </Routes>
 
       <Footer />
+      <BottomNav />
+      <InstallPrompt />
 
       {showCalcModal && (
         <CalculatorModal onClose={() => setShowCalcModal(false)} onPickService={handlePickService} />

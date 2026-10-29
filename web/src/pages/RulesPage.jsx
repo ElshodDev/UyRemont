@@ -62,7 +62,7 @@ export default function RulesPage() {
 
       <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
         <h2 className="font-bold text-slate-900 mb-4">Qanday ishlaydi</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FLOW.map(({ icon: Icon, title, text }, i) => (
             <div key={title} className="flex gap-3">
               <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0"><Icon className="w-5 h-5" /></span>
@@ -78,7 +78,7 @@ export default function RulesPage() {
         </p>
       </section>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
           <h2 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><User className="w-5 h-5 text-blue-600" /> Mijozlar uchun</h2>
           <ol className="space-y-2.5 text-sm text-slate-700 list-decimal pl-5">

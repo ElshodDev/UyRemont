@@ -88,7 +88,7 @@ function StatsTab() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
           <h3 className="font-bold text-slate-900 text-sm mb-3">Buyurtmalar holati</h3>
           <table className="w-full text-sm">

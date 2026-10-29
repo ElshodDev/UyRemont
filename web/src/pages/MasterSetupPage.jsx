@@ -286,7 +286,7 @@ export default function MasterSetupPage() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Ism va familiyangiz *</label>
             <input

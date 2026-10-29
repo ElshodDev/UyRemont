@@ -357,7 +357,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
       />
 
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <div className="grid sm:grid-cols-3 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
             <div><span className="text-[11px] text-slate-400 block">Manzil</span><span className="font-semibold text-slate-800">{[order.district, order.address].filter(Boolean).join(', ')}</span></div>

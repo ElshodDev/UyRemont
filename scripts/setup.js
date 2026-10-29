@@ -173,6 +173,7 @@ const main = async () => {
         step(2, 'Paketlarni o\'rnatish o\'tkazib yuborildi');
     } else {
         step(2, 'Paketlar o\'rnatilmoqda (backend va web, 1-3 daqiqa)...');
+        if (!run('npm', ['install'], ROOT)) fail('Loyiha paketlarini o\'rnatib bo\'lmadi. Internetni tekshirib, qayta urinib ko\'ring.');
         if (!run('npm', ['install'], BACKEND)) fail('backend paketlarini o\'rnatib bo\'lmadi. Internetni tekshirib, qayta urinib ko\'ring.');
         if (!run('npm', ['install'], WEB)) fail('web paketlarini o\'rnatib bo\'lmadi. Internetni tekshirib, qayta urinib ko\'ring.');
     }
@@ -186,6 +187,7 @@ const main = async () => {
     step(4, 'Tayyor! 🎉');
     console.log(`
    Ishga tushirish:   npm run dev
+   Telefondan sinash: npm run dev:phone   (HTTPS havola va QR kod)
    Sayt:              http://localhost:3000
    API holati:        http://localhost:5000/api/health
 

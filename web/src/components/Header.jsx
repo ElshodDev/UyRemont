@@ -45,7 +45,7 @@ export default function Header({ onOpenCalculator }) {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-3 min-w-0">
           <div className="w-11 h-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md shadow-blue-500/20 flex-shrink-0">
             🛠️
@@ -78,7 +78,7 @@ export default function Header({ onOpenCalculator }) {
           {(!user || user.role === 'client') && (
             <button
               onClick={callMaster}
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 font-bold text-xs sm:text-sm shadow-sm shadow-orange-500/30 transition"
+              className="hidden md:inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 font-bold text-xs sm:text-sm shadow-sm shadow-orange-500/30 transition"
             >
               <Zap className="w-4 h-4" />
               <span className="hidden sm:inline">Usta chaqirish</span>
@@ -88,7 +88,7 @@ export default function Header({ onOpenCalculator }) {
           {user?.role === 'master' && (
             <Link
               to="/master/work"
-              className={`inline-flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm border transition ${
+              className={`hidden md:inline-flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm border transition ${
                 dispatch?.isOnline
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                   : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'

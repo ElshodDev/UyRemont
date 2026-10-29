@@ -5,9 +5,14 @@
   "description": "UyRemont (Usta24) - backend va frontendni birga boshqarish",
   "scripts": {
     "setup": "node scripts/setup.js",
-    "dev": "node scripts/dev.js"
+    "dev": "node scripts/dev.js",
+    "dev:phone": "node scripts/dev.js --phone"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "cloudflared": "0.7.3",
+    "qrcode-terminal": "0.12.0"
   }
 }
