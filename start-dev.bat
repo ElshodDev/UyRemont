@@ -1,14 +1,26 @@
 @echo off
 chcp 65001 > nul
+cd /d "%~dp0"
 echo =======================================================
 echo          🏠 UyRemont Marketplace Ishga Tushmoqda...
 echo =======================================================
 echo.
-echo [1/2] Web Frontend (http://localhost:3000) ochilmoqda...
-start "UyRemont Web" cmd /k "cd web && npm run dev"
+if not exist "backend\node_modules" goto setup
+if not exist "web\node_modules" goto setup
+if not exist "backend\.env" goto setup
+goto run
+
+:setup
+echo Birinchi ishga tushirish: loyiha sozlanmoqda...
+call npm run setup
+if errorlevel 1 goto failed
+
+:run
+echo Brauzerda http://localhost:3000 manzilini oching. To'xtatish: Ctrl + C
+call npm run dev
+goto :eof
+
+:failed
 echo.
-echo [2/2] Backend API (http://localhost:5000) tekshirilmoqda...
-start "UyRemont Backend" cmd /k "cd backend && npm start"
-echo.
-echo Tayyor! Brauzeringizda http://localhost:3000 manziliga kiring.
+echo Sozlashda xatolik yuz berdi. Yuqoridagi xabarni o'qing.
 pause

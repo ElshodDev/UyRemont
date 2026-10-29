@@ -8,35 +8,39 @@ Ushbu platforma uy ta'mirlash, avto, maishiy texnika va gadjet ustalarini (sante
 
 ### Talablar
 - Node.js 18+
-- PostgreSQL 14+ (lokal yoki Supabase)
+- PostgreSQL ma'lumotlar bazasi. O'rnatish shart emas: **Neon** (neon.tech) yoki **Supabase** dagi bepul bulutli baza ham ishlaydi.
 
-### 1. Ma'lumotlar bazasini tayyorlash
+### Ikki buyruq bilan (loyiha papkasida)
+```bash
+npm run setup    # paketlar, backend/.env (JWT_SECRET avtomatik), baza jadvallari va demo ma'lumotlar
+npm run dev      # backend (5000) va sayt (3000) bitta oynada; to'xtatish: Ctrl + C
+```
+`npm run setup` faqat bitta narsani so'raydi: Neon/Supabase dagi **Connection string**. Uni joylashtiring (yoki kompyuterdagi PostgreSQL uchun Enter bosing). Skriptni qayta ishga tushirish xavfsiz — mavjud sozlamalar saqlanadi.
+
+Qo'shimcha: `npm run setup -- --skip-install` (paketlarsiz), `npm run setup -- --no-seed` (demo ma'lumotlarsiz).
+
+Windows da `start-dev.bat` faylini ikki marta bosish kifoya: birinchi marta sozlashni o'zi boshlaydi.
+
+👉 Sayt: **`http://localhost:3000`**, API: **`http://localhost:5000/api`** (holat: `/api/health`)
+
+Muammo bo'lsa, backend aniq sababni yozadi: baza ulanmasa (`DATABASE_URL`), jadvallar yo'q bo'lsa (`npm run db:seed`) yoki port band bo'lsa (backend boshqa oynada ishlayapti).
+
+<details>
+<summary>Qo'lda ishga tushirish (alohida terminallarda)</summary>
+
 ```bash
 cd backend
 npm install
-cp .env.example .env          # DATABASE_URL, JWT_SECRET va ADMIN_PHONE ni to'ldiring
-npm run db:seed               # jadvallar + mutaxassisliklar + demo ustalar
-# yoki faqat sxema (demo ma'lumotlarsiz):
-npm run db:setup
+cp .env.example .env     # DATABASE_URL va JWT_SECRET ni to'ldiring
+npm run db:seed          # yoki faqat sxema: npm run db:setup
+npm run dev
 ```
-Skriptlarni qayta ishga tushirish xavfsiz — mavjud (eski) bazaga yangi ustunlar va mutaxassisliklar katalogi qo'shiladi.
-
-### 2. Backend API
-```bash
-cd backend
-npm run dev        # yoki: npm start
-```
-👉 API manzili: **`http://localhost:5000/api`** (holat: `/api/health`)
-
-### 3. Web Frontend
 ```bash
 cd web
 npm install
 npm run dev
 ```
-👉 Brauzerda ochiladi: **`http://localhost:3000`** — `/api`, `/uploads` va `/socket.io` so'rovlari Vite proxy orqali backendga yuboriladi.
-
-Windows uchun ikkalasini birga ishga tushirish: `start-dev.bat`
+</details>
 
 ### Kirish (development)
 Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasida ko'rsatiladi.

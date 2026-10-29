@@ -5,13 +5,14 @@
 // =============================================
 
 const { v4: uuidv4 } = require('uuid');
-const { query, withTransaction } = require('../config/database');
+const { query, withTransaction, describeDbError } = require('../config/database');
 const config = require('../config/dispatch');
 
 let io = null;
 let timer = null;
 let ticking = false;
 let tickRequested = false;
+let lastError = { message: null, at: 0 };
 
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
@@ -277,7 +278,12 @@ const tick = async () => {
             }
         }
     } catch (error) {
-        console.error('❌ Dispetcher xatosi:', error.message);
+        // Baza ishlamay qolsa har 2 soniyada emas, daqiqada bir marta yoziladi
+        const message = describeDbError(error);
+        if (message !== lastError.message || Date.now() - lastError.at > 60000) {
+            console.error('❌ Dispetcher xatosi:', message);
+            lastError = { message, at: Date.now() };
+        }
     } finally {
         ticking = false;
         if (tickRequested) {

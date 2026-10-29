@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    // Port band bo'lsa boshqasiga jim o'tib ketmasin (backend CORS faqat 3000 ni kutadi)
+    strictPort: true,
     open: false,
     proxy: {
       '/api': backendUrl,

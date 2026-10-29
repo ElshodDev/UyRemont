@@ -3,6 +3,7 @@
 // =============================================
 
 const multer = require('multer');
+const { isConnectionError, isSchemaMissingError } = require('../config/database');
 
 /**
  * Controllerlarda tashlanadigan, foydalanuvchiga ko'rsatsa bo'ladigan xato
@@ -30,7 +31,16 @@ const notFound = (req, res, next) => {
 const errorHandler = (err, req, res, next) => {
     const isProduction = process.env.NODE_ENV === 'production';
     let statusCode = err.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
-    let message = err.message;
+    let message = err.message || 'Serverda xatolik yuz berdi';
+
+    // Ma'lumotlar bazasi ishlamayotgan bo'lsa
+    if (!err.statusCode && isConnectionError(err)) {
+        statusCode = 503;
+        message = 'Ma\'lumotlar bazasiga ulanib bo\'lmadi. Keyinroq urinib ko\'ring';
+    } else if (isSchemaMissingError(err)) {
+        statusCode = 503;
+        message = 'Ma\'lumotlar bazasi hali tayyorlanmagan (jadvallar yo\'q). Administrator "npm run db:seed" ni ishga tushirsin';
+    }
 
     // PostgreSQL xatolari
     if (err.code === '23505') {
@@ -77,7 +87,7 @@ const errorHandler = (err, req, res, next) => {
         message = 'Serverda xatolik yuz berdi. Keyinroq urinib ko\'ring';
     }
 
-    if (statusCode >= 500) {
+    if (statusCode >= 500 && statusCode !== 503) {
         console.error('❌ Xato:', {
             message: err.message,
             stack: isProduction ? undefined : err.stack,

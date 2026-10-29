@@ -86,7 +86,11 @@ export async function api(path, { method = 'GET', body, params, signal, token: t
       tokenStorage.clear();
       window.dispatchEvent(new Event('auth:expired'));
     }
-    throw new ApiError(data?.message || 'Kutilmagan xatolik yuz berdi', response.status, data);
+    // JSON bo'lmagan 5xx javob - odatda backend ishlamayotganini bildiradi (Vite proxy xatosi)
+    const fallback = data === null && response.status >= 500
+      ? 'Backend serveri javob bermayapti. U ishga tushganini tekshiring (loyiha papkasida: npm run dev).'
+      : 'Kutilmagan xatolik yuz berdi';
+    throw new ApiError(data?.message || fallback, response.status, data);
   }
 
   return data;

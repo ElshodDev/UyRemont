@@ -1,0 +1,13 @@
+{
+  "name": "uyremont",
+  "private": true,
+  "version": "1.2.0",
+  "description": "UyRemont (Usta24) - backend va frontendni birga boshqarish",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "dev": "node scripts/dev.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
