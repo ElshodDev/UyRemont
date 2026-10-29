@@ -7,6 +7,7 @@
 const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction, describeDbError } = require('../config/database');
 const config = require('../config/dispatch');
+const { notifyOffer, syncOfferMessage, notifyOrderEvent } = require('./telegram/notify');
 
 let io = null;
 let timer = null;
@@ -40,6 +41,8 @@ const emitToUser = (userId, event, payload) => {
 };
 
 const emitOrderUpdate = (order, extra = {}) => {
+    // Telegram: tomonlarga holat haqida xabar (ilova yopiq bo'lsa ham)
+    notifyOrderEvent(order, extra);
     if (!io) return;
     const payload = { order_id: order.id, status: order.status, ...extra };
     io.to(`order_${order.id}`).emit('order_updated', payload);
@@ -270,6 +273,7 @@ const tick = async ({ force = false } = {}) => {
             if (item.closedOffer) {
                 const { id, master_id: masterId, forcedOffline } = item.closedOffer;
                 emitToUser(masterId, 'offer_closed', { offer_id: id, reason: 'expired' });
+                syncOfferMessage(id);
                 if (forcedOffline) {
                     emitToUser(masterId, 'dispatch_offline', {
                         reason: `Ketma-ket ${config.MAX_MISSED_OFFERS} ta buyurtmaga javob bermaganingiz uchun ish rejimingiz o'chirildi`,
@@ -277,7 +281,10 @@ const tick = async ({ force = false } = {}) => {
                 }
             } else if (item.offerId) {
                 const payload = await buildOfferPayload(item.offerId);
-                if (payload) emitToUser(item.masterId, 'order_offer', payload);
+                if (payload) {
+                    emitToUser(item.masterId, 'order_offer', payload);
+                    notifyOffer(item.masterId, payload);
+                }
                 emitToUser(item.order.client_id, 'search_update', {
                     order_id: item.order.id, radius_km: item.radius, offered: true,
                 });

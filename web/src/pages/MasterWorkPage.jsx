@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Power, MapPin, Star, Percent, Wallet, CheckCircle, XCircle, AlertTriangle, Briefcase, ArrowRight, BookOpen
+  Power, MapPin, Star, Percent, Wallet, CheckCircle, XCircle, AlertTriangle, Briefcase, ArrowRight, BookOpen, Send
 } from 'lucide-react';
 import MapView from '../components/MapView';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -10,6 +10,7 @@ import { formatPrice, formatRating, ORDER_STATUSES } from '../lib/format';
 import { DISTRICT_COORDS, TASHKENT_CENTER } from '../lib/geo';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { useLoginMethods } from '../lib/telegram';
 
 function Stat({ icon: Icon, label, value, hint }) {
   return (
@@ -35,6 +36,7 @@ export default function MasterWorkPage() {
   const { state, isOnline, gps, manualLocation, currentLocation } = dispatch;
   const [toggling, setToggling] = useState(false);
   const [config, setConfig] = useState(null);
+  const loginMethods = useLoginMethods();
 
   // Sahifa ochilganda holatni yangilash
   useEffect(() => {
@@ -98,6 +100,19 @@ export default function MasterWorkPage() {
             <Requirement ok={req.rating_ok}>Reyting {config?.min_rating ?? 4} dan past emas</Requirement>
           </ul>
         </div>
+      )}
+
+      {loginMethods?.enabled && !user.telegram && (
+        <Link to="/profile#telegram" className="flex items-center gap-3 rounded-2xl p-4 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition">
+          <span className="w-10 h-10 rounded-xl bg-[#229ED9] text-white flex items-center justify-center flex-shrink-0" aria-hidden="true">
+            <Send className="w-5 h-5" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-slate-900">Telegram'ni ulang</span>
+            <span className="block text-xs text-slate-600">Ilova yopiq bo'lsa ham buyurtma Telegram'ga keladi va o'sha yerda qabul qilasiz</span>
+          </span>
+          <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+        </Link>
       )}
 
       {state.active_job && (

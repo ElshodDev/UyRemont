@@ -14,12 +14,12 @@ const { sendOtpSms, isSmsConfigured } = require('../services/sms.service');
 const { normalizePhone, optionalString, requiredString } = require('../utils/validators');
 const { HttpError } = require('../middleware/errorHandler');
 const { UPLOAD_DIR } = require('../middleware/upload');
-const { OTP_DEV_MODE, OTP_DAILY_LIMIT, TERMS_VERSION } = require('../config/security');
+const { OTP_DEV_MODE, TERMS_VERSION } = require('../config/security');
+const { issueOtp } = require('../services/otp.service');
 const totp = require('../utils/totp');
 const { deleteUserPhotos, removeFiles } = require('./photos.controller');
+const { attachLinkToUser } = require('../services/telegram/links');
 
-const OTP_TTL_MS = 5 * 60 * 1000;      // Kod amal qilish muddati: 5 daqiqa
-const OTP_RESEND_MS = 60 * 1000;       // Qayta yuborish oralig'i: 1 daqiqa
 const OTP_MAX_ATTEMPTS = 5;            // Bitta kod uchun maksimal urinishlar
 const TWO_FACTOR_TTL = '5m';           // 2FA bosqichi uchun vaqtinchalik token muddati
 const TWO_FACTOR_MAX_ATTEMPTS = 5;     // Bitta 2FA bosqichida noto'g'ri kodlar soni
@@ -29,11 +29,6 @@ const ACTIVE_ORDER_STATUSES = ['pending', 'searching', 'accepted', 'arrived', 'i
 
 // 2FA bosqichidagi urinishlar (xotirada, token muddati tugaguncha)
 const twoFactorAttempts = new Map();
-
-/**
- * OTP kodni generatsiya qilish (6 xonali, kriptografik xavfsiz)
- */
-const generateOTP = () => crypto.randomInt(100000, 1000000).toString();
 
 /**
  * JWT token yaratish. tv (token_version) oshirilsa barcha eski tokenlar bekor bo'ladi
@@ -54,6 +49,8 @@ const loadUserProfile = async (userId) => {
         `SELECT
             u.id, u.phone, u.role, u.name, u.avatar_url, u.created_at,
             u.totp_enabled, u.terms_accepted_at,
+            (SELECT JSON_BUILD_OBJECT('username', t.username, 'first_name', t.first_name, 'notifications', t.notifications)
+             FROM telegram_links t WHERE t.user_id = u.id) as telegram,
             mp.id as master_profile_id, mp.bio, mp.experience_years,
             mp.hourly_rate, mp.district, mp.city, mp.is_verified,
             mp.rating, mp.reviews_count, mp.is_available,
@@ -95,53 +92,8 @@ const sendOTP = async (req, res, next) => {
             });
         }
 
-        // Sutkalik limit: kodni ko'p marta so'rab taxmin qilishning oldini olish
-        const daily = await query(
-            `SELECT COUNT(*)::int as total FROM otp_codes
-             WHERE phone = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
-            [phone]
-        );
-        if (daily.rows[0].total >= OTP_DAILY_LIMIT) {
-            return res.status(429).json({
-                success: false,
-                message: 'Bu raqamga bugun juda ko\'p kod so\'raldi. Ertaga qayta urinib ko\'ring',
-            });
-        }
-
-        // Juda tez-tez so'rov yuborilishining oldini olish
-        const recent = await query(
-            `SELECT created_at FROM otp_codes
-             WHERE phone = $1 AND created_at > NOW() - ($2::int * INTERVAL '1 millisecond')
-             ORDER BY created_at DESC LIMIT 1`,
-            [phone, OTP_RESEND_MS]
-        );
-        if (recent.rows.length > 0) {
-            const waitSeconds = Math.ceil(
-                (OTP_RESEND_MS - (Date.now() - new Date(recent.rows[0].created_at).getTime())) / 1000
-            );
-            return res.status(429).json({
-                success: false,
-                message: `Kodni qayta yuborish uchun ${Math.max(waitSeconds, 1)} soniya kuting`,
-                retryAfter: Math.max(waitSeconds, 1),
-            });
-        }
-
-        // OTP generatsiya
-        const code = generateOTP();
-        const expiresAt = new Date(Date.now() + OTP_TTL_MS);
-
-        // Oldingi kodlarni bekor qilish
-        await query(
-            'UPDATE otp_codes SET is_used = TRUE WHERE phone = $1 AND is_used = FALSE',
-            [phone]
-        );
-
-        // Yangi OTP saqlash
-        await query(
-            'INSERT INTO otp_codes (id, phone, code, expires_at) VALUES ($1, $2, $3, $4)',
-            [uuidv4(), phone, code, expiresAt]
-        );
-
+        // Sutkalik limit va 60 soniya oralig'i otp.service da tekshiriladi
+        const { code, expiresIn } = await issueOtp(phone);
         const { delivered } = await sendOtpSms(phone, code);
 
         res.status(200).json({
@@ -149,7 +101,8 @@ const sendOTP = async (req, res, next) => {
             message: 'OTP kod yuborildi',
             data: {
                 phone,
-                expiresIn: OTP_TTL_MS / 1000,
+                channel: 'sms',
+                expiresIn,
                 // Faqat aniq yoqilgan sinov rejimida (OTP_DEV_MODE=true) kod javobda qaytariladi
                 ...(!delivered && OTP_DEV_MODE && { devCode: code }),
             },
@@ -260,6 +213,9 @@ const verifyOTP = async (req, res, next) => {
                 message: 'Hisobingiz bloklangan. Qo\'llab-quvvatlash xizmatiga murojaat qiling',
             });
         }
+
+        // Raqam Telegram'da tasdiqlangan bo'lsa (bot orqali kod olgan) hisobga biriktiriladi
+        await attachLinkToUser(user.id, phone);
 
         // Ikki bosqichli kirish yoqilgan bo'lsa: avval authenticator ilovasidagi kod
         if (user.totp_enabled) {
@@ -574,6 +530,8 @@ const deleteMe = async (req, res, next) => {
             await client.query('DELETE FROM master_profiles WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM messages WHERE sender_id = $1', [userId]);
             await client.query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
+            await client.query('DELETE FROM telegram_links WHERE user_id = $1 OR phone = $2', [userId, phone]);
+            await client.query('DELETE FROM telegram_auth_requests WHERE user_id = $1 OR phone = $2', [userId, phone]);
             await client.query('UPDATE reviews SET comment = NULL WHERE client_id = $1', [userId]);
             // Telefon o'rniga noyob belgi: shu raqam bilan keyin yangi hisob ochish mumkin
             await client.query(

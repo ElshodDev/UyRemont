@@ -24,6 +24,8 @@ const {
 } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
 const { parsePhotoIds, attachPhotos } = require('./photos.controller');
+const offersService = require('../services/offers.service');
+const { syncOfferMessage, notifyOrderEvent } = require('../services/telegram/notify');
 
 const ACTIVE_INSTANT_STATUSES = ['searching', 'accepted', 'arrived', 'in_progress'];
 const CLIENT_CANCEL_REASONS = ['Rejalar o\'zgardi', 'Usta uzoq kutdirmoqda', 'Usta bilan kelisha olmadik', 'Xato buyurtma berdim', 'Boshqa sabab'];
@@ -283,10 +285,12 @@ const cancelInstantOrder = async (req, res, next) => {
             });
             const io = getIo();
             if (io) io.to(`order_${id}`).emit('order_updated', { order_id: id, status: 'searching' });
+            notifyOrderEvent(outcome.order, { actor: 'master' });
             triggerDispatch();
         } else {
             (outcome.offers || []).forEach((offer) => {
                 emitToUser(offer.master_id, 'offer_closed', { offer_id: offer.id, reason: 'cancelled' });
+                syncOfferMessage(offer.id);
             });
             emitOrderUpdate(outcome.order, { cancelled_by: outcome.order.cancelled_by });
         }
@@ -405,15 +409,17 @@ const setOnline = async (req, res, next) => {
             );
             triggerDispatch();
         } else {
-            await withTransaction(async (client) => {
+            const declined = await withTransaction(async (client) => {
                 await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [userId]);
                 // Faol taklif bo'lsa rad etilgan hisoblanadi
-                await client.query(
+                const offers = await client.query(
                     `UPDATE dispatch_offers SET status = 'declined', responded_at = NOW()
-                     WHERE master_id = $1 AND status = 'pending'`,
+                     WHERE master_id = $1 AND status = 'pending' RETURNING id`,
                     [userId]
                 );
+                return offers.rows;
             });
+            declined.forEach((offer) => syncOfferMessage(offer.id));
             triggerDispatch();
         }
 
@@ -488,48 +494,7 @@ const haversineKm = (lat1, lng1, lat2, lng2) => {
 const acceptOffer = async (req, res, next) => {
     try {
         const offerId = assertUuid(req.params.offerId, 'Taklif topilmadi');
-        const userId = req.user.id;
-
-        const order = await withTransaction(async (client) => {
-            const offerResult = await client.query(
-                'SELECT * FROM dispatch_offers WHERE id = $1 AND master_id = $2 FOR UPDATE',
-                [offerId, userId]
-            );
-            const offer = offerResult.rows[0];
-            if (!offer) throw new HttpError(404, 'Taklif topilmadi');
-            if (offer.status !== 'pending' || new Date(offer.expires_at).getTime() < Date.now()) {
-                throw new HttpError(409, 'Taklif muddati tugagan yoki bekor qilingan');
-            }
-
-            const orderResult = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [offer.order_id]);
-            if (!orderResult.rows[0] || orderResult.rows[0].status !== 'searching') {
-                await client.query(
-                    'UPDATE dispatch_offers SET status = \'cancelled\', responded_at = NOW() WHERE id = $1',
-                    [offerId]
-                );
-                throw new HttpError(409, 'Buyurtma endi mavjud emas');
-            }
-
-            await client.query(
-                'UPDATE dispatch_offers SET status = \'accepted\', responded_at = NOW() WHERE id = $1',
-                [offerId]
-            );
-            await client.query(
-                `UPDATE master_profiles
-                 SET offers_accepted = offers_accepted + 1, missed_offers_streak = 0
-                 WHERE user_id = $1`,
-                [userId]
-            );
-            const updated = await client.query(
-                `UPDATE orders SET status = 'accepted', master_id = $2, accepted_at = NOW()
-                 WHERE id = $1 RETURNING *`,
-                [offer.order_id, userId]
-            );
-            return updated.rows[0];
-        });
-
-        emitOrderUpdate(order, { message: 'Usta topildi va yo\'lga chiqdi' });
-
+        const order = await offersService.acceptOffer(offerId, req.user.id);
         res.status(200).json({
             success: true,
             message: 'Buyurtma qabul qilindi. Mijoz manziliga yo\'l oling',
@@ -547,18 +512,7 @@ const acceptOffer = async (req, res, next) => {
 const declineOffer = async (req, res, next) => {
     try {
         const offerId = assertUuid(req.params.offerId, 'Taklif topilmadi');
-        const result = await query(
-            `UPDATE dispatch_offers SET status = 'declined', responded_at = NOW()
-             WHERE id = $1 AND master_id = $2 AND status = 'pending'
-             RETURNING id`,
-            [offerId, req.user.id]
-        );
-        if (!result.rows[0]) throw new HttpError(409, 'Taklif allaqachon yopilgan');
-
-        // Rad etish ham javob hisoblanadi: ketma-ket javobsizlar hisobi nolga tushadi
-        await query('UPDATE master_profiles SET missed_offers_streak = 0 WHERE user_id = $1', [req.user.id]);
-        triggerDispatch();
-
+        await offersService.declineOffer(offerId, req.user.id);
         res.status(200).json({ success: true, message: 'Taklif rad etildi' });
     } catch (error) {
         next(error);

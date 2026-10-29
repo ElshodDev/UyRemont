@@ -480,3 +480,40 @@ FROM (VALUES
 ) AS v(slug, name, price_min, price_max, unit, sort_order)
 JOIN specializations s ON s.slug = v.slug
 WHERE NOT EXISTS (SELECT 1 FROM price_items);
+
+-- =============================================
+-- 13. TELEGRAM BOT
+-- =============================================
+
+-- Telegram hisobi va tasdiqlangan telefon raqami (bot "Raqamni yuborish" tugmasi orqali, faqat o'z raqami).
+-- user_id yangi foydalanuvchi kodni tasdiqlagach biriktiriladi.
+CREATE TABLE IF NOT EXISTS telegram_links (
+    telegram_user_id BIGINT PRIMARY KEY,
+    chat_id BIGINT NOT NULL,
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    username VARCHAR(64),
+    first_name VARCHAR(128),
+    last_name VARCHAR(128),
+    notifications BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Saytdan botga o'tish havolalari (t.me/<bot>?start=...). Havoladagi kalitning faqat SHA-256 xeshi saqlanadi.
+CREATE TABLE IF NOT EXISTS telegram_auth_requests (
+    token_hash CHAR(64) PRIMARY KEY,
+    purpose VARCHAR(10) NOT NULL CHECK (purpose IN ('login', 'link')),
+    phone VARCHAR(20),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    telegram_user_id BIGINT,
+    status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'linked', 'mismatch')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_telegram_requests_user ON telegram_auth_requests(telegram_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_telegram_requests_phone ON telegram_auth_requests(phone, created_at DESC);
+
+-- Ustaga Telegram orqali yuborilgan taklif xabari (taklif yopilganda xabar tahrirlanadi)
+ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT;
+ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_message_id BIGINT;

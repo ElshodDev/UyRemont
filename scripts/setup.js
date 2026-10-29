@@ -150,6 +150,23 @@ const configureEnv = async () => {
         databaseUrl = normalizeDatabaseUrl(answer);
     }
 
+    // Telegram bot (ixtiyoriy): kirish kodi va bildirishnomalar SMS o'rniga Telegram orqali
+    const telegramArg = args.find((a) => a.startsWith('--telegram='));
+    if (telegramArg || getEnv(lines, 'TELEGRAM_BOT_TOKEN') === undefined) {
+        let token = telegramArg ? telegramArg.slice(11).trim() : '';
+        if (!telegramArg) {
+            console.log('   Telegram bot tokeni (ixtiyoriy): Telegram\'da @BotFather -> /newbot -> berilgan tokenni joylashtiring.');
+            console.log('   Hozir kerak bo\'lmasa - Enter bosing (keyin: npm run setup -- --skip-install --telegram=TOKEN).');
+            token = unquote((await ask('   TELEGRAM_BOT_TOKEN: ')).trim());
+        }
+        if (token && !/^\d{5,}:[A-Za-z0-9_-]{30,}$/.test(token)) {
+            console.log('   ⚠️ Token formati noto\'g\'ri (masalan: 1234567890:AAH...). Telegram bot o\'tkazib yuborildi');
+            token = '';
+        }
+        lines = setEnv(lines, 'TELEGRAM_BOT_TOKEN', token);
+        console.log(token ? '   ✅ Telegram bot tokeni saqlandi' : '   Telegram bot o\'tkazib yuborildi');
+    }
+
     if (databaseUrl) {
         lines = setEnv(lines, 'DATABASE_URL', databaseUrl);
         console.log(`   ✅ DATABASE_URL saqlandi: ${hostOf(databaseUrl)}`);

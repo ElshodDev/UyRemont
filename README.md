@@ -148,6 +148,28 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 ---
 
+## 🤖 Telegram bot
+
+SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijozga buyurtma bosqichlari haqida xabarlar.
+
+**Ulash (5 daqiqa):**
+1. Telegram'da [@BotFather](https://t.me/BotFather) → `/newbot` → bot nomi va `..._bot` bilan tugaydigan username → token beriladi.
+2. Loyiha papkasida: `npm run setup -- --skip-install --telegram=TOKEN` (yoki `backend/.env` ga `TELEGRAM_BOT_TOKEN=...`).
+3. Backendni qayta ishga tushiring — konsolda `🤖 Telegram bot @..._bot ishlayapti (polling)` chiqadi.
+
+**Qanday ishlaydi:**
+- **Kirish:** kirish oynasida «Telegram orqali kod olish» → botda «Start» → «📱 Raqamni yuborish». Bot faqat foydalanuvchining **o'z** raqamini qabul qiladi va u saytda kiritilgan raqamga mos kelishi shart. Kod odatdagidek `/api/auth/verify-otp` da tasdiqlanadi (SMS bilan bir xil limitlar: 60 soniya oralig'i, 5 urinish, kunlik limit). Keyingi safar kod darhol Telegram'ga keladi.
+- **Usta:** yangi taklif Telegram'ga «✅ Qabul qilish / ❌ Rad etish» tugmalari bilan keladi; taklif yopilganda xabar yangilanadi (muddati tugadi / qabul qilindi + «Yo'l ko'rsatish»).
+- **Mijoz:** usta topildi, yetib keldi, ish boshlandi, yakunlandi (summa bilan), bekor qilindi, usta topilmadi.
+- **Chat:** qabul qiluvchi saytda bo'lmasa xabar Telegram'ga keladi (bir buyurtma uchun 2 daqiqada bir marta).
+- Profil → **Telegram**: ulash, xabarlarni o'chirish/yoqish, uzish. Botda `/stop` — xabarlarni o'chirish, `/start` — yoqish.
+
+**Production:** bir nechta server nusxasi bo'lsa `TELEGRAM_WEBHOOK_URL=https://api.domen.uz/api/telegram/webhook` qo'ying (so'rovlar maxfiy sarlavha bilan tekshiriladi), xabarlardagi havolalar uchun `PUBLIC_APP_URL=https://domen.uz`. Telegram tugmalarida `localhost` manzillari ishlamaydi, shuning uchun development'da havola tugmalari ko'rsatilmaydi.
+
+**API:** `GET /api/auth/telegram/config`, `POST /api/auth/telegram/start`, `GET /api/auth/telegram/requests/:id`, `GET/PUT/DELETE /api/auth/telegram`, `POST /api/auth/telegram/link`, `POST /api/telegram/webhook`.
+
+---
+
 ## ⚙️ Muhit o'zgaruvchilari
 
 `backend/.env` (namuna: `backend/.env.example`):
@@ -159,9 +181,12 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 | `JWT_SECRET`, `JWT_EXPIRES_IN` | Token imzosi va muddati |
 | `CLIENT_URL` | Frontend manzili (CORS), vergul bilan bir nechta |
 | `ADMIN_PHONE`, `ADMIN_NAME` | `db:setup` paytida administrator qilinadigan raqam |
-| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod konsolga chiqadi) |
+| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod faqat `OTP_DEV_MODE=true` da ko'rinadi) |
 | `UPLOAD_DIR` | Portfolio rasmlari papkasi (standart: `backend/uploads`) |
 | `ORDER_PHOTO_DIR` | Buyurtma rasmlari, ochiq emas (standart: `backend/private_uploads/orders`) |
+| `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh bo'lsa Telegram o'chiq) |
+| `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
+| `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |
 | `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi (standart: 10) |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |
 | `DISPATCH_REQUIRE_VERIFIED` | `false` bo'lsa tasdiqlanmagan ustalar ham tezkor chaqiruv oladi |

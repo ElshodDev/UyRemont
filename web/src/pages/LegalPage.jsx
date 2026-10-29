@@ -56,7 +56,8 @@ const PRIVACY = {
       'Telefon raqam va ism — ro\'yxatdan o\'tish va aloqa uchun.',
       'Buyurtma ma\'lumotlari: manzil, muammo tavsifi, yozishmalar, sharhlar.',
       'Joylashuv: mijozda — chaqiruv manzilini belgilashda; ustada — faqat ish rejimi yoqilganda yoki faol ish paytida.',
-      'Usta yuklagan rasmlar. Rasmlardagi yashirin ma\'lumotlar (GPS koordinatalar, qurilma modeli) yuklanganda avtomatik o\'chiriladi.'
+      'Rasmlar: ustaning portfoliosi va mijozning muammo rasmi. Rasmlardagi yashirin ma\'lumotlar (GPS koordinatalar, qurilma modeli) yuklanganda avtomatik o\'chiriladi.',
+      'Telegram orqali kirsangiz yoki botni ulasangiz: Telegram ID, foydalanuvchi nomi va ism — kirish kodi va buyurtma xabarlarini yuborish uchun. Xabarlarni botda /stop bilan o\'chirish yoki profilda Telegram\'ni uzish mumkin.'
     ]],
     ['2. Ma\'lumotlar nima uchun ishlatiladi', [
       'Buyurtmani eng yaqin ustaga yetkazish, mijoz va ustani bog\'lash, xizmat sifatini (reyting) ta\'minlash.',
@@ -66,6 +67,7 @@ const PRIVACY = {
     ['3. Kim ko\'radi', [
       'Telefon raqamingiz ikkinchi tomonga faqat buyurtma qabul qilingandan keyin ko\'rsatiladi.',
       'Ustaning joylashuvi mijozga faqat usta yo\'lda bo\'lgan vaqtda ko\'rsatiladi.',
+      'Buyurtmaning muammo rasmi faqat sizga, buyurtmani oladigan ustaga va administratorga ko\'rinadi (ochiq havola orqali emas).',
       'Administratorlar qoidabuzarlik va nizolarni ko\'rib chiqish uchun ma\'lumotlarga kira oladi; ularning amallari jurnalga yoziladi.'
     ]],
     ['4. Saqlash va himoya', [
