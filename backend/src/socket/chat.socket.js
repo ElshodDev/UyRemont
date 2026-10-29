@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query } = require('../config/database');
 const { isUuid } = require('../utils/validators');
+const { resolveUserFromToken } = require('../middleware/auth');
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -31,15 +31,12 @@ const initChatSocket = (io) => {
                 return next(new Error('Avtorizatsiya tokeni kerak'));
             }
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const userRes = await query('SELECT id, phone, role, name, avatar_url FROM users WHERE id = $1 AND is_active = TRUE', [decoded.userId]);
+            // HTTP so'rovlardagi kabi: token versiyasi, bloklash va o'chirilgan hisob tekshiriladi
+            const { user } = await resolveUserFromToken(token);
+            if (!user) return next(new Error('Autentifikatsiya xatosi'));
 
-            if (userRes.rows.length === 0) {
-                return next(new Error('Foydalanuvchi topilmadi'));
-            }
-
-            socket.user = userRes.rows[0];
-            socket.data.userId = socket.user.id;
+            socket.user = user;
+            socket.data.userId = user.id;
             next();
         } catch (err) {
             next(new Error('Autentifikatsiya xatosi'));

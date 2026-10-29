@@ -2,10 +2,11 @@
 // UyRemont - Buyurtmalar Controller
 // =============================================
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { emitOrderUpdate } = require('../services/dispatch.service');
+const { logAdminAction } = require('../services/audit.service');
 const {
     assertUuid,
     optionalString,
@@ -411,6 +412,13 @@ const updateOrderStatus = async (req, res, next) => {
 
         const updated = result.rows[0];
         emitOrderUpdate(updated);
+        if (actor === 'admin') {
+            await logAdminAction(req, {
+                action: 'order.status',
+                targetOrderId: id,
+                details: { from: order.status, to: updated.status },
+            });
+        }
 
         res.status(200).json({
             success: true,

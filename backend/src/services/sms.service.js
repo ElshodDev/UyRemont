@@ -1,7 +1,9 @@
 // =============================================
 // UyRemont - Eskiz.uz SMS xizmati
-// ESKIZ_EMAIL/ESKIZ_PASSWORD berilmasa, kod konsolga chiqariladi (development)
+// ESKIZ_EMAIL/ESKIZ_PASSWORD berilmasa, kod faqat OTP_DEV_MODE=true bo'lganda ko'rsatiladi
 // =============================================
+
+const { OTP_DEV_MODE } = require('../config/security');
 
 const ESKIZ_BASE_URL = 'https://notify.eskiz.uz/api';
 
@@ -52,7 +54,8 @@ const sendOtpSms = async (phone, code) => {
     const message = `UyRemont: Tasdiqlash kodingiz: ${code}. Kod 5 daqiqa amal qiladi.`;
 
     if (!isSmsConfigured()) {
-        console.log(`📱 OTP kodi [${phone}]: ${code} (SMS sozlanmagan, faqat development)`);
+        // Kod faqat aniq yoqilgan sinov rejimida konsolga chiqariladi
+        if (OTP_DEV_MODE) console.log(`📱 OTP kodi [${phone}]: ${code} (OTP_DEV_MODE)`);
         return { delivered: false };
     }
 

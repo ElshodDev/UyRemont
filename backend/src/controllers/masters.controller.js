@@ -4,9 +4,10 @@
 
 const fs = require('fs/promises');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction } = require('../config/database');
 const { UPLOAD_DIR } = require('../middleware/upload');
+const { saveUploadedImage } = require('../utils/images');
 const {
     assertUuid,
     optionalString,
@@ -394,25 +395,19 @@ const getMyPortfolio = async (req, res, next) => {
  * yoki JSON: { image_url, description }
  */
 const uploadPortfolio = async (req, res, next) => {
+    let saved = null;
     try {
         const userId = req.user.id;
         const description = optionalString(req.body.description, { max: 300, field: 'Tavsif' });
 
-        let imageUrl = null;
-        if (req.file) {
-            imageUrl = `/uploads/${req.file.filename}`;
-        } else if (typeof req.body.image_url === 'string' && /^https?:\/\/\S+$/i.test(req.body.image_url.trim())) {
-            imageUrl = req.body.image_url.trim();
-        }
-
-        if (!imageUrl) {
+        if (!req.file && !(typeof req.body.image_url === 'string' && /^https:\/\/\S+$/i.test(req.body.image_url.trim()))) {
             return res.status(400).json({
                 success: false,
-                message: 'Rasm fayli yoki to\'g\'ri rasm URL kiritilmagan',
+                message: 'Rasm fayli yoki to\'g\'ri rasm URL (https) kiritilmagan',
             });
         }
 
-        // Master profilini topish
+        // Master profilini topish va limitni tekshirish (fayl saqlanishidan oldin)
         const profileResult = await query(
             `SELECT mp.id, (SELECT COUNT(*)::int FROM portfolio_items p WHERE p.master_id = mp.id) as items
              FROM master_profiles mp WHERE mp.user_id = $1`,
@@ -420,13 +415,21 @@ const uploadPortfolio = async (req, res, next) => {
         );
 
         if (profileResult.rows.length === 0 || profileResult.rows[0].items >= MAX_PORTFOLIO_ITEMS) {
-            if (req.file) await fs.unlink(req.file.path).catch(() => {});
             return res.status(profileResult.rows.length === 0 ? 404 : 400).json({
                 success: false,
                 message: profileResult.rows.length === 0
                     ? 'Usta profili topilmadi'
                     : `Portfolioga ko'pi bilan ${MAX_PORTFOLIO_ITEMS} ta rasm qo'shish mumkin`,
             });
+        }
+
+        // Fayl tekshiriladi, qayta kodlanadi va EXIF (GPS) o'chiriladi
+        let imageUrl;
+        if (req.file) {
+            saved = await saveUploadedImage(req.file.buffer);
+            imageUrl = saved.url;
+        } else {
+            imageUrl = req.body.image_url.trim();
         }
 
         // Portfolio elementini saqlash
@@ -443,7 +446,7 @@ const uploadPortfolio = async (req, res, next) => {
             data: result.rows[0],
         });
     } catch (error) {
-        if (req.file) await fs.unlink(req.file.path).catch(() => {});
+        if (saved) await fs.unlink(saved.filePath).catch(() => {});
         next(error);
     }
 };

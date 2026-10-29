@@ -12,6 +12,8 @@ export default defineConfig({
     // Port band bo'lsa boshqasiga jim o'tib ketmasin (backend CORS faqat 3000 ni kutadi)
     strictPort: true,
     open: false,
+    // Telefondan sinash: "npm run dev:phone" yaratadigan HTTPS havola (Cloudflare tunnel)
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': backendUrl,
       '/uploads': backendUrl,

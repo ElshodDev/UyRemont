@@ -9,7 +9,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { pool, describeDbError, describeTarget } = require('../src/config/database');
 const { normalizePhone } = require('../src/utils/validators');
 

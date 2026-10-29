@@ -23,6 +23,14 @@ Windows da `start-dev.bat` faylini ikki marta bosish kifoya: birinchi marta sozl
 
 👉 Sayt: **`http://localhost:3000`**, API: **`http://localhost:5000/api`** (holat: `/api/health`)
 
+### 📱 Telefondan sinash
+```bash
+npm run dev:phone
+```
+Terminalda **HTTPS havola va QR kod** chiqadi — telefon kamerasi bilan skanerlang. Havola istalgan internetda (mobil internet ham) ishlaydi, GPS ham ishlaydi (Cloudflare tunnel, ro'yxatdan o'tish shart emas; havola har ishga tushirishda yangilanadi). Shu Wi-Fi dagi tezroq manzil ham ko'rsatiladi, lekin u HTTPS emasligi uchun GPS ishlamaydi.
+
+Telefonda ilova pastki navigatsiya bilan ochiladi va **«Bosh ekranga qo'shish»** orqali o'rnatiladi (PWA): Android Chrome da «O'rnatish» tugmasi chiqadi, iPhone Safari da Ulashish → «Bosh ekranga qo'shish».
+
 Muammo bo'lsa, backend aniq sababni yozadi: baza ulanmasa (`DATABASE_URL`), jadvallar yo'q bo'lsa (`npm run db:seed`) yoki port band bo'lsa (backend boshqa oynada ishlayapti).
 
 <details>

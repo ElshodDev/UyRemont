@@ -127,7 +127,7 @@ export default function CallMasterPage() {
         </div>
       </div>
 
-      <form onSubmit={submit} className="grid lg:grid-cols-5 gap-6">
+      <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
           <section className="bg-white rounded-2xl border border-slate-200 p-5">
             <h2 className="font-bold text-slate-900 text-sm mb-3">1. Qanday usta kerak?</h2>
@@ -185,7 +185,7 @@ export default function CallMasterPage() {
             <p className={`text-[11px] mt-2 ${locationError ? 'text-amber-700' : 'text-slate-400'}`}>
               {locationError || (location ? 'Markerni surib yoki xaritani bosib aniq joyni belgilang.' : 'Xaritani bosib manzilingizni belgilang.')}
             </p>
-            <div className="grid sm:grid-cols-3 gap-2 mt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
               <select
                 className={inputClass}
                 value={form.district}

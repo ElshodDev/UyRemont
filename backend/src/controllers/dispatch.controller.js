@@ -2,7 +2,7 @@
 // UyRemont - Tezkor chaqiruv (taxi rejimi) Controller
 // =============================================
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction } = require('../config/database');
 const config = require('../config/dispatch');
 const { HttpError } = require('../middleware/errorHandler');
@@ -22,6 +22,7 @@ const {
     etaMinutes,
     getIo,
 } = require('../services/dispatch.service');
+const { logAdminAction } = require('../services/audit.service');
 
 const ACTIVE_INSTANT_STATUSES = ['searching', 'accepted', 'arrived', 'in_progress'];
 const CLIENT_CANCEL_REASONS = ['Rejalar o\'zgardi', 'Usta uzoq kutdirmoqda', 'Usta bilan kelisha olmadik', 'Xato buyurtma berdim', 'Boshqa sabab'];
@@ -281,6 +282,10 @@ const cancelInstantOrder = async (req, res, next) => {
                 emitToUser(offer.master_id, 'offer_closed', { offer_id: offer.id, reason: 'cancelled' });
             });
             emitOrderUpdate(outcome.order, { cancelled_by: outcome.order.cancelled_by });
+        }
+
+        if (role === 'admin' && outcome.order.cancelled_by === 'admin') {
+            await logAdminAction(req, { action: 'order.cancel', targetOrderId: id, details: { reason } });
         }
 
         res.status(200).json({

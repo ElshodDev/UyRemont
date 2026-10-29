@@ -2,10 +2,11 @@
 // UyRemont - Administrator Controller
 // =============================================
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { assertUuid, parsePagination } = require('../utils/validators');
+const { logAdminAction } = require('../services/audit.service');
 
 const ROLES = ['client', 'master', 'admin'];
 
@@ -90,7 +91,7 @@ const getUsers = async (req, res, next) => {
         const { q, role, status } = req.query;
         const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 20 });
 
-        const conditions = [];
+        const conditions = ['u.deleted_at IS NULL'];
         const params = [];
         const addParam = (value) => {
             params.push(value);
@@ -162,17 +163,28 @@ const updateUser = async (req, res, next) => {
         }
 
         const user = await withTransaction(async (client) => {
-            const existing = await client.query('SELECT id, role FROM users WHERE id = $1', [id]);
+            const existing = await client.query('SELECT id, role FROM users WHERE id = $1 AND deleted_at IS NULL', [id]);
             if (existing.rows.length === 0) return null;
 
             if (isActive !== undefined || role !== undefined) {
+                // Bloklanganda barcha sessiyalari darhol bekor qilinadi
                 await client.query(
                     `UPDATE users
-                     SET is_active = COALESCE($1, is_active), role = COALESCE($2, role)
+                     SET is_active = COALESCE($1, is_active), role = COALESCE($2, role),
+                         token_version = token_version + CASE WHEN $1 = FALSE THEN 1 ELSE 0 END
                      WHERE id = $3`,
                     [isActive ?? null, role ?? null, id]
                 );
             }
+
+            const changes = Object.fromEntries(Object.entries({
+                is_active: isActive, role, is_verified: isVerified,
+            }).filter(([, value]) => value !== undefined));
+            await logAdminAction(req, {
+                action: isActive === false ? 'user.block' : isActive === true ? 'user.unblock' : role ? 'user.role' : 'user.verify',
+                targetUserId: id,
+                details: { ...changes, previous_role: existing.rows[0].role },
+            }, client);
 
             const effectiveRole = role || existing.rows[0].role;
             if (effectiveRole === 'master' || isVerified !== undefined) {
@@ -218,4 +230,28 @@ const updateUser = async (req, res, next) => {
     }
 };
 
-module.exports = { getStats, getUsers, updateUser };
+/**
+ * Administrator amallari jurnali
+ * GET /api/admin/audit?page=&limit=
+ */
+const getAuditLog = async (req, res, next) => {
+    try {
+        const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+        const result = await query(
+            `SELECT l.id, l.action, l.details, l.ip, l.created_at, l.target_order_id,
+                    a.name as admin_name, a.phone as admin_phone,
+                    t.name as target_name, t.phone as target_phone
+             FROM admin_audit_log l
+             LEFT JOIN users a ON a.id = l.admin_id
+             LEFT JOIN users t ON t.id = l.target_user_id
+             ORDER BY l.created_at DESC
+             LIMIT $1 OFFSET $2`,
+            [limit, offset]
+        );
+        res.status(200).json({ success: true, data: result.rows, pagination: { page, limit } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { getStats, getUsers, updateUser, getAuditLog };

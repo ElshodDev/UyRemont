@@ -67,7 +67,7 @@ const errorHandler = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         statusCode = 400;
         message = err.code === 'LIMIT_FILE_SIZE'
-            ? 'Rasm hajmi 5 MB dan oshmasligi kerak'
+            ? 'Rasm hajmi 8 MB dan oshmasligi kerak'
             : 'Faylni yuklashda xatolik';
     }
 

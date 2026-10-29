@@ -25,3 +25,31 @@ body {
 .animate-toast-in {
   animation: toast-in 0.2s ease-out;
 }
+
+/* ---------- Telefon uchun ---------- */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari 16px dan kichik maydonga bosilganda sahifani kattalashtirib yuboradi */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Pastki navigatsiya paneli kontentni yopib qo'ymasligi uchun */
+.pb-bottom-nav {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .pb-bottom-nav {
+    padding-bottom: 0;
+  }
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

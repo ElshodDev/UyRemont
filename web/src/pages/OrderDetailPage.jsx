@@ -106,7 +106,7 @@ export default function OrderDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Buyurtmalar
       </Link>
 
-      <div className="grid lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
           {isInstant ? (
             <InstantOrderPanel order={order} user={user} reload={load} />
@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
 
             {order.description && <p className="text-sm text-slate-600 whitespace-pre-wrap mb-4">{order.description}</p>}
 
-            <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4 text-slate-400" />{[order.district, order.address].filter(Boolean).join(', ')}</div>
               <div className="flex items-center gap-2 text-slate-600"><Wallet className="w-4 h-4 text-slate-400" />{formatPrice(order.budget)}</div>
               <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-slate-400" />Yaratilgan: {formatDate(order.created_at)}</div>

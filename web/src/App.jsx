@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import BottomNav from './components/BottomNav';
+import InstallPrompt from './components/InstallPrompt';
 import CalculatorModal from './components/CalculatorModal';
 import RequireAuth from './components/RequireAuth';
 import HomePage from './pages/HomePage';
@@ -14,6 +16,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import CallMasterPage from './pages/CallMasterPage';
 import MasterWorkPage from './pages/MasterWorkPage';
 import RulesPage from './pages/RulesPage';
+import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
   const navigate = useNavigate();
@@ -28,7 +31,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col pb-bottom-nav">
       <Header onOpenCalculator={() => setShowCalcModal(true)} />
 
       <Routes>
@@ -36,6 +39,8 @@ export default function App() {
         <Route path="/call" element={<RequireAuth roles={['client']}><CallMasterPage /></RequireAuth>} />
         <Route path="/master/work" element={<RequireAuth roles={['master']}><MasterWorkPage /></RequireAuth>} />
         <Route path="/rules" element={<RulesPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
         <Route path="/orders/:id" element={<RequireAuth><OrderDetailPage /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
@@ -46,6 +51,8 @@ export default function App() {
       </Routes>
 
       <Footer />
+      <BottomNav />
+      <InstallPrompt />
 
       {showCalcModal && (
         <CalculatorModal onClose={() => setShowCalcModal(false)} onPickService={handlePickService} />

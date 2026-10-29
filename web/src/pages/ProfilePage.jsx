@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Phone, Wrench, Repeat, ShieldCheck } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import SecuritySettings from '../components/SecuritySettings';
 import Spinner from '../components/Spinner';
 import { api } from '../lib/api';
 import { formatDate, formatPhone, ROLE_LABELS } from '../lib/format';
@@ -134,6 +135,14 @@ export default function ProfilePage() {
           </p>
         </div>
       )}
+
+      <SecuritySettings />
+
+      <p className="text-center text-xs text-slate-400">
+        <Link to="/terms" className="hover:text-slate-600">Foydalanish shartlari</Link>
+        {' · '}
+        <Link to="/privacy" className="hover:text-slate-600">Maxfiylik siyosati</Link>
+      </p>
 
       {switchOpen && (
         <ConfirmDialog
