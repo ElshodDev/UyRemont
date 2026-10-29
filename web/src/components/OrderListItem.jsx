@@ -12,7 +12,7 @@ export default function OrderListItem({ order, viewerRole, action }) {
       : `${order.client_name || 'Mijoz'} → ${order.master_name || 'ochiq'}`;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition">
+    <div className="card hover:border-slate-300 hover:shadow-sm transition">
       <Link to={`/orders/${order.id}`} className="block p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -54,7 +54,7 @@ export function OrderListSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
+        <div key={i} className="card p-5 animate-pulse">
           <div className="flex justify-between">
             <div className="h-4 bg-slate-200 rounded w-1/3" />
             <div className="h-5 bg-slate-200 rounded w-20" />

@@ -55,7 +55,7 @@ const PRIVACY = {
     ['1. Qanday ma\'lumotlar yig\'iladi', [
       'Telefon raqam va ism — ro\'yxatdan o\'tish va aloqa uchun.',
       'Buyurtma ma\'lumotlari: manzil, muammo tavsifi, yozishmalar, sharhlar.',
-      'Joylashuv: mijozda — chaqiruv manzilini belgilashda; ustada — faqat «liniyada» yoki faol ish paytida.',
+      'Joylashuv: mijozda — chaqiruv manzilini belgilashda; ustada — faqat ish rejimi yoqilganda yoki faol ish paytida.',
       'Usta yuklagan rasmlar. Rasmlardagi yashirin ma\'lumotlar (GPS koordinatalar, qurilma modeli) yuklanganda avtomatik o\'chiriladi.'
     ]],
     ['2. Ma\'lumotlar nima uchun ishlatiladi', [
@@ -98,7 +98,7 @@ function LegalPage({ doc }) {
         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
         Hujjat loyihasi: rasmiy ishga tushirishdan oldin yurist tomonidan tasdiqlanadi.
       </p>
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 space-y-6">
+      <div className="card p-5 sm:p-7 space-y-6">
         {doc.sections.map(([heading, items]) => (
           <section key={heading}>
             <h2 className="font-bold text-slate-900 mb-2">{heading}</h2>

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Zap, LocateFixed, MapPin, Users, Clock, Wallet, Info } from 'lucide-react';
+import { Zap, LocateFixed, MapPin, Users, Clock, Wallet, Info, Tag } from 'lucide-react';
 import MapView from '../components/MapView';
+import PhotoPicker from '../components/PhotoPicker';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { api } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -10,7 +11,7 @@ import { formatPrice } from '../lib/format';
 import { mainVerticals, districtsList } from '../data/catalog';
 import { useToast } from '../context/ToastContext';
 
-const inputClass = 'w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm';
+const inputClass = 'input';
 
 export default function CallMasterPage() {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function CallMasterPage() {
   const [form, setForm] = useState({ address: '', district: '', description: '' });
   const [estimate, setEstimate] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photoIds, setPhotoIds] = useState([]);
+  const [photosBusy, setPhotosBusy] = useState(false);
 
   // Faol chaqiruv bo'lsa to'g'ridan-to'g'ri uning sahifasiga
   useEffect(() => {
@@ -100,11 +103,12 @@ export default function CallMasterPage() {
     e.preventDefault();
     if (!specId) return toast.error('Xizmat turini tanlang');
     if (!location) return toast.error('Xaritada manzilingizni belgilang');
+    if (photosBusy) return toast.info('Rasmlar yuklanishini kuting');
     setSubmitting(true);
     try {
       const { data } = await api('/dispatch/orders', {
         method: 'POST',
-        body: { specialization_id: specId, lat: location.lat, lng: location.lng, ...form }
+        body: { specialization_id: specId, lat: location.lat, lng: location.lng, ...form, photo_ids: photoIds }
       });
       navigate(`/orders/${data.id}`);
     } catch (error) {
@@ -129,7 +133,7 @@ export default function CallMasterPage() {
 
       <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
-          <section className="bg-white rounded-2xl border border-slate-200 p-5">
+          <section className="card-pad">
             <h2 className="font-bold text-slate-900 text-sm mb-3">1. Qanday usta kerak?</h2>
             <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
               {mainVerticals.map((v) => (
@@ -137,7 +141,8 @@ export default function CallMasterPage() {
                   key={v.id}
                   type="button"
                   onClick={() => { setVertical(v.id); setSpecId(null); }}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition ${
+                  aria-pressed={vertical === v.id}
+                  className={`px-3 min-h-10 rounded-xl text-xs font-bold whitespace-nowrap border transition ${
                     vertical === v.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
@@ -151,6 +156,7 @@ export default function CallMasterPage() {
                   key={s.id}
                   type="button"
                   onClick={() => setSpecId(s.id)}
+                  aria-pressed={specId === s.id}
                   className={`p-3 rounded-xl border text-left transition ${
                     specId === s.id ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/20' : 'border-slate-200 hover:bg-slate-50'
                   }`}
@@ -163,14 +169,14 @@ export default function CallMasterPage() {
             </div>
           </section>
 
-          <section className="bg-white rounded-2xl border border-slate-200 p-5">
+          <section className="card-pad">
             <div className="flex items-center justify-between gap-2 mb-3">
               <h2 className="font-bold text-slate-900 text-sm">2. Qayerga?</h2>
               <button
                 type="button"
                 onClick={locate}
                 disabled={locating}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100"
+                className="btn btn-sm btn-soft font-bold"
               >
                 {locating ? <Spinner className="w-3.5 h-3.5" /> : <LocateFixed className="w-3.5 h-3.5" />}
                 Mening joylashuvim
@@ -188,6 +194,7 @@ export default function CallMasterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
               <select
                 className={inputClass}
+                aria-label="Tuman"
                 value={form.district}
                 onChange={(e) => setForm({ ...form, district: e.target.value })}
               >
@@ -199,6 +206,7 @@ export default function CallMasterPage() {
                 minLength={3}
                 maxLength={500}
                 className={`${inputClass} sm:col-span-2`}
+                aria-label="Manzil"
                 placeholder="Ko'cha, uy, xonadon, mo'ljal"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -206,21 +214,24 @@ export default function CallMasterPage() {
             </div>
           </section>
 
-          <section className="bg-white rounded-2xl border border-slate-200 p-5">
+          <section className="card-pad">
             <h2 className="font-bold text-slate-900 text-sm mb-3">3. Muammo nimada? <span className="font-normal text-slate-400">(ixtiyoriy)</span></h2>
             <textarea
               rows="3"
               maxLength={2000}
               className={inputClass}
+              aria-label="Muammo tavsifi"
               placeholder="Masalan: oshxonadagi kran oqyapti, smesitelni almashtirish kerak"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
+            <p className="label mt-4">Rasm <span className="font-normal text-slate-400">— usta kerakli asbobni oldindan oladi</span></p>
+            <PhotoPicker onChange={setPhotoIds} onBusyChange={setPhotosBusy} />
           </section>
         </div>
 
         <aside className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 lg:sticky lg:top-24 space-y-4">
+          <div className="card-pad lg:sticky lg:top-24 space-y-4">
             <h2 className="font-bold text-slate-900">Chaqiruv</h2>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -228,7 +239,7 @@ export default function CallMasterPage() {
                 <span className="font-bold text-slate-900">{selectedSpec ? formatPrice(estimate?.call_fee ?? selectedSpec.call_fee) : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-2"><Users className="w-4 h-4" /> Liniyadagi ustalar</span>
+                <span className="text-slate-500 flex items-center gap-2"><Users className="w-4 h-4" /> Hozir bo'sh ustalar</span>
                 <span className="font-bold text-slate-900">{estimate ? `${estimate.online_masters} ta` : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -243,7 +254,7 @@ export default function CallMasterPage() {
 
             {estimate && estimate.online_masters === 0 && (
               <p className="text-xs p-3 rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
-                Hozir yaqin atrofda liniyadagi usta yo'q. Chaqiruv berishingiz mumkin — usta liniyaga chiqishi bilan taklif yuboriladi.
+                Hozir yaqin atrofda bo'sh usta yo'q. Chaqiruv berishingiz mumkin — usta ishga chiqishi bilan taklif yuboriladi.
               </p>
             )}
 
@@ -251,15 +262,20 @@ export default function CallMasterPage() {
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               Ish narxi usta muammoni ko'rgach kelishiladi. To'lov ish tugagach ustaga to'g'ridan-to'g'ri amalga oshiriladi.
             </p>
+            {selectedSpec && (
+              <Link to={`/prices#${selectedSpec.slug}`} className="link text-xs inline-flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" /> {selectedSpec.name_uz}: taxminiy ish narxlari
+              </Link>
+            )}
 
             <button
               type="submit"
-              disabled={submitting || !specId || !location}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-base shadow-lg shadow-orange-500/25 hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              disabled={submitting || photosBusy || !specId || !location}
+              className="btn btn-accent btn-lg w-full"
             >
               {submitting ? <Spinner className="w-5 h-5 text-white" /> : <><Zap className="w-5 h-5" /> Usta chaqirish</>}
             </button>
-            <Link to="/rules" className="block text-center text-xs font-semibold text-blue-600 hover:text-blue-700">
+            <Link to="/rules" className="link block text-center text-xs min-h-9 leading-9">
               Ishlash qoidalari
             </Link>
           </div>

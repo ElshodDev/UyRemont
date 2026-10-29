@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Filter, Megaphone, Wrench, Zap } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, MapPin, Filter, Megaphone, Wrench, Zap, Tag, ArrowRight } from 'lucide-react';
 import MasterCard, { MasterCardSkeleton } from '../components/MasterCard';
 import MasterProfileModal from '../components/MasterProfileModal';
 import OrderModal from '../components/OrderModal';
@@ -9,6 +9,7 @@ import Spinner from '../components/Spinner';
 import { api } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
 import { useAuth } from '../context/AuthContext';
+import { useCallMaster } from '../lib/useCallMaster';
 import { useToast } from '../context/ToastContext';
 import { mainVerticals, districtsList, ALL_DISTRICTS } from '../data/catalog';
 
@@ -139,19 +140,8 @@ export default function HomePage() {
   };
 
   // Tezkor chaqiruv: tanlangan mutaxassislik bilan /call sahifasiga
-  const callMaster = () => {
-    requireAuth((current) => {
-      if (current.role !== 'client') {
-        toast.error(current.role === 'master'
-          ? 'Usta chaqirish uchun profilingizda mijoz rejimiga o\'ting'
-          : 'Administrator hisobidan usta chaqirib bo\'lmaydi');
-        return;
-      }
-      const params = new URLSearchParams({ vertical: activeVertical });
-      if (selectedSpec !== 'all') params.set('spec', selectedSpec);
-      navigate(`/call?${params.toString()}`);
-    });
-  };
+  const openCall = useCallMaster();
+  const callMaster = () => openCall({ vertical: activeVertical, ...(selectedSpec !== 'all' && { spec: selectedSpec }) });
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -171,7 +161,8 @@ export default function HomePage() {
               <button
                 key={v.id}
                 onClick={() => handleVerticalChange(v.id)}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
+                aria-pressed={isSelected}
+                className={`flex items-center gap-2.5 px-4 min-h-11 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
                   isSelected
                     ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
@@ -210,7 +201,8 @@ export default function HomePage() {
             <div className="flex-1 flex items-center px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
               <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
               <input
-                type="text"
+                type="search"
+                aria-label="Usta yoki xizmat qidirish"
                 placeholder={`${currentVerticalObj.name} bo'yicha usta yoki xizmat qidirish...`}
                 className="w-full bg-transparent border-none outline-none text-sm placeholder-slate-400 font-medium"
                 value={searchQuery}
@@ -221,7 +213,8 @@ export default function HomePage() {
             <div className="flex items-center px-4 py-2 bg-slate-50 rounded-xl border border-slate-200 md:min-w-[200px]">
               <MapPin className="w-5 h-5 text-slate-400 mr-2 flex-shrink-0" />
               <select
-                className="w-full bg-transparent border-none outline-none text-sm font-medium text-slate-700 cursor-pointer"
+                className="w-full min-h-9 bg-transparent border-none outline-none text-sm font-medium text-slate-700 cursor-pointer"
+                aria-label="Tuman"
                 value={selectedDistrict}
                 onChange={(e) => setFilter({ district: e.target.value })}
               >
@@ -233,19 +226,25 @@ export default function HomePage() {
           <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-2">
             <button
               onClick={callMaster}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-sm font-extrabold shadow-lg shadow-orange-900/30 transition"
+              className="btn btn-accent px-5 font-extrabold shadow-lg shadow-orange-900/30"
             >
               <Zap className="w-4 h-4" />
               Usta chaqirish — eng yaqini keladi
             </button>
             <button
               onClick={() => startOrder(null)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-xs sm:text-sm font-semibold transition"
+              className="btn bg-snow/10 hover:bg-snow/20 border border-snow/25 text-white text-xs sm:text-sm"
             >
               <Megaphone className="w-4 h-4" />
               Usta tanlamasdan buyurtma qoldirish
             </button>
           </div>
+          <Link
+            to="/prices"
+            className="mt-4 inline-flex items-center gap-1.5 min-h-11 text-sm font-semibold text-white/90 hover:text-white underline-offset-4 hover:underline"
+          >
+            <Tag className="w-4 h-4" /> Qancha turadi? Taxminiy narxlarni ko'ring <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
@@ -258,11 +257,8 @@ export default function HomePage() {
               <button
                 key={s.id}
                 onClick={() => setFilter({ spec: s.slug })}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${
-                  isSelected
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
+                aria-pressed={isSelected}
+                className={`chip ${isSelected ? 'chip-active' : ''}`}
               >
                 <span>{s.icon}</span>
                 <span>{s.name_uz}</span>
@@ -289,7 +285,8 @@ export default function HomePage() {
               <Filter className="w-4 h-4" /> Saralash:
             </span>
             <select
-              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium outline-none text-slate-700"
+              className="input w-auto min-h-10 py-1.5 bg-white text-xs sm:text-sm font-medium"
+              aria-label="Saralash"
               value={sortBy}
               onChange={(e) => setFilter({ sort: e.target.value === 'rating' ? null : e.target.value })}
             >
@@ -316,16 +313,10 @@ export default function HomePage() {
             description="Tanlangan filtrlar bo'yicha hozircha usta topilmadi. Filtrni o'zgartiring yoki ochiq buyurtma qoldiring."
             action={(
               <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={resetFilters}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-blue-700"
-                >
+                <button onClick={resetFilters} className="btn btn-primary">
                   Barchasini ko'rsatish
                 </button>
-                <button
-                  onClick={() => startOrder(null)}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-50"
-                >
+                <button onClick={() => startOrder(null)} className="btn btn-secondary">
                   Ochiq buyurtma qoldirish
                 </button>
               </div>
@@ -350,7 +341,7 @@ export default function HomePage() {
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                  className="btn btn-secondary px-6"
                 >
                   {loadingMore ? <Spinner className="w-4 h-4" /> : 'Ko\'proq ko\'rsatish'}
                 </button>
@@ -360,7 +351,7 @@ export default function HomePage() {
         )}
 
         {/* USTALAR UCHUN TAKLIF */}
-        <div className="mt-12 rounded-3xl bg-gradient-to-r from-slate-900 to-blue-900 text-white p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="mt-12 rounded-3xl bg-gradient-to-r from-slate-900 to-blue-900 dark:ring-1 dark:ring-white/10 text-white p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-2xl bg-white/10"><Wrench className="w-6 h-6" /></div>
             <div>
@@ -372,7 +363,7 @@ export default function HomePage() {
           </div>
           <button
             onClick={() => requireAuth((current) => navigate(current.role === 'master' ? '/master/profile' : '/master/setup'))}
-            className="px-5 py-3 rounded-xl bg-white text-slate-900 font-bold text-sm hover:bg-blue-50 whitespace-nowrap"
+            className="btn bg-snow text-ink font-bold hover:bg-primary-50 whitespace-nowrap px-5"
           >
             Usta bo'lib qo'shilish
           </button>

@@ -16,6 +16,7 @@ const { HttpError } = require('../middleware/errorHandler');
 const { UPLOAD_DIR } = require('../middleware/upload');
 const { OTP_DEV_MODE, OTP_DAILY_LIMIT, TERMS_VERSION } = require('../config/security');
 const totp = require('../utils/totp');
+const { deleteUserPhotos, removeFiles } = require('./photos.controller');
 
 const OTP_TTL_MS = 5 * 60 * 1000;      // Kod amal qilish muddati: 5 daqiqa
 const OTP_RESEND_MS = 60 * 1000;       // Qayta yuborish oralig'i: 1 daqiqa
@@ -561,7 +562,7 @@ const deleteMe = async (req, res, next) => {
             throw new HttpError(409, 'Sizda faol buyurtmalar bor. Avval ularni yakunlang yoki bekor qiling');
         }
 
-        const files = await withTransaction(async (client) => {
+        const { portfolioFiles, orderPhotoFiles } = await withTransaction(async (client) => {
             const portfolio = await client.query(
                 `SELECT p.image_url FROM portfolio_items p
                  JOIN master_profiles mp ON mp.id = p.master_id WHERE mp.user_id = $1`,
@@ -569,6 +570,7 @@ const deleteMe = async (req, res, next) => {
             );
             const phone = (await client.query('SELECT phone FROM users WHERE id = $1', [userId])).rows[0].phone;
 
+            const photos = await deleteUserPhotos(client, userId);
             await client.query('DELETE FROM master_profiles WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM messages WHERE sender_id = $1', [userId]);
             await client.query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
@@ -582,13 +584,14 @@ const deleteMe = async (req, res, next) => {
                  WHERE id = $1`,
                 [userId, `x${crypto.randomBytes(7).toString('hex')}`]
             );
-            return portfolio.rows.map((row) => row.image_url);
+            return { portfolioFiles: portfolio.rows.map((row) => row.image_url), orderPhotoFiles: photos };
         });
 
-        // Serverga yuklangan portfolio rasmlarini o'chirish
-        await Promise.all(files
+        // Serverga yuklangan portfolio va buyurtma rasmlarini o'chirish
+        await Promise.all(portfolioFiles
             .filter((url) => url.startsWith('/uploads/'))
             .map((url) => fs.unlink(path.join(UPLOAD_DIR, path.basename(url))).catch(() => {})));
+        await removeFiles(orderPhotoFiles);
         await disconnectUserSockets(req, userId);
 
         res.status(200).json({ success: true, message: 'Hisobingiz va shaxsiy ma\'lumotlaringiz o\'chirildi' });

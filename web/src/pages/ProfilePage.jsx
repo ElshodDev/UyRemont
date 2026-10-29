@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Phone, Wrench, Repeat, ShieldCheck } from 'lucide-react';
+import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SecuritySettings from '../components/SecuritySettings';
+import { ThemeSegmented } from '../components/ThemeSwitch';
+import { openOnboarding } from '../components/Onboarding';
 import Spinner from '../components/Spinner';
 import { api } from '../lib/api';
 import { formatDate, formatPhone, ROLE_LABELS } from '../lib/format';
@@ -48,7 +50,7 @@ export default function ProfilePage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full flex-1 space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+      <div className="card p-5 sm:p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl font-black">
             {(user.name || '?').charAt(0).toUpperCase()}
@@ -64,15 +66,16 @@ export default function ProfilePage() {
         </div>
 
         <form onSubmit={saveName} className="space-y-3">
-          <label className="text-xs font-semibold text-slate-700 block">Ism va familiya</label>
+          <label className="label" htmlFor="profile-name">Ism va familiya</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
+                id="profile-name"
                 required
                 minLength={2}
                 maxLength={100}
-                className="w-full p-2.5 pl-9 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm"
+                className="input pl-9"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -80,7 +83,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving || name.trim() === (user.name || '')}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="btn btn-primary px-5 font-bold"
             >
               {saving ? <Spinner className="w-4 h-4 text-white" /> : 'Saqlash'}
             </button>
@@ -106,7 +109,7 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={() => navigate('/master/setup')}
-            className="px-4 py-2.5 rounded-xl bg-white text-blue-700 text-sm font-bold hover:bg-blue-50 whitespace-nowrap"
+            className="btn bg-snow text-primary-700 font-bold hover:bg-primary-50 whitespace-nowrap"
           >
             {user.master_profile_id ? 'Usta rejimiga o\'tish' : 'Usta profilini yaratish'}
           </button>
@@ -114,18 +117,18 @@ export default function ProfilePage() {
       )}
 
       {user.role === 'master' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-3">
+        <div className="card p-5 sm:p-6 space-y-3">
           <h3 className="font-bold text-slate-900">Usta hisobi</h3>
           <div className="flex flex-col sm:flex-row gap-2">
             <Link
               to="/master/profile"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 inline-flex items-center justify-center gap-2"
+              className="btn btn-primary flex-1 font-bold"
             >
               <Wrench className="w-4 h-4" /> Usta profilini tahrirlash
             </Link>
             <button
               onClick={() => setSwitchOpen(true)}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 inline-flex items-center justify-center gap-2"
+              className="btn btn-secondary flex-1"
             >
               <Repeat className="w-4 h-4" /> Mijoz rejimiga o'tish
             </button>
@@ -136,12 +139,36 @@ export default function ProfilePage() {
         </div>
       )}
 
+      <section className="card p-5 sm:p-6 space-y-4" aria-labelledby="appearance-title">
+        <div>
+          <h3 id="appearance-title" className="font-bold text-slate-900">Ko'rinish</h3>
+          <p className="text-xs text-slate-500">Qorong'i rejim kechqurun ko'zni charchatmaydi va batareyani tejaydi.</p>
+        </div>
+        <ThemeSegmented />
+      </section>
+
+      <section className="card overflow-hidden" aria-label="Yordam">
+        {[
+          { to: '/prices', icon: Tag, label: 'Taxminiy narxlar' },
+          { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' }
+        ].map(({ to, icon: Icon, label }) => (
+          <Link key={to} to={to} className="flex items-center justify-between gap-3 px-5 min-h-14 border-b border-slate-100 hover:bg-slate-50">
+            <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><Icon className="w-4 h-4 text-blue-600" /> {label}</span>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+          </Link>
+        ))}
+        <button type="button" onClick={openOnboarding} className="w-full flex items-center justify-between gap-3 px-5 min-h-14 hover:bg-slate-50 text-left">
+          <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><PlayCircle className="w-4 h-4 text-blue-600" /> Qisqa tanishtiruv: ilova qanday ishlaydi</span>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+      </section>
+
       <SecuritySettings />
 
       <p className="text-center text-xs text-slate-400">
-        <Link to="/terms" className="hover:text-slate-600">Foydalanish shartlari</Link>
+        <Link to="/terms" className="inline-block py-3 hover:text-slate-600">Foydalanish shartlari</Link>
         {' · '}
-        <Link to="/privacy" className="hover:text-slate-600">Maxfiylik siyosati</Link>
+        <Link to="/privacy" className="inline-block py-3 hover:text-slate-600">Maxfiylik siyosati</Link>
       </p>
 
       {switchOpen && (

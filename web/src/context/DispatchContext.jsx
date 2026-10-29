@@ -22,7 +22,7 @@ const readManualLocation = () => {
 };
 
 /**
- * Usta ish rejimi: liniya holati, joylashuvni yuborish va kelgan takliflar.
+ * Usta ish rejimi: ishda/dam olish holati, joylashuvni yuborish va kelgan takliflar.
  * Faqat usta roli uchun ishlaydi, boshqalar uchun bo'sh qiymat qaytaradi.
  */
 export function DispatchProvider({ children }) {
@@ -98,7 +98,7 @@ export function DispatchProvider({ children }) {
     };
   }, [isMaster, refresh, toast]);
 
-  // GPS kuzatuvi liniyada yoki faol ish paytida
+  // GPS kuzatuvi ish rejimida yoki faol ish paytida
   useEffect(() => {
     if (!sharing || !navigator.geolocation) return undefined;
     setGps((g) => ({ ...g, status: 'locating' }));

@@ -100,3 +100,17 @@ export async function api(path, { method = 'GET', body, params, signal, token: t
  * Backend dagi /uploads rasmlari uchun to'liq manzil
  */
 export const assetUrl = (url) => (url && url.startsWith('/uploads/') ? `${BACKEND_URL}${url}` : url);
+
+/**
+ * Faqat token bilan beriladigan fayl (masalan, buyurtma rasmi) -> brauzer ichidagi vaqtinchalik manzil
+ * @returns {Promise<string>} URL.createObjectURL natijasi (ishlatib bo'lgach revokeObjectURL qiling)
+ */
+export async function fetchObjectUrl(path, { signal } = {}) {
+  const token = tokenStorage.get();
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    signal
+  });
+  if (!response.ok) throw new ApiError('Faylni yuklab bo\'lmadi', response.status);
+  return URL.createObjectURL(await response.blob());
+}

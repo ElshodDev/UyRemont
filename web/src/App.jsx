@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import InstallPrompt from './components/InstallPrompt';
+import Onboarding from './components/Onboarding';
 import CalculatorModal from './components/CalculatorModal';
 import RequireAuth from './components/RequireAuth';
 import HomePage from './pages/HomePage';
@@ -16,6 +17,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import CallMasterPage from './pages/CallMasterPage';
 import MasterWorkPage from './pages/MasterWorkPage';
 import RulesPage from './pages/RulesPage';
+import PricesPage from './pages/PricesPage';
 import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
@@ -39,6 +41,7 @@ export default function App() {
         <Route path="/call" element={<RequireAuth roles={['client']}><CallMasterPage /></RequireAuth>} />
         <Route path="/master/work" element={<RequireAuth roles={['master']}><MasterWorkPage /></RequireAuth>} />
         <Route path="/rules" element={<RulesPage />} />
+        <Route path="/prices" element={<PricesPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
@@ -53,6 +56,7 @@ export default function App() {
       <Footer />
       <BottomNav />
       <InstallPrompt />
+      <Onboarding />
 
       {showCalcModal && (
         <CalculatorModal onClose={() => setShowCalcModal(false)} onPickService={handlePickService} />

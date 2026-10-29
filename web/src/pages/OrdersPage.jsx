@@ -147,7 +147,7 @@ export default function OrdersPage({ embedded = false }) {
             title="Buyurtmalar topilmadi"
             description={user.role === 'client' ? 'Ustalar ro\'yxatidan kerakli ustani tanlab, birinchi buyurtmangizni bering.' : 'Bu bo\'limda hali buyurtmalar yo\'q.'}
             action={user.role === 'client' && (
-              <Link to="/" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
+              <Link to="/" className="btn btn-primary px-4">
                 Usta topish
               </Link>
             )}
@@ -166,7 +166,7 @@ export default function OrdersPage({ embedded = false }) {
                 <button
                   onClick={() => claim(order)}
                   disabled={claiming === order.id}
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-70 inline-flex items-center justify-center gap-2"
+                  className="btn btn-primary w-full sm:w-auto px-4 font-bold"
                 >
                   {claiming === order.id ? <Spinner className="w-4 h-4 text-white" /> : 'Buyurtmani olish'}
                 </button>
@@ -178,7 +178,7 @@ export default function OrdersPage({ embedded = false }) {
               <button
                 onClick={() => load(pagination.page + 1)}
                 disabled={state === 'more'}
-                className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 inline-flex items-center gap-2"
+                className="btn btn-secondary px-6"
               >
                 {state === 'more' ? <Spinner className="w-4 h-4" /> : 'Ko\'proq ko\'rsatish'}
               </button>

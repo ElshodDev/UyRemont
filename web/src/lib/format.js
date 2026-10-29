@@ -81,3 +81,35 @@ export function getOrderActions(order, user) {
   }
   return actions;
 }
+
+// 80000 -> "80 ming", 3500000 -> "3,5 mln"
+const compactMoney = (value) => {
+  if (value >= 1000000) return `${Number((value / 1000000).toFixed(1)).toLocaleString('ru-RU')} mln`;
+  if (value >= 1000) return `${Math.round(value / 1000).toLocaleString('ru-RU')} ming`;
+  return Math.round(value).toLocaleString('ru-RU');
+};
+const unitOf = (text) => text.split(' ')[1] || '';
+const amountOf = (text) => text.split(' ')[0];
+
+/**
+ * Narx oralig'i telefonda o'qishga qulay ko'rinishda: "80–150 ming so'm", "600 ming – 3,5 mln so'm"
+ */
+export const formatPriceRange = (min, max) => {
+  const low = compactMoney(Number(min) || 0);
+  if (max === null || max === undefined) return `${low} so'mdan`;
+  if (Number(max) === Number(min)) return `${low} so'm`;
+  const high = compactMoney(Number(max));
+  return unitOf(low) === unitOf(high)
+    ? `${amountOf(low)}–${high} so'm`
+    : `${low} – ${high} so'm`;
+};
+
+export const PRICE_UNITS = {
+  ish: '',
+  dona: 'dona',
+  'kv.m': 'kv.m',
+  metr: 'metr',
+  komplekt: 'komplekt',
+  detal: 'detal',
+  soat: 'soat'
+};

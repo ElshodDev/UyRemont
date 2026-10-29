@@ -9,13 +9,13 @@ export const specializationLabel = (master) => (
 
 export default function MasterCard({ master, onView, onOrder }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
+    <article className="card shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
       <div className="p-5 flex-1">
         <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0">
             <Avatar src={master.avatar_url} name={master.name} />
             {master.is_verified && (
-              <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-1" title="Tasdiqlangan usta">
+              <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-1 ring-2 ring-white" title="Tasdiqlangan usta" aria-label="Tasdiqlangan usta">
                 <ShieldCheck className="w-3.5 h-3.5" />
               </div>
             )}
@@ -26,8 +26,8 @@ export default function MasterCard({ master, onView, onOrder }) {
             <p className="text-xs font-semibold text-blue-600 mt-0.5 line-clamp-1">{specializationLabel(master)}</p>
 
             <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center text-amber-500 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-md">
-                <Star className="w-3.5 h-3.5 fill-current mr-1" />
+              <div className="flex items-center text-amber-700 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-md" aria-label={`Reyting ${formatRating(master.rating)}`}>
+                <Star className="w-3.5 h-3.5 fill-current mr-1 text-amber-500" aria-hidden="true" />
                 {formatRating(master.rating)}
               </div>
               <span className="text-xs text-slate-400">({master.reviews_count || 0} ta sharh)</span>
@@ -78,24 +78,26 @@ export default function MasterCard({ master, onView, onOrder }) {
       <div className="p-3 bg-slate-50/70 border-t border-slate-100 grid grid-cols-2 gap-2">
         <button
           onClick={() => onView(master)}
-          className="w-full py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 text-slate-700 hover:bg-white hover:border-slate-300 transition"
+          aria-label={`${master.name || 'Usta'} profilini ko'rish`}
+          className="btn btn-secondary w-full px-3 text-xs"
         >
           Profilni ko'rish
         </button>
         <button
           onClick={() => onOrder(master)}
-          className="w-full py-2 px-3 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition"
+          className="btn btn-primary w-full px-3 text-xs font-bold"
+          aria-label={`${master.name || 'Usta'}ga buyurtma berish`}
         >
           Buyurtma berish
         </button>
       </div>
-    </div>
+    </article>
   );
 }
 
 export function MasterCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
+    <div className="card p-5 animate-pulse" aria-hidden="true">
       <div className="flex gap-4">
         <div className="w-16 h-16 rounded-2xl bg-slate-200" />
         <div className="flex-1 space-y-2 py-1">

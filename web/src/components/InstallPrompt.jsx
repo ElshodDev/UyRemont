@@ -52,24 +52,24 @@ export default function InstallPrompt() {
   };
 
   return (
-    <div className="md:hidden fixed inset-x-3 z-40 bottom-[calc(5rem+env(safe-area-inset-bottom))] bg-slate-900 text-white rounded-2xl shadow-xl p-3.5 flex items-center gap-3 animate-toast-in">
+    <div className="md:hidden fixed inset-x-3 z-40 bottom-[calc(5rem+env(safe-area-inset-bottom))] bg-ink text-white rounded-2xl shadow-xl ring-1 ring-white/10 p-3.5 flex items-center gap-3 animate-toast-in">
       <img src="/icons/icon-192.png" alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold">Usta24 ilovasini o'rnating</p>
         {deferred ? (
-          <p className="text-[11px] text-slate-300">Bosh ekrandan bir bosishda oching</p>
+          <p className="text-[11px] text-white/70">Bosh ekrandan bir bosishda oching</p>
         ) : (
-          <p className="text-[11px] text-slate-300 flex items-center gap-1 flex-wrap">
+          <p className="text-[11px] text-white/70 flex items-center gap-1 flex-wrap">
             <Share className="w-3 h-3" /> Ulashish → «Bosh ekranga qo'shish»
           </p>
         )}
       </div>
       {deferred && (
-        <button onClick={install} className="px-3 py-2 rounded-xl bg-blue-600 text-xs font-bold inline-flex items-center gap-1">
+        <button onClick={install} className="btn btn-sm btn-primary">
           <Download className="w-3.5 h-3.5" /> O'rnatish
         </button>
       )}
-      <button onClick={dismiss} className="p-1.5 text-slate-400 hover:text-white" aria-label="Yopish">
+      <button onClick={dismiss} className="w-11 h-11 -mr-2 inline-flex items-center justify-center text-white/60 hover:text-white" aria-label="Yopish">
         <X className="w-4 h-4" />
       </button>
     </div>

@@ -74,7 +74,7 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 flex flex-col h-[480px]">
+    <div className="card flex flex-col h-[480px]">
       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
         <h3 className="font-bold text-slate-900 flex items-center gap-2 text-sm">
           <MessageSquare className="w-4 h-4 text-blue-600" /> Chat
@@ -111,7 +111,8 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
 
       <form onSubmit={send} className="p-3 border-t border-slate-100 flex gap-2">
         <input
-          className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm disabled:opacity-60"
+          className="input flex-1"
+          aria-label="Xabar"
           placeholder={disabled ? 'Chat yopilgan' : 'Xabar yozing...'}
           maxLength={2000}
           disabled={disabled}
@@ -121,7 +122,7 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
         <button
           type="submit"
           disabled={disabled || !text.trim() || !connected}
-          className="px-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          className="btn btn-primary px-4"
           aria-label="Yuborish"
         >
           <Send className="w-4 h-4" />

@@ -10,7 +10,7 @@ import { mainVerticals, districtsList } from '../data/catalog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-const inputClass = 'w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm';
+const inputClass = 'input';
 
 function PortfolioManager() {
   const toast = useToast();
@@ -72,7 +72,7 @@ function PortfolioManager() {
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+    <section className="card p-5 sm:p-6">
       <h2 className="font-bold text-slate-900 mb-1">Portfolio</h2>
       <p className="text-xs text-slate-500 mb-4">Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 8 MB gacha). Rasmdagi joylashuv (GPS) ma'lumotlari avtomatik o'chiriladi.</p>
 
@@ -94,7 +94,7 @@ function PortfolioManager() {
         <button
           type="submit"
           disabled={!file || uploading}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          className="btn btn-primary px-4 font-bold"
         >
           {uploading ? <Spinner className="w-4 h-4 text-white" /> : <><ImagePlus className="w-4 h-4" /> Yuklash</>}
         </button>
@@ -243,7 +243,7 @@ export default function MasterSetupPage() {
         )}
       </div>
 
-      <form onSubmit={submit} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-4 text-xs">
+      <form onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs">
         <div>
           <label className="font-semibold text-slate-700 block mb-1.5">Xizmat sohasi va mutaxassislik *</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
@@ -359,7 +359,7 @@ export default function MasterSetupPage() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition disabled:opacity-70 inline-flex items-center justify-center gap-2"
+          className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
         >
           {saving ? <Spinner className="w-4 h-4 text-white" /> : isMaster ? 'O\'zgarishlarni saqlash' : 'Profilni saqlash'}
         </button>

@@ -7,6 +7,100 @@ body {
   min-height: 100vh;
 }
 
+/* ---------- Klaviatura bilan boshqarish: fokus aniq ko'rinsin ---------- */
+@layer base {
+  :focus-visible {
+    outline: 2px solid theme('colors.blue.500');
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* ---------- Dizayn tizimi: umumiy tugma, maydon va kartochkalar ---------- */
+@layer components {
+  /* Tugmalar: balandligi kamida 44px (barmoq bilan bosish uchun) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl text-sm font-semibold
+      transition select-none active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-sm {
+    @apply min-h-10 px-3 text-xs rounded-lg;
+  }
+  .btn-lg {
+    @apply min-h-14 px-6 text-base font-extrabold rounded-2xl;
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white shadow-sm hover:bg-blue-700;
+  }
+  .btn-accent {
+    @apply bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold shadow-md shadow-orange-500/25
+      hover:from-amber-600 hover:to-orange-600;
+  }
+  .btn-secondary {
+    @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50;
+  }
+  .btn-ghost {
+    @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+  .btn-soft {
+    @apply bg-blue-50 text-blue-700 hover:bg-blue-100;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-danger-soft {
+    @apply bg-red-50 text-red-700 border border-red-200 hover:bg-red-100;
+  }
+  .btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-700;
+  }
+  .btn-dark {
+    @apply bg-slate-900 text-white hover:bg-slate-800;
+  }
+  /* Faqat ikonkali tugma */
+  .icon-btn {
+    @apply inline-flex items-center justify-center w-11 h-11 rounded-xl text-slate-500 transition
+      hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50;
+  }
+
+  /* Kartochka */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200;
+  }
+  .card-pad {
+    @apply bg-white rounded-2xl border border-slate-200 p-5;
+  }
+
+  /* Forma maydonlari */
+  .input {
+    @apply w-full min-h-11 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900
+      outline-none transition placeholder:text-slate-400
+      focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60;
+  }
+  .label {
+    @apply block text-xs font-bold text-slate-700 mb-1.5;
+  }
+  .hint {
+    @apply text-[11px] text-slate-500;
+  }
+
+  /* Tanlov tugmachalari (filtrlar, kategoriyalar) */
+  .chip {
+    @apply inline-flex items-center gap-2 min-h-11 px-4 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap
+      transition bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+  .chip-active {
+    @apply bg-blue-600 text-white shadow-sm hover:bg-blue-600 hover:text-white;
+  }
+
+  /* Matnli havola */
+  .link {
+    @apply font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline;
+  }
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -24,6 +118,14 @@ body {
 
 .animate-toast-in {
   animation: toast-in 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ---------- Telefon uchun ---------- */
@@ -52,4 +154,26 @@ html {
 
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------- Xarita qorong'i rejimda ---------- */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+.dark .leaflet-container {
+  background: #1b2538;
+}
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip,
+.dark .leaflet-bar a {
+  background: #131c2e;
+  color: #e2e8f0;
+  border-color: #243045;
+}
+.dark .leaflet-control-attribution {
+  background: rgb(19 28 46 / 0.8) !important;
+  color: #94a3b8;
+}
+.dark .leaflet-control-attribution a {
+  color: #93c5fd;
 }

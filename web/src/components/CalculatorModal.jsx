@@ -36,7 +36,8 @@ export default function CalculatorModal({ onClose, onPickService }) {
         <div>
           <label className="font-bold text-slate-700 block mb-1.5">Xizmat turini tanlang:</label>
           <select
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium outline-none focus:border-amber-500"
+            className="input font-medium focus:border-amber-500 focus:ring-amber-500/20"
+            aria-label="Xizmat turi"
             value={form.serviceType}
             onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
           >
@@ -99,7 +100,7 @@ export default function CalculatorModal({ onClose, onPickService }) {
 
       <button
         onClick={() => onPickService(service)}
-        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs sm:text-sm hover:bg-slate-800 transition"
+        className="btn btn-dark w-full font-bold min-h-12"
       >
         Ushbu xizmat bo'yicha usta tanlash
       </button>

@@ -53,7 +53,7 @@ npm run dev
 ### Kirish (development)
 Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasida ko'rsatiladi.
 - **Administrator:** `.env` dagi `ADMIN_PHONE` (standart: `+998900000000`)
-- **Demo usta:** `+998901112233` (Jamshid Karimov, santexnik, tasdiqlangan — `/master/work` da liniyaga chiqing)
+- **Demo usta:** `+998901112233` (Jamshid Karimov, santexnik, tasdiqlangan — `/master/work` da «Ishga chiqish» tugmasini bosing)
 - **Demo mijoz:** `+998931234567`
 
 ---
@@ -73,8 +73,10 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/masters/specializations` | Mutaxassisliklar katalogi (4 bo'lim) |
 | `GET /api/masters/:id` | Usta profili, portfolio, sharhlar |
 | `PUT /api/masters/profile` | Usta profilini tahrirlash (faqat usta) |
-| `GET/POST/DELETE /api/masters/portfolio` | Portfolio rasmlari (fayl yuklash, 5 MB gacha) |
-| `POST /api/orders` | Buyurtma: aniq ustaga yoki mutaxassislik bo'yicha ochiq buyurtma |
+| `GET/POST/DELETE /api/masters/portfolio` | Portfolio rasmlari (fayl yuklash, 8 MB gacha, EXIF/GPS o'chiriladi) |
+| `POST /api/orders` | Buyurtma: aniq ustaga yoki mutaxassislik bo'yicha ochiq buyurtma (`photo_ids` bilan) |
+| `POST /api/orders/photos`, `DELETE /api/orders/photos/:id` | Muammo rasmi (buyurtmadan oldin yuklanadi, ko'pi bilan 3 ta) |
+| `GET /api/orders/:id/photos/:photoId` | Rasm faqat mijozga, taklif olgan/biriktirilgan ustaga va adminga beriladi |
 | `GET /api/orders` | Rolga mos buyurtmalar (mijoz / usta / admin) |
 | `GET /api/orders/open` | Ustaning mutaxassisligiga mos ochiq buyurtmalar |
 | `GET /api/orders/:id` | Tafsilot va chat tarixi (faqat ishtirokchilarga) |
@@ -82,6 +84,8 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `POST /api/reviews` | Yakunlangan buyurtmaga 1–5 yulduzli sharh |
 | `GET /api/admin/stats` | Platforma statistikasi (faqat admin) |
 | `GET /api/admin/users`, `PATCH /api/admin/users/:id` | Foydalanuvchilarni qidirish, bloklash, rol berish, ustani tasdiqlash |
+| `GET /api/prices` | Taxminiy narxlar ro'yxati (ommaviy) |
+| `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 
 **Buyurtma holatlari:**
 `pending → accepted → in_progress → completed`, `pending/accepted → cancelled`.
@@ -102,6 +106,12 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 - **Usta kabineti:** profil yaratish/tahrirlash, mutaxassisliklar, "Band/Bo'sh" holati, portfolio yuklash, ochiq buyurtmalarni olish.
 - **Admin panel** (`/admin`): statistika, foydalanuvchilar (bloklash, rol, tasdiqlash), barcha buyurtmalar.
 - **Smart smeta kalkulyatori** — tanlangan xizmat bo'yicha ustalar ro'yxatiga o'tadi.
+- **Taxminiy narxlar** (`/prices`): soha bo'yicha ish haqi oralig'i, qidiruv, admin panelda tahrirlanadi.
+- **Muammo rasmi:** mijoz chaqiruvga 3 tagacha rasm qo'shadi (telefonda kichraytiriladi), usta taklifda oldindan ko'radi.
+- **Tanishtiruv:** birinchi ochilishda 3 ta ekran (o'tkazib yuborish mumkin, «Qoidalar» va profildan qayta ochiladi).
+- **Tungi rejim:** telefon sozlamasi bo'yicha yoki profilda tanlanadi.
+
+**Dizayn tizimi:** ranglar `web/tailwind.config.js` da CSS o'zgaruvchilari orqali beriladi va qorong'i rejimda o'zi almashadi (`bg-white`, `text-slate-900` kabi klasslar ikkala rejimda ishlaydi, `dark:` yozish shart emas). Har doim oq/to'q qoladigan joylar uchun `snow` va `ink` ranglari. Umumiy klasslar `web/src/index.css` da: `btn` (+ `btn-primary`, `btn-accent`, `btn-secondary`, `btn-danger`, `btn-success`, `btn-dark`, `btn-soft`, `btn-ghost`, `btn-sm`, `btn-lg`), `icon-btn`, `card`, `card-pad`, `input`, `label`, `hint`, `chip`, `chip-active`, `link`. Tugmalar balandligi kamida 44px.
 
 ---
 
@@ -109,9 +119,9 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 
 Yandex Taxi kabi ishlaydi: mijoz usta chaqiradi, tizim eng yaqin bo'sh ustani o'zi topadi.
 
-**Mijoz:** `/call` — xizmat turi → xaritada manzil (GPS yoki qo'lda) → chiqish narxi, liniyadagi ustalar soni va taxminiy yetib kelish vaqti → «Usta chaqirish». Keyin buyurtma sahifasida jonli holat: *Qidiruv → Usta yo'lda (xaritada jonli) → Yetib keldi → Ish → Yakun*.
+**Mijoz:** `/call` — xizmat turi → xaritada manzil (GPS yoki qo'lda) → muammo tavsifi va rasmi → chiqish narxi, bo'sh ustalar soni va taxminiy yetib kelish vaqti → «Usta chaqirish». Keyin buyurtma sahifasida jonli holat: *Qidiruv → Usta yo'lda (xaritada jonli) → Yetib keldi → Ish → Yakun*.
 
-**Usta:** `/master/work` — «Liniyaga chiqish» tugmasi, bugungi daromad/komissiya/reyting/qabul qilish foizi. Liniyada joylashuv har 15 soniyada yuboriladi; taklif kelganda signal va taymerli oyna chiqadi (Qabul qilish / Rad etish). Faol ishda: Navigator, «Yetib keldim», «Ishni boshlash», «Yakunlash» (yakuniy summa bilan), mijozni baholash.
+**Usta:** `/master/work` — «Ishga chiqish» tugmasi, bugungi daromad/komissiya/reyting/qabul qilish foizi. Ish rejimida joylashuv har 15 soniyada yuboriladi; taklif kelganda signal va taymerli oyna chiqadi (Qabul qilish / Rad etish). Faol ishda: Navigator, «Yetib keldim», «Ishni boshlash», «Yakunlash» (yakuniy summa bilan), mijozni baholash.
 
 **Qoidalar** (server tomonda majburiy, `/rules` sahifasida ko'rsatiladi, `backend/src/config/dispatch.js`):
 
@@ -120,12 +130,12 @@ Yandex Taxi kabi ishlaydi: mijoz usta chaqiradi, tizim eng yaqin bo'sh ustani o'
 | Taklif eng yaqin ustaga ketma-ket yuboriladi, javob vaqti | 20 soniya (`DISPATCH_OFFER_TIMEOUT_SEC`) |
 | Qidiruv radiusi bosqichma-bosqich kengayadi | 3 → 7 → 15 km |
 | Usta topilmasa chaqiruv yopiladi | 5 daqiqa (`DISPATCH_SEARCH_TIMEOUT_MIN`) |
-| Ketma-ket javobsiz takliflar → liniyadan avtomatik chiqarish | 3 ta |
+| Ketma-ket javobsiz takliflar → ish rejimi avtomatik o'chadi | 3 ta |
 | Mijozda bir vaqtda faol chaqiruv | 1 ta |
 | Qabuldan keyin bepul bekor qilish | 3 daqiqa (keyin «kech bekor qilish» qayd etiladi) |
 | Ish boshlangandan keyin mijoz bekor qila olmaydi | — |
 | Usta voz kechsa chaqiruv qayta qidiruvga qaytadi | o'sha ustaga qayta taklif qilinmaydi |
-| Liniyaga chiqish: tasdiqlangan profil, mutaxassislik, reyting ≥ 4.0 | `DISPATCH_REQUIRE_VERIFIED` |
+| Ishga chiqish: tasdiqlangan profil, mutaxassislik, reyting ≥ 4.0 | `DISPATCH_REQUIRE_VERIFIED` |
 | Joylashuvi eskirgan ustaga taklif yuborilmaydi | 10 daqiqa |
 | Platforma komissiyasi | 10% (`PLATFORM_COMMISSION_PERCENT`) |
 | Ikki tomonlama reyting | mijoz ↔ usta |
@@ -151,6 +161,7 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 | `ADMIN_PHONE`, `ADMIN_NAME` | `db:setup` paytida administrator qilinadigan raqam |
 | `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod konsolga chiqadi) |
 | `UPLOAD_DIR` | Portfolio rasmlari papkasi (standart: `backend/uploads`) |
+| `ORDER_PHOTO_DIR` | Buyurtma rasmlari, ochiq emas (standart: `backend/private_uploads/orders`) |
 | `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi (standart: 10) |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |
 | `DISPATCH_REQUIRE_VERIFIED` | `false` bo'lsa tasdiqlanmagan ustalar ham tezkor chaqiruv oladi |

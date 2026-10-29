@@ -255,15 +255,24 @@ CREATE TRIGGER update_orders_updated_at
 -- Mijoz usta chaqiradi, tizim eng yaqin onlayn ustaga navbat bilan taklif yuboradi
 -- =============================================
 
--- Har bir mutaxassislik uchun ustaning chiqish (chaqiruv) narxi
-ALTER TABLE specializations ADD COLUMN IF NOT EXISTS call_fee DECIMAL(10, 2) NOT NULL DEFAULT 50000;
-UPDATE specializations SET call_fee = CASE vertical
-        WHEN 'auto' THEN 80000
-        WHEN 'appliance' THEN 60000
-        WHEN 'gadget' THEN 40000
-        ELSE 50000
-    END
-WHERE call_fee = 50000;
+-- Har bir mutaxassislik uchun ustaning chiqish (chaqiruv) narxi.
+-- Bo'limlar bo'yicha boshlang'ich qiymat faqat ustun birinchi marta qo'shilganda beriladi,
+-- keyin administrator panelida o'zgartirilgan narxlar qayta yozilmaydi.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = 'specializations' AND column_name = 'call_fee'
+    ) THEN
+        ALTER TABLE specializations ADD COLUMN call_fee DECIMAL(10, 2) NOT NULL DEFAULT 50000;
+        UPDATE specializations SET call_fee = CASE vertical
+                WHEN 'auto' THEN 80000
+                WHEN 'appliance' THEN 60000
+                WHEN 'gadget' THEN 40000
+                ELSE 50000
+            END;
+    END IF;
+END $$;
 
 -- Ustaning liniyadagi holati, joylashuvi va takliflar statistikasi
 ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS is_online BOOLEAN NOT NULL DEFAULT FALSE;
@@ -356,3 +365,118 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_otp_phone_created ON otp_codes(phone, created_at DESC);
+
+-- =============================================
+-- 12. BUYURTMA RASMLARI VA NARXLAR RO'YXATI
+-- =============================================
+
+-- Mijoz muammo rasmini buyurtmadan oldin yuklaydi (order_id hali NULL), buyurtma yaratilganda biriktiriladi.
+-- Fayllar ochiq papkada emas: faqat buyurtmaga ruxsati borlarga API orqali beriladi.
+CREATE TABLE IF NOT EXISTS order_photos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+    uploaded_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    file_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_order_photos_order ON order_photos(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_photos_drafts ON order_photos(uploaded_by, created_at) WHERE order_id IS NULL;
+
+-- Taxminiy narxlar (usta ish haqi, materiallar alohida). Administrator panelida tahrirlanadi.
+CREATE TABLE IF NOT EXISTS price_items (
+    id SERIAL PRIMARY KEY,
+    specialization_id INTEGER NOT NULL REFERENCES specializations(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    price_min INTEGER NOT NULL CHECK (price_min >= 0),
+    price_max INTEGER CHECK (price_max IS NULL OR price_max >= price_min),
+    unit VARCHAR(30) NOT NULL DEFAULT 'ish',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_price_items_spec ON price_items(specialization_id, sort_order);
+
+-- Boshlang'ich narxlar (Toshkent bo'yicha o'rtacha) faqat jadval bo'sh bo'lganda qo'shiladi,
+-- keyin administrator o'zgartirgan narxlar qayta yozilmaydi
+INSERT INTO price_items (specialization_id, name, price_min, price_max, unit, sort_order)
+SELECT s.id, v.name, v.price_min, v.price_max, v.unit, v.sort_order
+FROM (VALUES
+    ('santexnik', 'Kran (smesitel) almashtirish', 80000, 150000, 'dona', 1),
+    ('santexnik', 'Quvur oqishini tuzatish', 80000, 200000, 'ish', 2),
+    ('santexnik', 'Rakovina o''rnatish', 150000, 300000, 'dona', 3),
+    ('santexnik', 'Unitaz o''rnatish', 200000, 400000, 'dona', 4),
+    ('santexnik', 'Suv isitgich (kolonka) o''rnatish', 250000, 450000, 'dona', 5),
+    ('elektrik', 'Rozetka yoki o''chirgich almashtirish', 30000, 60000, 'dona', 1),
+    ('elektrik', 'Lyustra osish', 80000, 200000, 'dona', 2),
+    ('elektrik', 'Avtomat (shit) almashtirish', 60000, 150000, 'dona', 3),
+    ('elektrik', 'Yangi sim tortish', 15000, 30000, 'metr', 4),
+    ('malyar', 'Devor bo''yash', 25000, 45000, 'kv.m', 1),
+    ('malyar', 'Shift bo''yash', 30000, 50000, 'kv.m', 2),
+    ('malyar', 'Shpatlyovka', 35000, 60000, 'kv.m', 3),
+    ('kafel', 'Devorga kafel yotqizish', 90000, 150000, 'kv.m', 1),
+    ('kafel', 'Polga kafel yotqizish', 80000, 140000, 'kv.m', 2),
+    ('kafel', 'Eski kafelni olib tashlash', 25000, 40000, 'kv.m', 3),
+    ('gipsokarton', 'Gipsokarton shift', 90000, 160000, 'kv.m', 1),
+    ('gipsokarton', 'Gipsokarton devor (peregorodka)', 80000, 140000, 'kv.m', 2),
+    ('mebel', 'Shkaf yig''ish', 150000, 400000, 'dona', 1),
+    ('mebel', 'Oshxona mebelini yig''ish', 150000, 250000, 'metr', 2),
+    ('mebel', 'Eshik qulfini almashtirish', 80000, 150000, 'dona', 3),
+    ('oboy', 'Oboy yopishtirish', 25000, 45000, 'kv.m', 1),
+    ('oboy', 'Eski oboyni olib tashlash', 10000, 20000, 'kv.m', 2),
+    ('laminat', 'Laminat yotqizish', 35000, 60000, 'kv.m', 1),
+    ('laminat', 'Plintus o''rnatish', 15000, 25000, 'metr', 2),
+    ('eshik_oyna', 'Eshik o''rnatish', 250000, 500000, 'dona', 1),
+    ('eshik_oyna', 'Plastik oynani sozlash', 80000, 150000, 'dona', 2),
+    ('eshik_oyna', 'Oyna rezinasini almashtirish', 15000, 30000, 'metr', 3),
+    ('tozalash', 'Kvartirani umumiy tozalash', 15000, 25000, 'kv.m', 1),
+    ('tozalash', 'Ta''mirdan keyin tozalash', 25000, 40000, 'kv.m', 2),
+    ('tozalash', 'Divan yuvish', 150000, 300000, 'dona', 3),
+    ('motor', 'Dvigatel diagnostikasi', 100000, 200000, 'ish', 1),
+    ('motor', 'Svechalarni almashtirish', 50000, 100000, 'komplekt', 2),
+    ('motor', 'Dvigatel kapital ta''miri', 3000000, 8000000, 'ish', 3),
+    ('xodovoy', 'Xodovoy diagnostikasi', 50000, 100000, 'ish', 1),
+    ('xodovoy', 'Amortizator almashtirish', 150000, 300000, 'dona', 2),
+    ('xodovoy', 'Tormoz kolodkalarini almashtirish', 100000, 200000, 'komplekt', 3),
+    ('avtoelektrik', 'Akkumulyator almashtirish', 50000, 100000, 'ish', 1),
+    ('avtoelektrik', 'Signalizatsiya (Magicar) o''rnatish', 300000, 600000, 'ish', 2),
+    ('avtoelektrik', 'Starter yoki generator ta''miri', 200000, 500000, 'ish', 3),
+    ('diagnostika', 'Kompyuter diagnostika', 100000, 200000, 'ish', 1),
+    ('diagnostika', 'Xatolarni o''chirish', 50000, 100000, 'ish', 2),
+    ('kuzov', 'Bitta detalni bo''yash', 600000, 1200000, 'detal', 1),
+    ('kuzov', 'Pachoqni to''g''rilash', 200000, 600000, 'dona', 2),
+    ('kuzov', 'Polirovka', 500000, 1200000, 'ish', 3),
+    ('moy', 'Motor moyini almashtirish (ish haqi)', 30000, 60000, 'ish', 1),
+    ('moy', 'Filtr almashtirish', 20000, 50000, 'dona', 2),
+    ('konditsioner', 'Konditsioner o''rnatish', 400000, 700000, 'dona', 1),
+    ('konditsioner', 'Konditsionerni tozalash', 150000, 250000, 'dona', 2),
+    ('konditsioner', 'Freon to''ldirish', 200000, 400000, 'ish', 3),
+    ('kir_yuvish', 'Diagnostika', 50000, 100000, 'ish', 1),
+    ('kir_yuvish', 'Nasos (pompa) almashtirish', 200000, 400000, 'ish', 2),
+    ('kir_yuvish', 'Podshipnik almashtirish', 400000, 800000, 'ish', 3),
+    ('muzlatgich', 'Termostat almashtirish', 200000, 400000, 'ish', 1),
+    ('muzlatgich', 'Freon to''ldirish', 300000, 600000, 'ish', 2),
+    ('muzlatgich', 'Kompressor almashtirish', 800000, 1800000, 'ish', 3),
+    ('gaz_plita', 'Gaz plitani ulash', 100000, 200000, 'ish', 1),
+    ('gaz_plita', 'Konforka yoki klapan ta''miri', 100000, 250000, 'ish', 2),
+    ('gaz_plita', 'Duxovka termostatini almashtirish', 150000, 350000, 'ish', 3),
+    ('qozon', 'Qozonni tozalash (profilaktika)', 200000, 400000, 'ish', 1),
+    ('qozon', 'Qozon o''rnatish', 500000, 1200000, 'ish', 2),
+    ('qozon', 'Datchik yoki plata ta''miri', 250000, 700000, 'ish', 3),
+    ('iphone', 'Ekran almashtirish', 600000, 3500000, 'ish', 1),
+    ('iphone', 'Batareya almashtirish', 300000, 900000, 'ish', 2),
+    ('iphone', 'Quvvatlash ulagichi ta''miri', 200000, 500000, 'ish', 3),
+    ('android', 'Ekran almashtirish', 300000, 2000000, 'ish', 1),
+    ('android', 'Batareya almashtirish', 150000, 400000, 'ish', 2),
+    ('android', 'Proshivka (dasturiy ta''minot)', 100000, 250000, 'ish', 3),
+    ('noutbuk', 'Tozalash va termopasta', 150000, 300000, 'ish', 1),
+    ('noutbuk', 'Klaviatura almashtirish', 250000, 600000, 'ish', 2),
+    ('noutbuk', 'SSD o''rnatish (ish haqi)', 80000, 150000, 'ish', 3),
+    ('ekran', 'Telefon displeyi', 300000, 3000000, 'ish', 1),
+    ('ekran', 'Noutbuk matritsasi', 800000, 2500000, 'ish', 2),
+    ('ekran', 'Himoya oynasi yopishtirish', 30000, 80000, 'dona', 3),
+    ('windows', 'Windows o''rnatish', 100000, 200000, 'ish', 1),
+    ('windows', 'Dasturlar o''rnatish', 50000, 150000, 'ish', 2),
+    ('windows', 'Virusdan tozalash', 80000, 150000, 'ish', 3)
+) AS v(slug, name, price_min, price_max, unit, sort_order)
+JOIN specializations s ON s.slug = v.slug
+WHERE NOT EXISTS (SELECT 1 FROM price_items);
