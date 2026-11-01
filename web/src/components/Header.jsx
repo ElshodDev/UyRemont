@@ -135,7 +135,7 @@ export default function Header({ onOpenCalculator }) {
                     </NavLink>
                   )}
                   {user.role === 'client' && (
-                    <NavLink to="/master/setup" className={menuLink}>
+                    <NavLink to="/usta-bolish" className={menuLink}>
                       <PlusCircle className="w-4 h-4 text-slate-400" /> {t('Usta bo\'lish')}
                     </NavLink>
                   )}

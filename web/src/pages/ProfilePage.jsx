@@ -112,7 +112,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <button
-            onClick={() => navigate('/master/setup')}
+            onClick={() => navigate('/usta-bolish')}
             className="btn bg-snow text-primary-700 font-bold hover:bg-primary-50 whitespace-nowrap"
           >
             {user.master_profile_id ? t('Usta rejimiga o\'tish') : t('Usta profilini yaratish')}

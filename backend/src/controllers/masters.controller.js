@@ -12,6 +12,7 @@ const {
     assertUuid,
     optionalString,
     optionalNumber,
+    requiredString,
     parsePagination,
 } = require('../utils/validators');
 const { sendQr } = require('../utils/qr');
@@ -386,6 +387,67 @@ const updateMyPublicLink = async (req, res, next) => {
 };
 
 /**
+ * 1 daqiqada usta bo'lish: rol, profil, mutaxassisliklar va tuman bitta so'rovda (bitta tranzaksiyada).
+ * Narx, tajriba, ma'lumot va ish rasmlari keyin profil sahifasida to'ldiriladi.
+ * Usta allaqachon bo'lsa - soha va tuman yangilanadi (qolgan ma'lumotlar o'zgarmaydi).
+ * POST /api/masters/quick-start
+ * Body: { specialization_ids: number[], district: string, name? }
+ */
+const quickStart = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        if (req.user.role === 'admin') {
+            throw new HttpError(400, 'Administrator hisobi usta profiliga ega bo\'la olmaydi');
+        }
+        const ids = req.body.specialization_ids;
+        const validIds = Array.isArray(ids)
+            && ids.length >= 1 && ids.length <= 10
+            && ids.every((sid) => Number.isInteger(sid) && sid > 0);
+        if (!validIds) throw new HttpError(400, 'Kamida bitta mutaxassislikni tanlang (ko\'pi bilan 10 ta)');
+        const district = requiredString(req.body.district, { min: 2, max: 100, field: 'Tuman' });
+        const name = optionalString(req.body.name, { max: 100, field: 'Ism' });
+        if (name !== null && name.length < 2) throw new HttpError(400, 'Ismingizni to\'liq kiriting');
+        if (!name && !req.user.name) throw new HttpError(400, 'Ismingizni kiriting');
+        if (containsContact(name) || containsContact(district)) throw new HttpError(400, CONTACT_IN_TEXT_MESSAGE);
+
+        const wasMaster = req.user.role === 'master';
+        await withTransaction(async (client) => {
+            const specs = await client.query(
+                'SELECT id FROM specializations WHERE id = ANY($1::int[]) AND is_active = TRUE',
+                [ids]
+            );
+            if (specs.rows.length === 0) throw new HttpError(400, 'Tanlangan mutaxassislik topilmadi');
+
+            await client.query(
+                `UPDATE users SET role = 'master', name = COALESCE($2, name) WHERE id = $1`,
+                [userId, name]
+            );
+            const profile = await client.query(
+                `INSERT INTO master_profiles (id, user_id, district)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (user_id) DO UPDATE SET district = EXCLUDED.district
+                 RETURNING id`,
+                [uuidv4(), userId, district]
+            );
+            const masterProfileId = profile.rows[0].id;
+            await client.query('DELETE FROM master_specializations WHERE master_id = $1', [masterProfileId]);
+            await client.query(
+                `INSERT INTO master_specializations (master_id, specialization_id)
+                 SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING`,
+                [masterProfileId, specs.rows.map((row) => row.id)]
+            );
+        });
+
+        res.status(wasMaster ? 200 : 201).json({
+            success: true,
+            message: wasMaster ? 'Profil yangilandi' : 'Tabriklaymiz! Siz endi Usta24 ustasisiz',
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * Usta profilini yangilash
  * PUT /api/masters/profile
  * Body: { name, bio, experience_years, hourly_rate, district, city, is_available, specialization_ids }
@@ -628,4 +690,5 @@ module.exports = {
     uploadPortfolio,
     deletePortfolioItem,
     getSpecializations,
+    quickStart,
 };

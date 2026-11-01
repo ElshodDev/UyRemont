@@ -318,6 +318,14 @@ module.exports = {
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
     'Komissiya hisobi': 'Счёт комиссии',
 
+    // ---------- 1 daqiqada usta bo'lish ----------
+    'Administrator hisobi usta profiliga ega bo\'la olmaydi': 'У аккаунта администратора не может быть профиля мастера',
+    'Kamida bitta mutaxassislikni tanlang (ko\'pi bilan 10 ta)': 'Выберите хотя бы одну специализацию (не более 10)',
+    'Ismingizni to\'liq kiriting': 'Введите имя полностью',
+    'Ismingizni kiriting': 'Введите ваше имя',
+    'Tanlangan mutaxassislik topilmadi': 'Выбранная специализация не найдена',
+    'Tabriklaymiz! Siz endi Usta24 ustasisiz': 'Поздравляем! Теперь вы мастер Usta24',
+
     // ---------- Aloqa ma'lumotlari va to'lovni tasdiqlash ----------
     'Telefon raqam yoki Telegram manzilini yozmang: raqamlar buyurtma qabul qilingach ikki tomonga ham ko\'rinadi':
         'Не указывайте номер телефона или Telegram: контакты станут видны обеим сторонам после принятия заказа',

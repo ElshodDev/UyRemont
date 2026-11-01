@@ -342,5 +342,53 @@ export default {
   'Mijozdan ham to\'langan summani tasdiqlash so\'raladi.': 'Клиента тоже попросят подтвердить оплаченную сумму.',
   'Mijoz to\'lovni tasdiqladi': 'Клиент подтвердил оплату',
   'Telefon raqam yoki Telegram yozmang: mijoz raqamingizni buyurtmani qabul qilganingizdan keyin ko\'radi.':
-    'Не указывайте телефон или Telegram: клиент увидит ваш номер после того, как вы примете заказ.'
+    'Не указывайте телефон или Telegram: клиент увидит ваш номер после того, как вы примете заказ.',
+  // 1 daqiqada usta bo'lish
+  'Soha': 'Сфера',
+  'Telefon': 'Телефон',
+  '1 daqiqada usta bo\'ling — Usta24': 'Станьте мастером за 1 минуту — Usta24',
+  'Ko\'pi bilan {n} ta soha tanlash mumkin': 'Можно выбрать не более {n} направлений',
+  'Siz allaqachon ustasiz': 'Вы уже мастер',
+  'Tabriklaymiz, {name}!': 'Поздравляем, {name}!',
+  'Tabriklaymiz!': 'Поздравляем!',
+  'Siz endi Usta24 ustasisiz. Profilingiz katalogga qo\'shildi — mijozlar sizga buyurtma bera oladi.':
+    'Теперь вы мастер Usta24. Ваш профиль добавлен в каталог — клиенты могут оформлять вам заказы.',
+  'Yangi buyurtmalar darhol telefoningizga keladi': 'Новые заказы будут сразу приходить на телефон',
+  'Hujjatlaringizni yuboring': 'Отправьте документы',
+  '«Tasdiqlangan» belgisi va tezkor chaqiruvlar shundan keyin ochiladi': 'После этого откроются отметка «Проверен» и срочные вызовы',
+  'Narx, tajriba va ish rasmlarini qo\'shing': 'Добавьте цену, опыт и фото работ',
+  'To\'liq profilli ustani mijozlar ko\'proq tanlaydi': 'Клиенты чаще выбирают мастеров с заполненным профилем',
+  'Buyurtma, chaqiruv, komissiya va qoidalar — qisqacha': 'Заказы, вызовы, комиссия и правила — кратко',
+  'Profilni to\'ldirish': 'Заполнить профиль',
+  '1 daqiqada usta bo\'ling': 'Станьте мастером за 1 минуту',
+  'Ro\'yxatdan o\'tish bepul. Buyurtmalar telefoningizga keladi, komissiya faqat bajarilgan ishdan.':
+    'Регистрация бесплатная. Заказы приходят на телефон, комиссия — только с выполненной работы.',
+  'Qanday ish qilasiz?': 'Чем вы занимаетесь?',
+  'Bir nechtasini tanlashingiz mumkin': 'Можно выбрать несколько',
+  'Tanlandi: {n} ta': 'Выбрано: {n}',
+  'Kamida bitta sohani tanlang': 'Выберите хотя бы одно направление',
+  'Qayerda ishlaysiz?': 'Где вы работаете?',
+  'Asosiy tumaningiz. Mijozlar katalogda tuman bo\'yicha qidiradi.': 'Ваш основной район. Клиенты ищут мастеров в каталоге по району.',
+  'Ism va familiyangiz': 'Имя и фамилия',
+  'Telefon raqamni tasdiqlash': 'Подтвердить номер телефона',
+  'Kod SMS yoki Telegram orqali keladi. Raqamingiz mijozlarga faqat buyurtma qabul qilganingizda ko\'rinadi.':
+    'Код придёт по SMS или в Telegram. Клиенты увидят ваш номер только после того, как вы примете заказ.',
+  'ustalar uchun qo\'llanma': 'руководство для мастеров',
+  'Ro\'yxatdan o\'ting — 1 daqiqa': 'Зарегистрируйтесь — 1 минута',
+  '«1 daqiqada usta bo\'lish» ni bosing: sohangizni va tumaningizni tanlang, telefon raqamingizni tasdiqlang (kod SMS yoki Telegram orqali keladi). Shu zahoti katalogga qo\'shilasiz.':
+    'Нажмите «Стать мастером за 1 минуту»: выберите направление и район, подтвердите номер телефона (код придёт по SMS или в Telegram). Вы сразу попадёте в каталог.',
+  'Keyin, bo\'sh vaqtingizda: tajriba, narx va o\'zingiz haqingizda 2–3 gap. Ishlaringizdan 3–6 ta rasm qo\'shing. «Profilni to\'ldiring» ro\'yxati nima qolganini ko\'rsatadi.':
+    'Потом, когда будет время: опыт, цена и 2–3 предложения о себе. Добавьте 3–6 фото своих работ. Список «Заполните профиль» подскажет, что осталось.',
+  '1 daqiqada usta bo\'lish': 'Стать мастером за 1 минуту',
+  'Boshlang\'ich narx': 'Начальная цена',
+  'O\'zingiz haqingizda (kamida 30 belgi)': 'О себе (не менее 30 символов)',
+  'Kamida 3 ta ish rasmi': 'Не менее 3 фото работ',
+  'Hujjatlar (tasdiqlangan belgisi)': 'Документы (отметка «Проверен»)',
+  'Telegram (buyurtma xabarlari)': 'Telegram (уведомления о заказах)',
+  'Profil to\'liqligi': 'Заполненность профиля',
+  'To\'liq profilli ustani mijozlar ko\'proq tanlaydi.': 'Клиенты чаще выбирают мастеров с заполненным профилем.',
+  'bajarilgan': 'выполнено',
+  'bajarilmagan': 'не выполнено',
+  'Masalan: 5': 'Например: 5',
+  'Bo\'sh qolsa: «Narx kelishiladi»': 'Если пусто: «Цена договорная»'
 };
