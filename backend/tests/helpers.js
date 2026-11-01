@@ -51,6 +51,7 @@ const startApp = async () => {
         TELEGRAM_WEBHOOK_URL: '',
         UPLOAD_DIR: path.join(os.tmpdir(), 'usta24-test', 'uploads'),
         ORDER_PHOTO_DIR: path.join(os.tmpdir(), 'usta24-test', 'orders'),
+        MASTER_DOC_DIR: path.join(os.tmpdir(), 'usta24-test', 'documents'),
     });
 
     const { server, io } = require('../server');

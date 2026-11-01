@@ -2,13 +2,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle,
-  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, Tag
+  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, Tag, BadgeCheck, LifeBuoy, Bug
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
 import OrdersPage from './OrdersPage';
 import AdminPricesTab from './AdminPricesTab';
+import AdminAnalytics from './AdminAnalytics';
+import { VerificationsTab, SupportTab, ErrorsTab } from './AdminMvpTabs';
 import TwoFactorRequired, { isTwoFactorError } from '../components/TwoFactorRequired';
 import { api } from '../lib/api';
 import { formatDate, formatPhone, formatPrice, formatRating, ROLE_LABELS } from '../lib/format';
@@ -18,9 +20,12 @@ import { useToast } from '../context/ToastContext';
 const TABS = [
   { id: 'stats', label: 'Statistika', icon: LayoutDashboard },
   { id: 'users', label: 'Foydalanuvchilar', icon: Users },
+  { id: 'verifications', label: 'Ustalar', icon: BadgeCheck, queue: 'verifications' },
   { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList },
+  { id: 'support', label: 'Murojaatlar', icon: LifeBuoy, queue: 'tickets' },
   { id: 'prices', label: 'Narxlar', icon: Tag },
-  { id: 'audit', label: 'Jurnal', icon: ScrollText }
+  { id: 'audit', label: 'Jurnal', icon: ScrollText },
+  { id: 'errors', label: 'Xatolar', icon: Bug, queue: 'errors' }
 ];
 
 const AUDIT_ACTIONS = {
@@ -33,7 +38,10 @@ const AUDIT_ACTIONS = {
   'price.create': 'Narx qo\'shdi',
   'price.update': 'Narxni o\'zgartirdi',
   'price.delete': 'Narxni o\'chirdi',
-  'price.call_fee': 'Chiqish narxini o\'zgartirdi'
+  'price.call_fee': 'Chiqish narxini o\'zgartirdi',
+  'support.update': 'Murojaatni ko\'rib chiqdi',
+  'master.approve': 'Ustani tasdiqladi',
+  'master.reject': 'Ustani rad etdi'
 };
 
 function AuditTab() {
@@ -153,9 +161,11 @@ function StatsTab() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <AdminAnalytics />
+
+      <div className="grid grid-cols-1 gap-4">
         <div className="card p-5">
-          <h3 className="font-bold text-slate-900 text-sm mb-3">Buyurtmalar holati</h3>
+          <h3 className="font-bold text-slate-900 text-sm mb-3">Buyurtmalar holati (jami)</h3>
           <table className="w-full text-sm">
             <tbody>
               {statusRows.map(([label, value]) => (
@@ -169,28 +179,6 @@ function StatsTab() {
           <p className="text-[11px] text-slate-400 mt-3">
             Yakunlangan buyurtmalar byudjeti: <strong className="text-slate-600">{formatPrice(orders.completed_budget)}</strong>
           </p>
-        </div>
-
-        <div className="card p-5">
-          <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-blue-600" /> Oxirgi 7 kun
-          </h3>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[11px] text-slate-400 text-left">
-                <th className="font-semibold pb-1">Sana</th>
-                <th className="font-semibold pb-1 text-right">Yangi buyurtmalar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.orders_last_7_days.map((row) => (
-                <tr key={row.day} className="border-b border-slate-100 last:border-0">
-                  <td className="py-1.5 text-slate-600">{formatDate(row.day, false)}</td>
-                  <td className="py-1.5 text-right font-bold text-slate-900 tabular-nums">{row.orders}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -416,6 +404,11 @@ function UsersTab() {
 export default function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = TABS.some((t) => t.id === searchParams.get('section')) ? searchParams.get('section') : 'stats';
+  const [queues, setQueues] = useState({});
+  const loadQueues = useCallback(() => {
+    api('/admin/queues').then(({ data }) => setQueues(data)).catch(() => {});
+  }, []);
+  useEffect(loadQueues, [loadQueues, tab]);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
@@ -431,7 +424,7 @@ export default function AdminPage() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 border-b border-slate-200">
-        {TABS.map(({ id, label, icon: Icon }) => (
+        {TABS.map(({ id, label, icon: Icon, queue }) => (
           <button
             key={id}
             onClick={() => setSearchParams(id === 'stats' ? {} : { section: id }, { replace: true })}
@@ -441,6 +434,11 @@ export default function AdminPage() {
             }`}
           >
             <Icon className="w-4 h-4" /> {label}
+            {queue && queues[queue] > 0 && (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-600 text-white text-[11px] font-bold inline-flex items-center justify-center" aria-label={`${queues[queue]} ta yangi`}>
+                {queues[queue]}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -448,6 +446,9 @@ export default function AdminPage() {
       {tab === 'stats' && <StatsTab />}
       {tab === 'users' && <UsersTab />}
       {tab === 'orders' && <OrdersPage embedded />}
+      {tab === 'verifications' && <VerificationsTab onChanged={loadQueues} />}
+      {tab === 'support' && <SupportTab onChanged={loadQueues} />}
+      {tab === 'errors' && <ErrorsTab onChanged={loadQueues} />}
       {tab === 'prices' && <AdminPricesTab />}
       {tab === 'audit' && <AuditTab />}
     </main>

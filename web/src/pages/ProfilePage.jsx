@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle, Heart } from 'lucide-react';
+import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle, Heart, LifeBuoy } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SecuritySettings from '../components/SecuritySettings';
 import TelegramSettings from '../components/TelegramSettings';
@@ -157,7 +157,8 @@ export default function ProfilePage() {
         {[
           ...(user.role === 'client' ? [{ to: '/favorites', icon: Heart, label: 'Sevimli ustalar' }] : []),
           { to: '/prices', icon: Tag, label: 'Taxminiy narxlar' },
-          { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' }
+          { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' },
+          ...(user.role !== 'admin' ? [{ to: '/support', icon: LifeBuoy, label: 'Yordam va murojaatlarim' }] : [])
         ].map(({ to, icon: Icon, label }) => (
           <Link key={to} to={to} className="flex items-center justify-between gap-3 px-5 min-h-14 border-b border-slate-100 hover:bg-slate-50">
             <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><Icon className="w-4 h-4 text-blue-600" /> {label}</span>

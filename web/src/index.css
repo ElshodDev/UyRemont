@@ -156,6 +156,16 @@ html {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ---------- Grafiklar (admin statistikasi): rang ko'rlik uchun tekshirilgan juftlik ---------- */
+:root {
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+}
+.dark {
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+}
+
 /* ---------- Xarita qorong'i rejimda ---------- */
 .dark .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);

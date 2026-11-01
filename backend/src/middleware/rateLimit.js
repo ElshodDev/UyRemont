@@ -25,4 +25,13 @@ const otpLimiter = rateLimit({
     message: limitMessage('Juda ko\'p urinish. 15 daqiqadan so\'ng qayta urinib ko\'ring'),
 });
 
-module.exports = { apiLimiter, otpLimiter };
+// Saytdan xato hisobotlari (bitta qurilma xatolar oqimi bilan jurnalni to'ldirmasligi uchun)
+const clientErrorLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: limitMessage('Juda ko\'p xato hisoboti'),
+});
+
+module.exports = { apiLimiter, otpLimiter, clientErrorLimiter };

@@ -4,7 +4,7 @@ import { FileText, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 // DIQQAT: bu matnlar namuna. Ishga tushirishdan oldin yurist tomonidan tekshirilishi
 // va [kvadrat qavs] ichidagi ma'lumotlar (kompaniya, manzil, server joylashuvi) to'ldirilishi kerak.
-const UPDATED = '2026-yil oktabr';
+const UPDATED = '2026-yil noyabr';
 
 const TERMS = {
   title: 'Foydalanish shartlari',
@@ -57,7 +57,10 @@ const PRIVACY = {
       'Buyurtma ma\'lumotlari: manzil, muammo tavsifi, yozishmalar, sharhlar.',
       'Joylashuv: mijozda — chaqiruv manzilini belgilashda; ustada — faqat ish rejimi yoqilganda yoki faol ish paytida.',
       'Rasmlar: ustaning portfoliosi va mijozning muammo rasmi. Rasmlardagi yashirin ma\'lumotlar (GPS koordinatalar, qurilma modeli) yuklanganda avtomatik o\'chiriladi.',
-      'Telegram orqali kirsangiz yoki botni ulasangiz: Telegram ID, foydalanuvchi nomi va ism — kirish kodi va buyurtma xabarlarini yuborish uchun. Xabarlarni botda /stop bilan o\'chirish yoki profilda Telegram\'ni uzish mumkin.'
+      'Telegram orqali kirsangiz yoki botni ulasangiz: Telegram ID, foydalanuvchi nomi va ism — kirish kodi va buyurtma xabarlarini yuborish uchun. Xabarlarni botda /stop bilan o\'chirish yoki profilda Telegram\'ni uzish mumkin.',
+      'Usta tasdiqlanishi uchun: pasport (yoki ID karta) rasmi, ixtiyoriy selfi va sertifikat — faqat shaxsni tekshirish uchun.',
+      'Murojaatlar: siz yozgan muammo tavsifi va administrator javobi.',
+      'Texnik xatolar: sahifa manzili (so\'rov parametrlarisiz), brauzer turi va xato matni — ilovani tuzatish uchun.'
     ]],
     ['2. Ma\'lumotlar nima uchun ishlatiladi', [
       'Buyurtmani eng yaqin ustaga yetkazish, mijoz va ustani bog\'lash, xizmat sifatini (reyting) ta\'minlash.',
@@ -68,6 +71,7 @@ const PRIVACY = {
       'Telefon raqamingiz ikkinchi tomonga faqat buyurtma qabul qilingandan keyin ko\'rsatiladi.',
       'Ustaning joylashuvi mijozga faqat usta yo\'lda bo\'lgan vaqtda ko\'rsatiladi.',
       'Buyurtmaning muammo rasmi faqat sizga, buyurtmani oladigan ustaga va administratorga ko\'rinadi (ochiq havola orqali emas).',
+      'Ustaning hujjatlari faqat administratorga ko\'rinadi (ochiq havola orqali emas), mijozlarga ko\'rsatilmaydi.',
       'Administratorlar qoidabuzarlik va nizolarni ko\'rib chiqish uchun ma\'lumotlarga kira oladi; ularning amallari jurnalga yoziladi.'
     ]],
     ['4. Saqlash va himoya', [
@@ -76,7 +80,7 @@ const PRIVACY = {
     ]],
     ['5. Sizning huquqlaringiz', [
       'Ma\'lumotlaringizni ko\'rish va tuzatish: Profil sahifasida.',
-      'Hisobni va shaxsiy ma\'lumotlarni o\'chirish: Profil → Xavfsizlik → «Hisobni o\'chirish». Bajarilgan buyurtmalar ikkinchi tomon tarixi uchun ismsiz holda qoladi.',
+      'Hisobni va shaxsiy ma\'lumotlarni o\'chirish: Profil → Xavfsizlik → «Hisobni o\'chirish». Hujjatlar, rasmlar va murojaatlar ham o\'chiriladi; bajarilgan buyurtmalar ikkinchi tomon tarixi uchun ismsiz holda qoladi.',
       'Rozilikni qaytarib olish va savollar: [email], [telefon].'
     ]],
     ['6. Qurilmada saqlanadigan ma\'lumotlar', [

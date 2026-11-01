@@ -10,7 +10,10 @@ const adminRoutes = require('./admin.routes');
 const dispatchRoutes = require('./dispatch.routes');
 const addressesRoutes = require('./addresses.routes');
 const favoritesRoutes = require('./favorites.routes');
+const supportRoutes = require('./support.routes');
 const { getPrices } = require('../controllers/prices.controller');
+const { reportClientError } = require('../controllers/monitoring.controller');
+const { clientErrorLimiter } = require('../middleware/rateLimit');
 
 router.use('/auth', authRoutes);
 router.use('/masters', mastersRoutes);
@@ -20,8 +23,11 @@ router.use('/admin', adminRoutes);
 router.use('/dispatch', dispatchRoutes);
 router.use('/addresses', addressesRoutes);
 router.use('/favorites', favoritesRoutes);
+router.use('/support', supportRoutes);
 // Taxminiy narxlar (ommaviy)
 router.get('/prices', getPrices);
+// Saytdagi xatolar (admin paneldagi "Xatolar" bo'limi uchun)
+router.post('/client-errors', clientErrorLimiter, reportClientError);
 
 // Salomatlikni tekshirish (Health check) - ma'lumotlar bazasi ulanishi bilan
 router.get('/health', async (req, res) => {

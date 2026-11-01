@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import InstallPrompt from './components/InstallPrompt';
 import Onboarding from './components/Onboarding';
+import ErrorBoundary from './components/ErrorBoundary';
+import AccountEvents from './components/AccountEvents';
+import SupportPage from './pages/SupportPage';
 import CalculatorModal from './components/CalculatorModal';
 import RequireAuth from './components/RequireAuth';
 import HomePage from './pages/HomePage';
@@ -24,6 +27,7 @@ import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showCalcModal, setShowCalcModal] = useState(false);
 
   // Kalkulyatorda tanlangan xizmat bo'yicha ustalar ro'yxatini ochish
@@ -38,6 +42,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col pb-bottom-nav">
       <Header onOpenCalculator={() => setShowCalcModal(true)} />
 
+      <ErrorBoundary key={location.pathname}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/call" element={<RequireAuth roles={['client']}><CallMasterPage /></RequireAuth>} />
@@ -46,6 +51,7 @@ export default function App() {
         <Route path="/prices" element={<PricesPage />} />
         <Route path="/u/:slug" element={<PublicMasterPage />} />
         <Route path="/favorites" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
+        <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
@@ -56,11 +62,13 @@ export default function App() {
         <Route path="/admin" element={<RequireAuth roles={['admin']}><AdminPage /></RequireAuth>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </ErrorBoundary>
 
       <Footer />
       <BottomNav />
       <InstallPrompt />
       <Onboarding />
+      <AccountEvents />
 
       {showCalcModal && (
         <CalculatorModal onClose={() => setShowCalcModal(false)} onPickService={handlePickService} />

@@ -8,6 +8,9 @@ import { DispatchProvider } from './context/DispatchContext.jsx'
 import { FavoritesProvider } from './context/FavoritesContext.jsx'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
+import { installErrorReporter } from './lib/errorReporter'
+
+installErrorReporter()
 
 // Ilovani telefonga o'rnatish (PWA) va oflayn sahifa uchun
 if ('serviceWorker' in navigator) {

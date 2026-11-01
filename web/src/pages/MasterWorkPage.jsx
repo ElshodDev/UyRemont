@@ -93,7 +93,9 @@ export default function MasterWorkPage() {
         <div className="bg-white rounded-2xl border border-red-200 p-5">
           <h2 className="font-bold text-slate-900 mb-2">Ishga chiqish uchun:</h2>
           <ul className="space-y-1.5">
-            <Requirement ok={req.verified}>Profil administrator tomonidan tasdiqlangan</Requirement>
+            <Requirement ok={req.verified}>
+              Profil administrator tomonidan tasdiqlangan — <Link to="/master/profile#tasdiqlash" className="underline">hujjat yuklash</Link>
+            </Requirement>
             <Requirement ok={req.has_specializations}>
               Kamida bitta mutaxassislik tanlangan — <Link to="/master/profile" className="underline">profilni tahrirlash</Link>
             </Requirement>

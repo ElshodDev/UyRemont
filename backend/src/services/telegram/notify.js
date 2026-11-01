@@ -246,6 +246,7 @@ const notifyChatMessage = ({ io, orderId, senderId, senderName, text }) => (asyn
 })().catch(logError('chat'));
 
 module.exports = {
+    notifyUser,
     notifyOffer,
     syncOfferMessage,
     notifyOrderEvent,

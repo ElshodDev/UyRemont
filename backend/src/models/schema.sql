@@ -547,3 +547,53 @@ CREATE INDEX IF NOT EXISTS idx_favorite_masters_master ON favorite_masters(maste
 -- Ustaning ommaviy havolasi: usta24.uz/u/<public_slug>
 ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS public_slug VARCHAR(40);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_master_profiles_public_slug ON master_profiles(public_slug);
+
+-- =============================================
+-- 15. MVP: murojaatlar, ustalarni tasdiqlash, xatolar jurnali
+-- =============================================
+
+-- Murojaatlar: "usta kelmadi", "narx oshib ketdi", "mijoz to'lamadi" va h.k.
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    number BIGSERIAL UNIQUE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    category VARCHAR(30) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(12) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'rejected')),
+    admin_reply TEXT,
+    handled_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id, created_at DESC);
+
+-- Ustani tasdiqlash: hujjatlar (faqat administrator ko'radi) va so'rov holati
+CREATE TABLE IF NOT EXISTS master_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind VARCHAR(20) NOT NULL CHECK (kind IN ('passport', 'selfie', 'certificate')),
+    file_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_master_documents_user ON master_documents(user_id);
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS verification_rejected_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS verification_note TEXT;
+
+-- Server va sayt xatolari: bir xil xato bitta qatorda sanaladi (fingerprint)
+CREATE TABLE IF NOT EXISTS error_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    fingerprint CHAR(40) NOT NULL UNIQUE,
+    source VARCHAR(10) NOT NULL CHECK (source IN ('server', 'client')),
+    message TEXT NOT NULL,
+    stack TEXT,
+    url TEXT,
+    user_agent TEXT,
+    count INTEGER NOT NULL DEFAULT 1,
+    first_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_seen TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    resolved BOOLEAN NOT NULL DEFAULT FALSE
+);
+CREATE INDEX IF NOT EXISTS idx_error_logs_last_seen ON error_logs(resolved, last_seen DESC);

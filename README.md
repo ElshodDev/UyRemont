@@ -90,6 +90,12 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/masters/u/:slug`, `GET /api/masters/u/:slug/qr` | Ustaning ommaviy sahifasi va QR kodi |
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
+| `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yuborish, o'z murojaatlari |
+| `GET/POST /api/masters/me/verification`, `POST/GET/DELETE /api/masters/me/documents` | Ustaning tasdiqlash holati, hujjat yuklash va tekshiruvga yuborish |
+| `GET /api/admin/support`, `PUT /api/admin/support/:id` | Murojaatlar navbati, holat va javob |
+| `GET /api/admin/verifications`, `POST /api/admin/verifications/:userId/approve\|reject`, `GET /api/admin/documents/:id` | Ustalarni tekshirish navbati va hujjatlar |
+| `GET /api/admin/analytics?days=`, `GET /api/admin/queues` | MVP ko'rsatkichlari, navbatlardagi ishlar soni |
+| `POST /api/client-errors`, `GET /api/admin/errors`, `POST /api/admin/errors/:id/resolve` | Saytdagi xatolarni yig'ish va ko'rish |
 
 **Buyurtma holatlari:**
 `pending → accepted → in_progress → completed`, `pending/accepted → cancelled`.
@@ -108,7 +114,7 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 - **Buyurtma berish:** aniq ustaga yoki "Usta tanlamasdan buyurtma qoldirish", Telegram orqali ulashish.
 - **Buyurtmalarim:** holat filtrlari, buyurtma sahifasida holat bosqichlari, amallar, real-time chat va sharh qoldirish.
 - **Usta kabineti:** profil yaratish/tahrirlash, mutaxassisliklar, "Band/Bo'sh" holati, portfolio yuklash, ochiq buyurtmalarni olish.
-- **Admin panel** (`/admin`): statistika, foydalanuvchilar (bloklash, rol, tasdiqlash), barcha buyurtmalar.
+- **Admin panel** (`/admin`): MVP ko'rsatkichlari va grafiklar, foydalanuvchilar, ustalarni tekshirish navbati, buyurtmalar, murojaatlar, narxlar, jurnal, xatolar (navbatdagi ishlar soni tab yonida qizil belgida).
 - **Smart smeta kalkulyatori** — tanlangan xizmat bo'yicha ustalar ro'yxatiga o'tadi.
 - **Taxminiy narxlar** (`/prices`): soha bo'yicha ish haqi oralig'i, qidiruv, admin panelda tahrirlanadi.
 - **Muammo rasmi:** mijoz chaqiruvga 3 tagacha rasm qo'shadi (telefonda kichraytiriladi), usta taklifda oldindan ko'radi.
@@ -118,6 +124,8 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 - **Sevimli ustalar:** kartochkadagi yurakcha, `/favorites` sahifasi, bosh sahifada sevimlilar qatori; tezkor chaqiruvda sevimli usta qidiruv radiusida bo'lsa taklif birinchi unga boradi.
 - **"Yana chaqirish":** yakunlangan/bekor qilingan buyurtmadan xizmat turi va manzil bilan qayta chaqirish yoki o'sha ustaga qayta buyurtma.
 - **Ustaning ommaviy havolasi** (`/u/<nom>`): usta uni Telegram'da ulashadi, QR kodni chop etadi; havola nomini o'zgartirish mumkin.
+- **Murojaatlar markazi** (`/support`): kontaktlar, «Murojaatlarim» ro'yxati; buyurtma sahifasida «Muammo haqida xabar berish».
+- **Ustani tasdiqlash:** usta profil sahifasida pasport rasmini yuklab tekshiruvga yuboradi, natija sahifani yangilamasdan keladi.
 
 **Dizayn tizimi:** ranglar `web/tailwind.config.js` da CSS o'zgaruvchilari orqali beriladi va qorong'i rejimda o'zi almashadi (`bg-white`, `text-slate-900` kabi klasslar ikkala rejimda ishlaydi, `dark:` yozish shart emas). Har doim oq/to'q qoladigan joylar uchun `snow` va `ink` ranglari. Umumiy klasslar `web/src/index.css` da: `btn` (+ `btn-primary`, `btn-accent`, `btn-secondary`, `btn-danger`, `btn-success`, `btn-dark`, `btn-soft`, `btn-ghost`, `btn-sm`, `btn-lg`), `icon-btn`, `card`, `card-pad`, `input`, `label`, `hint`, `chip`, `chip-active`, `link`. Tugmalar balandligi kamida 44px.
 
@@ -156,6 +164,23 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 ---
 
+## 🛟 Murojaatlar, ustani tasdiqlash, statistika
+
+**Murojaatlar markazi.** Mijoz yoki usta buyurtma sahifasidagi «Muammo haqida xabar berish» tugmasi yoki `/support` sahifasi orqali yozadi. Turlar rolga qarab: usta kelmadi, narx bo'yicha kelishmovchilik, ish sifati, mijoz to'lamadi, xulq-atvor, ilovadagi muammo, boshqa. Buyurtmaga oid turlar faqat o'sha buyurtma ishtirokchisidan qabul qilinadi. Cheklov: 5 ta ochiq va kuniga 10 ta murojaat. Administrator «Murojaatlar» bo'limida holatni o'zgartiradi va javob yozadi. Javob foydalanuvchiga darhol saytda, ulangan bo'lsa Telegram'da ham keladi. Kontaktlar `SUPPORT_PHONE` va `SUPPORT_TELEGRAM` dan olinadi.
+
+**Ustani tasdiqlash.** Usta profil sahifasining (`/master/profile`) yuqorisidagi tasdiqlash bo'limida pasport yoki ID karta rasmini (majburiy), selfi va sertifikatni (ixtiyoriy) yuklaydi va tekshiruvga yuboradi. Ism, kamida bitta mutaxassislik va pasport talab qilinadi. Hujjatlar ochiq papkada emas: `MASTER_DOC_DIR` da saqlanadi, faqat ustaning o'ziga va administratorga beriladi, EXIF/GPS o'chiriladi, hisob o'chirilganda fayllar ham o'chiriladi. Administrator «Ustalar» bo'limida hujjatlarni ko'rib tasdiqlaydi yoki sabab yozib rad etadi (jurnalga yoziladi). Tasdiqlangan usta darhol tezkor chaqiruv ola boshlaydi.
+
+**MVP ko'rsatkichlari** (Admin → Statistika, 7/14/30/90 kun):
+- usta topilish darajasi (tezkor chaqiruvlarning necha foizida usta topildi; 70% dan past bo'lsa ogohlantirish);
+- usta topilish va yetib kelish vaqtining medianasi;
+- yakunlangan ishlar, aylanma va komissiya, qayta buyurtma bergan mijozlar, bekor qilishlar (kech bekor qilish bilan), ochiq murojaatlar;
+- kunlik buyurtmalar (tezkor/oddiy) va Toshkent vaqti bo'yicha soatlik talab grafiklari, har birida «Jadval» ko'rinishi;
+- sohalar bo'yicha talab va tasdiqlangan ustalar soni (3 tadan kam bo'lsa ⚠).
+
+**Xatolarni kuzatish.** Serverdagi 5xx xatolar va brauzerdagi JavaScript xatolari (`window.onerror`, `unhandledrejection`, React ErrorBoundary) `error_logs` jadvaliga bir xil xatolar birlashtirilib yoziladi (soni va oxirgi vaqti bilan). Admin → «Xatolar» bo'limida ko'riladi va «Hal qilindi» deb belgilanadi; xato qaytalansa yana ochiladi. Sahifa manzili so'rov parametrlarisiz saqlanadi (tokenlar va telefon raqamlar logga tushmaydi).
+
+---
+
 ## 🧪 Avtomatik testlar
 
 Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DATABASE_URL` `backend/.env` dagi `DATABASE_URL` bilan bir xil bo'lsa testlar to'xtaydi).
@@ -165,13 +190,13 @@ Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DA
 createdb uyremont_test
 
 cd backend
-TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 60+ test, ~10 soniya
+TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 75+ test, ~15 soniya
 cd ../web && npm test && npm run build
 ```
 
 Windows PowerShell'da: `$env:TEST_DATABASE_URL="postgresql://..."; npm test`.
 
-- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola.
+- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola, murojaatlar, ustani tasdiqlash va hujjatlar, statistika, xatolar jurnali.
 - **GitHub Actions** (`.github/workflows/ci.yml`): har bir push'da testlar PostgreSQL bilan avtomatik ishlaydi, `npm audit` (yuqori daraja) va sayt build'i tekshiriladi. Natija commit va PR yonida ✅/❌ bo'lib ko'rinadi.
 
 ---
@@ -212,6 +237,8 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 | `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod faqat `OTP_DEV_MODE=true` da ko'rinadi) |
 | `UPLOAD_DIR` | Portfolio rasmlari papkasi (standart: `backend/uploads`) |
 | `ORDER_PHOTO_DIR` | Buyurtma rasmlari, ochiq emas (standart: `backend/private_uploads/orders`) |
+| `MASTER_DOC_DIR` | Ustalarning hujjatlari, ochiq emas (standart: `backend/private_uploads/documents`) |
+| `SUPPORT_PHONE`, `SUPPORT_TELEGRAM` | `/support` sahifasidagi kontaktlar (masalan `+998 71 200 00 00` va `usta24_yordam`) |
 | `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh bo'lsa Telegram o'chiq) |
 | `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
 | `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |

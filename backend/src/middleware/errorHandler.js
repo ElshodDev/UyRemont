@@ -88,6 +88,10 @@ const errorHandler = (err, req, res, next) => {
     }
 
     if (statusCode >= 500 && statusCode !== 503) {
+        // Admin paneldagi "Xatolar" bo'limi uchun (aylanma bog'liqlik bo'lmasligi uchun shu yerda yuklanadi)
+        require('../services/errorLog.service').recordErrorSafely({
+            source: 'server', message: err.message, stack: err.stack, url: req.originalUrl,
+        });
         console.error('❌ Xato:', {
             message: err.message,
             stack: isProduction ? undefined : err.stack,

@@ -14,6 +14,7 @@ const {
     deletePortfolioItem,
     getSpecializations,
 } = require('../controllers/masters.controller');
+const verification = require('../controllers/verification.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { uploadImage } = require('../middleware/upload');
 
@@ -29,6 +30,13 @@ router.get('/u/:slug', getMasterBySlug);
 router.get('/u/:slug/qr', getMasterQr);
 router.get('/me/link', authenticate, authorize('master'), getMyPublicLink);
 router.put('/me/link', authenticate, authorize('master'), updateMyPublicLink);
+
+// Tasdiqlash: hujjatlar va tekshiruvga yuborish
+router.get('/me/verification', authenticate, authorize('master'), verification.getMyVerification);
+router.post('/me/verification', authenticate, authorize('master'), verification.submitVerification);
+router.post('/me/documents', authenticate, authorize('master'), uploadImage.single('image'), verification.uploadDocument);
+router.get('/me/documents/:id', authenticate, authorize('master'), verification.getMyDocument);
+router.delete('/me/documents/:id', authenticate, authorize('master'), verification.deleteDocument);
 
 // Usta o'z profilini yangilashi
 router.put('/profile', authenticate, authorize('master'), updateProfile);
