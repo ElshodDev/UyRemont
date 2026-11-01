@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2, MapPin, Send, ShieldCheck, Sparkles, Wrench, BookOpen
+  ArrowLeft, ArrowRight, Check, CheckCircle2, MapPin, Send, ShieldCheck, Sparkles, Wrench, BookOpen, Gift
 } from 'lucide-react';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { api } from '../lib/api';
@@ -214,6 +214,12 @@ export default function BecomeMasterPage() {
             icon={Sparkles}
             title={t('Narx, tajriba va ish rasmlarini qo\'shing')}
             text={t('To\'liq profilli ustani mijozlar ko\'proq tanlaydi')}
+          />
+          <NextStep
+            to="/taklif"
+            icon={Gift}
+            title={t('Ustalarni taklif qiling')}
+            text={t('Taklif qilgan ustangiz birinchi ishini bajarganda ikkalangizga bonus')}
           />
           <NextStep
             to="/ustalar"

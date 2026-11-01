@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   Calculator, PlusCircle, LogIn, ChevronDown, ClipboardList,
-  User, Wrench, LayoutDashboard, LogOut, Zap, Power, BookOpen, Tag, Sun, Moon, Heart
+  User, Wrench, LayoutDashboard, LogOut, Zap, Power, BookOpen, Tag, Sun, Moon, Heart, Gift
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDispatch } from '../context/DispatchContext';
@@ -142,6 +142,11 @@ export default function Header({ onOpenCalculator }) {
                   <NavLink to="/profile" className={menuLink}>
                     <User className="w-4 h-4 text-slate-400" /> {t('Profil')}
                   </NavLink>
+                  {user.role !== 'admin' && (
+                    <NavLink to="/taklif" className={menuLink}>
+                      <Gift className="w-4 h-4 text-rose-500" /> {t('Do\'stlarni taklif qilish')}
+                    </NavLink>
+                  )}
                   {user.role === 'admin' && (
                     <NavLink to="/admin" className={menuLink}>
                       <LayoutDashboard className="w-4 h-4 text-slate-400" /> {t('Admin panel')}

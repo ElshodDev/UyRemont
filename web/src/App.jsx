@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -16,6 +16,9 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import MasterSetupPage from './pages/MasterSetupPage';
 import BecomeMasterPage from './pages/BecomeMasterPage';
+import InvitePage from './pages/InvitePage';
+import ReferralLandingPage from './pages/ReferralLandingPage';
+import { captureRefFromUrl } from './lib/referral';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 import CallMasterPage from './pages/CallMasterPage';
@@ -34,6 +37,11 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showCalcModal, setShowCalcModal] = useState(false);
+
+  // Istalgan sahifadagi ?ref=KOD (taklif) eslab qolinadi
+  useEffect(() => {
+    captureRefFromUrl();
+  }, []);
 
   // Kalkulyatorda tanlangan xizmat bo'yicha ustalar ro'yxatini ochish
   const handlePickService = (service) => {
@@ -57,6 +65,8 @@ export default function App() {
         <Route path="/u/:slug" element={<PublicMasterPage />} />
         <Route path="/ustalar" element={<MasterGuidePage />} />
         <Route path="/usta-bolish" element={<BecomeMasterPage />} />
+        <Route path="/r/:code" element={<ReferralLandingPage />} />
+        <Route path="/taklif" element={<RequireAuth roles={['client', 'master']}><InvitePage /></RequireAuth>} />
         <Route path="/ustalar/varaqa" element={<RecruitFlyerPage />} />
         <Route path="/master/varaqa" element={<RequireAuth roles={['master']}><MasterFlyerPage /></RequireAuth>} />
         <Route path="/master/hisob" element={<RequireAuth roles={['master']}><MasterBalancePage /></RequireAuth>} />

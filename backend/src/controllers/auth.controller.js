@@ -19,6 +19,7 @@ const { issueOtp } = require('../services/otp.service');
 const totp = require('../utils/totp');
 const { deleteUserPhotos, removeFiles } = require('./photos.controller');
 const { attachLinkToUser } = require('../services/telegram/links');
+const { attachReferrer } = require('../services/referral.service');
 const { deleteUserDocuments, removeDocumentFiles } = require('./verification.controller');
 const { isLanguage, DEFAULT_LANGUAGE } = require('../i18n');
 const { setUserSocketsLanguage } = require('../socket/language');
@@ -208,6 +209,8 @@ const verifyOTP = async (req, res, next) => {
                  RETURNING *`,
                 [uuidv4(), phone, name, TERMS_VERSION, req.headerLanguage || DEFAULT_LANGUAGE]
             );
+            // Taklif havolasi orqali kelgan bo'lsa (/r/KOD) - taklif qilgan odamga bog'lanadi
+            if (req.body.ref) await attachReferrer(client, created.rows[0].id, req.body.ref);
             return { user: created.rows[0], isNewUser: true };
         });
 

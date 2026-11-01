@@ -332,6 +332,15 @@ module.exports = {
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
     'Komissiya hisobi': 'Счёт комиссии',
 
+    // ---------- Referal dasturi ----------
+    'Taklif havolasi topilmadi': 'Пригласительная ссылка не найдена',
+    '🎁 Siz taklif qilgan usta {name:raw} birinchi ishini bajardi. Komissiya hisobingizga {amount} bonus yozildi':
+        '🎁 Приглашённый вами мастер {name} выполнил первую работу. На ваш счёт комиссии начислен бонус {amount}',
+    '🎁 Siz taklif qilgan mijoz {name:raw} birinchi buyurtmasini bajartirdi. Komissiya hisobingizga {amount} bonus yozildi':
+        '🎁 Приглашённый вами клиент {name} получил первый выполненный заказ. На ваш счёт комиссии начислен бонус {amount}',
+    '🎁 Birinchi ishingiz bilan tabriklaymiz! Komissiya hisobingizga {amount} xush kelibsiz bonusi yozildi':
+        '🎁 Поздравляем с первой работой! На ваш счёт комиссии начислен приветственный бонус {amount}',
+
     // ---------- Oddiy buyurtma komissiyasi: yakuniy summa ----------
     'Avval yakunlangan buyurtmalarning summasini kiriting (Buyurtmalarim)': 'Сначала укажите итоговую сумму по завершённым заказам (Мои заказы)',
     'Komissiya qarzingiz {due} — limitdan ({limit}) oshgan. Yangi buyurtma olish uchun avval to\'lang':

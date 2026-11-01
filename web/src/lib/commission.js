@@ -14,7 +14,8 @@ export const PAYMENT_METHOD_LABELS = Object.fromEntries(PAYMENT_METHODS);
 export const ENTRY_LABELS = {
   commission: 'Komissiya',
   payment: 'To\'lov',
-  adjustment: 'Tuzatish'
+  adjustment: 'Tuzatish',
+  bonus: 'Bonus'
 };
 
 /**

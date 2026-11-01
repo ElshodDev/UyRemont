@@ -11,6 +11,7 @@ const dispatchRoutes = require('./dispatch.routes');
 const addressesRoutes = require('./addresses.routes');
 const favoritesRoutes = require('./favorites.routes');
 const supportRoutes = require('./support.routes');
+const referralsRoutes = require('./referrals.routes');
 const { getPrices } = require('../controllers/prices.controller');
 const { reportClientError } = require('../controllers/monitoring.controller');
 const { clientErrorLimiter } = require('../middleware/rateLimit');
@@ -25,6 +26,7 @@ router.use('/dispatch', dispatchRoutes);
 router.use('/addresses', addressesRoutes);
 router.use('/favorites', favoritesRoutes);
 router.use('/support', supportRoutes);
+router.use('/referrals', referralsRoutes);
 // Varaqalar uchun QR kod (usta jalb qilish)
 router.get('/qr/:page', getPageQr);
 // Taxminiy narxlar (ommaviy)

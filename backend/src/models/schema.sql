@@ -756,3 +756,31 @@ CREATE INDEX IF NOT EXISTS idx_user_warnings_user ON user_warnings(user_id, crea
 -- =============================================
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS price_due_at TIMESTAMP WITH TIME ZONE;
 CREATE INDEX IF NOT EXISTS idx_orders_price_due ON orders(master_id, price_due_at) WHERE price_due_at IS NOT NULL;
+
+-- =============================================
+-- 21. Referal dasturi: shaxsiy havola (/r/KOD), kim taklif qilgani va bonuslar.
+-- Taklif qilingan odam birinchi marta yakuniy summasi REFERRAL_MIN_LABOR dan kam bo'lmagan ishni bajarganda
+-- (usta) yoki bajartirganda (mijoz) ustalarning komissiya hisobiga bonus yoziladi ('bonus' - qarzni kamaytiradi)
+-- =============================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR(12);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by UUID REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_at TIMESTAMP WITH TIME ZONE;
+CREATE INDEX IF NOT EXISTS idx_users_referred_by ON users(referred_by) WHERE referred_by IS NOT NULL;
+
+ALTER TABLE master_ledger DROP CONSTRAINT IF EXISTS master_ledger_kind_check;
+ALTER TABLE master_ledger ADD CONSTRAINT master_ledger_kind_check
+    CHECK (kind IN ('commission', 'payment', 'adjustment', 'bonus'));
+
+CREATE TABLE IF NOT EXISTS referral_rewards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    referrer_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    referee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event VARCHAR(20) NOT NULL CHECK (event IN ('master_first_job', 'client_first_order')),
+    order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    referrer_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    referee_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (referee_id, event)
+);
+CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer ON referral_rewards(referrer_id, created_at DESC);
