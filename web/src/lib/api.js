@@ -2,6 +2,7 @@
 // UyRemont - Backend API bilan ishlash
 // =============================================
 
+import { getLang, t } from '../i18n';
 // Production da VITE_BACKEND_URL=https://api.uyremont.uz, development da Vite proxy
 export const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 const API_URL = `${BACKEND_URL}/api`;
@@ -58,6 +59,8 @@ export async function api(path, { method = 'GET', body, params, signal, token: t
   const token = tokenOverride || tokenStorage.get();
   const isFormData = body instanceof FormData;
   const headers = {
+    // Server xabarlari (xatolar, tasdiqlar) shu tilda qaytadi
+    'Accept-Language': getLang(),
     ...(token && { Authorization: `Bearer ${token}` }),
     ...(body !== undefined && !isFormData && { 'Content-Type': 'application/json' })
   };
@@ -72,7 +75,7 @@ export async function api(path, { method = 'GET', body, params, signal, token: t
     });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    throw new ApiError('Server bilan bog\'lanib bo\'lmadi. Internet yoki backend ishlayotganini tekshiring.', 0);
+    throw new ApiError(t('Server bilan bog\'lanib bo\'lmadi. Internet yoki backend ishlayotganini tekshiring.'), 0);
   }
 
   let data = null;
@@ -112,6 +115,6 @@ export async function fetchObjectUrl(path, { signal } = {}) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     signal
   });
-  if (!response.ok) throw new ApiError('Faylni yuklab bo\'lmadi', response.status);
+  if (!response.ok) throw new ApiError(t('Faylni yuklab bo\'lmadi'), response.status);
   return URL.createObjectURL(await response.blob());
 }
