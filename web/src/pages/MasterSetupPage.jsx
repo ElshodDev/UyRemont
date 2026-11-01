@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Wrench, ImagePlus, Trash2, ShieldCheck, Star } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PublicLinkCard from '../components/PublicLinkCard';
+import VerificationCard from '../components/VerificationCard';
 import Spinner from '../components/Spinner';
 import { api, assetUrl } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -244,6 +245,7 @@ export default function MasterSetupPage() {
         )}
       </div>
 
+      {isMaster && <VerificationCard />}
       {isMaster && <PublicLinkCard />}
 
       <form onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs">

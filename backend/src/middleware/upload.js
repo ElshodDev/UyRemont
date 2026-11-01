@@ -14,6 +14,10 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const ORDER_PHOTO_DIR = process.env.ORDER_PHOTO_DIR || path.join(__dirname, '..', '..', 'private_uploads', 'orders');
 fs.mkdirSync(ORDER_PHOTO_DIR, { recursive: true });
 
+// Ustaning tasdiqlash hujjatlari (pasport, selfi) - faqat administrator ko'radi
+const MASTER_DOC_DIR = process.env.MASTER_DOC_DIR || path.join(__dirname, '..', '..', 'private_uploads', 'documents');
+fs.mkdirSync(MASTER_DOC_DIR, { recursive: true });
+
 // Birinchi bosqich: brauzer aytgan turi. Haqiqiy tarkib keyin sharp bilan tekshiriladi
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -31,4 +35,4 @@ const uploadImage = multer({
     },
 });
 
-module.exports = { uploadImage, UPLOAD_DIR, ORDER_PHOTO_DIR, MAX_UPLOAD_BYTES };
+module.exports = { uploadImage, UPLOAD_DIR, ORDER_PHOTO_DIR, MASTER_DOC_DIR, MAX_UPLOAD_BYTES };

@@ -19,6 +19,7 @@ const { issueOtp } = require('../services/otp.service');
 const totp = require('../utils/totp');
 const { deleteUserPhotos, removeFiles } = require('./photos.controller');
 const { attachLinkToUser } = require('../services/telegram/links');
+const { deleteUserDocuments, removeDocumentFiles } = require('./verification.controller');
 
 const OTP_MAX_ATTEMPTS = 5;            // Bitta kod uchun maksimal urinishlar
 const TWO_FACTOR_TTL = '5m';           // 2FA bosqichi uchun vaqtinchalik token muddati
@@ -518,7 +519,7 @@ const deleteMe = async (req, res, next) => {
             throw new HttpError(409, 'Sizda faol buyurtmalar bor. Avval ularni yakunlang yoki bekor qiling');
         }
 
-        const { portfolioFiles, orderPhotoFiles } = await withTransaction(async (client) => {
+        const { portfolioFiles, orderPhotoFiles, documentFiles } = await withTransaction(async (client) => {
             const portfolio = await client.query(
                 `SELECT p.image_url FROM portfolio_items p
                  JOIN master_profiles mp ON mp.id = p.master_id WHERE mp.user_id = $1`,
@@ -527,6 +528,8 @@ const deleteMe = async (req, res, next) => {
             const phone = (await client.query('SELECT phone FROM users WHERE id = $1', [userId])).rows[0].phone;
 
             const photos = await deleteUserPhotos(client, userId);
+            const documents = await deleteUserDocuments(client, userId);
+            await client.query('DELETE FROM support_tickets WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM master_profiles WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM messages WHERE sender_id = $1', [userId]);
             await client.query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
@@ -544,7 +547,7 @@ const deleteMe = async (req, res, next) => {
                  WHERE id = $1`,
                 [userId, `x${crypto.randomBytes(7).toString('hex')}`]
             );
-            return { portfolioFiles: portfolio.rows.map((row) => row.image_url), orderPhotoFiles: photos };
+            return { portfolioFiles: portfolio.rows.map((row) => row.image_url), orderPhotoFiles: photos, documentFiles: documents };
         });
 
         // Serverga yuklangan portfolio va buyurtma rasmlarini o'chirish
@@ -552,6 +555,7 @@ const deleteMe = async (req, res, next) => {
             .filter((url) => url.startsWith('/uploads/'))
             .map((url) => fs.unlink(path.join(UPLOAD_DIR, path.basename(url))).catch(() => {})));
         await removeFiles(orderPhotoFiles);
+        await removeDocumentFiles(documentFiles);
         await disconnectUserSockets(req, userId);
 
         res.status(200).json({ success: true, message: 'Hisobingiz va shaxsiy ma\'lumotlaringiz o\'chirildi' });

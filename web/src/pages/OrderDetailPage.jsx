@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera, Zap, RotateCcw } from 'lucide-react';
+import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera, Zap, RotateCcw, LifeBuoy } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
@@ -8,6 +8,7 @@ import ReviewForm from '../components/ReviewForm';
 import InstantOrderPanel from '../components/InstantOrderPanel';
 import OrderPhotos from '../components/OrderPhotos';
 import FavoriteButton from '../components/FavoriteButton';
+import SupportDialog from '../components/SupportDialog';
 import { useOrderModal } from '../components/useOrderModal';
 import { useSpecializations } from '../lib/useSpecializations';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -57,6 +58,7 @@ export default function OrderDetailPage() {
   const [pendingAction, setPendingAction] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [repeating, setRepeating] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const { specializations } = useSpecializations();
   const orderModal = useOrderModal({ specializations });
 
@@ -254,6 +256,12 @@ export default function OrderDetailPage() {
 
           {canReview && <ReviewForm orderId={order.id} onCreated={load} />}
 
+          {user.role !== 'admin' && (order.client_id === user.id || order.master_id === user.id) && (
+            <button type="button" onClick={() => setReporting(true)} className="btn btn-ghost w-full text-slate-500">
+              <LifeBuoy className="w-4 h-4" /> Muammo haqida xabar berish
+            </button>
+          )}
+
           {order.review_rating && (
             <div className="card-pad">
               <h3 className="font-bold text-slate-900 text-sm mb-2">Mijoz sharhi</h3>
@@ -280,6 +288,7 @@ export default function OrderDetailPage() {
       </div>
 
       {orderModal.element}
+      {reporting && <SupportDialog orderId={order.id} orderTitle={order.title} onClose={() => setReporting(false)} />}
 
       {pendingAction && (
         <ConfirmDialog
