@@ -5,7 +5,9 @@ import EmptyState, { ErrorState } from '../components/EmptyState';
 import { api } from '../lib/api';
 import { formatPrice, formatPriceRange, PRICE_UNITS } from '../lib/format';
 import { useCallMaster } from '../lib/useCallMaster';
+import { useSpecializations } from '../lib/useSpecializations';
 import { mainVerticals } from '../data/catalog';
+import { t, specName } from '../i18n';
 
 function PriceSkeleton() {
   return (
@@ -28,6 +30,10 @@ export default function PricesPage() {
   const [vertical, setVertical] = useState('all');
   const [search, setSearch] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const { specializations } = useSpecializations();
+
+  // Narxlar API si faqat name_uz beradi: ruscha nom mutaxassisliklar katalogidan
+  const groupName = (group) => specName(specializations.find((s) => s.id === group.id) || group);
 
   useEffect(() => {
     setStatus('loading');
@@ -56,26 +62,26 @@ export default function PricesPage() {
     return groups
       .filter((g) => vertical === 'all' || g.vertical === vertical)
       .map((g) => {
-        if (!q || g.name_uz.toLowerCase().includes(q)) return g;
+        if (!q || g.name_uz.toLowerCase().includes(q) || groupName(g).toLowerCase().includes(q)) return g;
         return { ...g, items: g.items.filter((item) => item.name.toLowerCase().includes(q)) };
       })
       .filter((g) => g.items.length > 0);
-  }, [groups, vertical, search]);
+  }, [groups, vertical, search, specializations]);
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
       <div className="flex items-center gap-3 mb-5">
         <div className="p-2.5 rounded-2xl bg-blue-600 text-white"><Tag className="w-6 h-6" /></div>
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Taxminiy narxlar</h1>
-          <p className="text-xs sm:text-sm text-slate-500">Toshkent bo'yicha o'rtacha usta ish haqi</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">{t('Taxminiy narxlar')}</h1>
+          <p className="text-xs sm:text-sm text-slate-500">{t('Toshkent bo\'yicha o\'rtacha usta ish haqi')}</p>
         </div>
       </div>
 
       <div className="card p-4 mb-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600">
-        <p className="flex gap-2"><Info className="w-4 h-4 text-blue-600 flex-shrink-0" /> Aniq narx usta ishni ko'rgach kelishiladi. Bu narxlar mo'ljal uchun.</p>
-        <p className="flex gap-2"><Package className="w-4 h-4 text-blue-600 flex-shrink-0" /> Materiallar (kran, kafel, bo'yoq) narxga kirmaydi.</p>
-        <p className="flex gap-2"><Truck className="w-4 h-4 text-blue-600 flex-shrink-0" /> Chiqish narxi — ustaning kelish haqi, ish bajarilsa umumiy summaga kiradi.</p>
+        <p className="flex gap-2"><Info className="w-4 h-4 text-blue-600 flex-shrink-0" /> {t('Aniq narx usta ishni ko\'rgach kelishiladi. Bu narxlar mo\'ljal uchun.')}</p>
+        <p className="flex gap-2"><Package className="w-4 h-4 text-blue-600 flex-shrink-0" /> {t('Materiallar (kran, kafel, bo\'yoq) narxga kirmaydi.')}</p>
+        <p className="flex gap-2"><Truck className="w-4 h-4 text-blue-600 flex-shrink-0" /> {t('Chiqish narxi — ustaning kelish haqi, ish bajarilsa umumiy summaga kiradi.')}</p>
       </div>
 
       <div className="sticky top-16 md:top-20 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 py-2 bg-slate-50/95 backdrop-blur space-y-2 mb-3">
@@ -84,8 +90,8 @@ export default function PricesPage() {
           <input
             type="search"
             className="input pl-9 bg-white"
-            placeholder="Ish nomini qidiring, masalan: kran"
-            aria-label="Ish nomini qidirish"
+            placeholder={t('Ish nomini qidiring, masalan: kran')}
+            aria-label={t('Ish nomini qidirish')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -99,7 +105,7 @@ export default function PricesPage() {
               aria-pressed={vertical === v.id}
               className={`chip ${vertical === v.id ? 'chip-active' : 'bg-white border border-slate-200'}`}
             >
-              <span aria-hidden="true">{v.icon}</span> {v.name}
+              <span aria-hidden="true">{v.icon}</span> {t(v.name)}
             </button>
           ))}
         </div>
@@ -112,7 +118,7 @@ export default function PricesPage() {
       )}
       {status === 'error' && <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />}
       {status === 'ready' && visible.length === 0 && (
-        <EmptyState title="Hech narsa topilmadi" description="Boshqa so'z bilan qidirib ko'ring yoki usta chaqirib, narxni kelishib oling." />
+        <EmptyState title={t('Hech narsa topilmadi')} description={t('Boshqa so\'z bilan qidirib ko\'ring yoki usta chaqirib, narxni kelishib oling.')} />
       )}
 
       {status === 'ready' && visible.length > 0 && (
@@ -122,10 +128,10 @@ export default function PricesPage() {
               <div className="p-4 flex items-center justify-between gap-3 border-b border-slate-100">
                 <h2 id={`narx-title-${group.slug}`} className="font-bold text-slate-900 flex items-center gap-2 min-w-0">
                   <span className="text-xl" aria-hidden="true">{group.icon}</span>
-                  <span className="truncate">{group.name_uz}</span>
+                  <span className="truncate">{groupName(group)}</span>
                 </h2>
                 <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
-                  Chiqish: <span className="text-slate-800">{formatPrice(group.call_fee)}</span>
+                  {t('Chiqish:')} <span className="text-slate-800">{formatPrice(group.call_fee)}</span>
                 </span>
               </div>
               <ul className="divide-y divide-slate-100">
@@ -134,7 +140,7 @@ export default function PricesPage() {
                     <span className="text-slate-700">{item.name}</span>
                     <span className="text-right whitespace-nowrap">
                       <span className="font-bold text-slate-900 tabular-nums">{formatPriceRange(item.price_min, item.price_max)}</span>
-                      {PRICE_UNITS[item.unit] && <span className="block text-[11px] text-slate-400">{PRICE_UNITS[item.unit]} uchun</span>}
+                      {PRICE_UNITS[item.unit] && <span className="block text-[11px] text-slate-400">{t('{unit} uchun', { unit: t(PRICE_UNITS[item.unit]) })}</span>}
                     </span>
                   </li>
                 ))}
@@ -145,7 +151,7 @@ export default function PricesPage() {
                   onClick={() => callMaster({ vertical: group.vertical, spec: group.slug })}
                   className="btn btn-accent w-full"
                 >
-                  <Zap className="w-4 h-4" /> {group.name_uz} chaqirish
+                  <Zap className="w-4 h-4" /> {t('{name} chaqirish', { name: groupName(group) })}
                 </button>
               </div>
             </section>

@@ -18,7 +18,10 @@ import { api } from '../lib/api';
 import { formatDate, formatPhone, formatPrice, getOrderActions } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { orderPlace, orderSpecName } from '../components/OrderListItem';
+import { t } from '../i18n';
 
+// Yorliqlar o'zbekcha (kalit), ko'rsatishda t(step.label)
 const STEPS = [
   { id: 'pending', label: 'Yuborildi' },
   { id: 'accepted', label: 'Qabul qilindi' },
@@ -41,7 +44,7 @@ function ContactCard({ label, name, phone }) {
         {phone && <span className="text-xs text-slate-600">{formatPhone(phone)}</span>}
       </div>
       {phone && (
-        <a href={`tel:${phone}`} className="w-11 h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center justify-center flex-shrink-0" aria-label={`${name || ''} raqamiga qo'ng'iroq qilish`}>
+        <a href={`tel:${phone}`} className="w-11 h-11 rounded-xl bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center justify-center flex-shrink-0" aria-label={t('{name} raqamiga qo\'ng\'iroq qilish', { name: name || '' })}>
           <Phone className="w-4 h-4" />
         </a>
       )}
@@ -81,7 +84,7 @@ export default function OrderDetailPage() {
     setUpdating(true);
     try {
       await api(`/orders/${id}/status`, { method: 'PUT', body: { status: action.status } });
-      toast.success('Buyurtma holati yangilandi');
+      toast.success(t('Buyurtma holati yangilandi'));
       setPendingAction(null);
       await load();
     } catch (err) {
@@ -111,7 +114,7 @@ export default function OrderDetailPage() {
       const { data } = await api(`/masters/${order.master_id}`);
       orderModal.open(data, initial);
     } catch {
-      toast.error('Usta hozir mavjud emas. Ochiq buyurtma qoldirishingiz mumkin');
+      toast.error(t('Usta hozir mavjud emas. Ochiq buyurtma qoldirishingiz mumkin'));
       orderModal.open(null, initial);
     } finally {
       setRepeating(false);
@@ -138,7 +141,7 @@ export default function OrderDetailPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
       <Link to="/orders" className="inline-flex items-center gap-1 min-h-11 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-2">
-        <ArrowLeft className="w-4 h-4" /> Buyurtmalar
+        <ArrowLeft className="w-4 h-4" /> {t('Buyurtmalar')}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -150,7 +153,7 @@ export default function OrderDetailPage() {
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
                 {order.specialization_name && (
-                  <span className="text-xs font-semibold text-blue-600">{order.specialization_icon} {order.specialization_name}</span>
+                  <span className="text-xs font-semibold text-blue-600">{order.specialization_icon} {orderSpecName(order, specializations)}</span>
                 )}
                 <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 break-words">{order.title}</h1>
               </div>
@@ -160,11 +163,11 @@ export default function OrderDetailPage() {
             {order.description && <p className="text-sm text-slate-600 whitespace-pre-wrap mb-4">{order.description}</p>}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4 text-slate-400" />{[order.district, order.address].filter(Boolean).join(', ')}</div>
+              <div className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4 text-slate-400" />{orderPlace(order)}</div>
               <div className="flex items-center gap-2 text-slate-600"><Wallet className="w-4 h-4 text-slate-400" />{formatPrice(order.budget)}</div>
-              <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-slate-400" />Yaratilgan: {formatDate(order.created_at)}</div>
+              <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-slate-400" />{t('Yaratilgan: {date}', { date: formatDate(order.created_at) })}</div>
               {order.scheduled_at && (
-                <div className="flex items-center gap-2 text-slate-600"><Clock className="w-4 h-4 text-slate-400" />Qulay vaqt: {formatDate(order.scheduled_at)}</div>
+                <div className="flex items-center gap-2 text-slate-600"><Clock className="w-4 h-4 text-slate-400" />{t('Qulay vaqt: {date}', { date: formatDate(order.scheduled_at) })}</div>
               )}
             </div>
 
@@ -182,7 +185,7 @@ export default function OrderDetailPage() {
                         {done ? <Check className="w-4 h-4" /> : i + 1}
                       </div>
                       <span className={`text-[10px] sm:text-[11px] mt-1 font-semibold ${i <= stepIndex ? 'text-slate-800' : 'text-slate-400'}`}>
-                        {step.label}
+                        {t(step.label)}
                       </span>
                     </div>
                     {i < STEPS.length - 1 && (
@@ -193,7 +196,7 @@ export default function OrderDetailPage() {
                 })}
               </div>
             ) : (
-              <p className="mt-5 p-3 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium">Bu buyurtma bekor qilingan.</p>
+              <p className="mt-5 p-3 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium">{t('Bu buyurtma bekor qilingan.')}</p>
             )}
 
             {actions.length > 0 && (
@@ -205,7 +208,7 @@ export default function OrderDetailPage() {
                     onClick={() => (action.confirm ? setPendingAction(action) : changeStatus(action))}
                     className={`btn font-bold ${TONES[action.tone]}`}
                   >
-                    {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : action.label}
+                    {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : t(action.label)}
                   </button>
                 ))}
               </div>
@@ -216,7 +219,7 @@ export default function OrderDetailPage() {
           {order.photos?.length > 0 && (
             <div className="card-pad">
               <h3 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
-                <Camera className="w-4 h-4 text-blue-600" /> Muammo rasmlari
+                <Camera className="w-4 h-4 text-blue-600" /> {t('Muammo rasmlari')}
               </h3>
               <OrderPhotos orderId={order.id} photoIds={order.photos} thumbClassName="w-24 h-24 sm:w-28 sm:h-28" />
             </div>
@@ -224,31 +227,31 @@ export default function OrderDetailPage() {
 
           {(!isInstant || order.master_id) && (
           <div className="card-pad space-y-2">
-            <h3 className="font-bold text-slate-900 text-sm mb-1">Ishtirokchilar</h3>
-            <ContactCard label="Mijoz" name={order.client_name} phone={order.client_phone} />
-            <ContactCard label="Usta" name={order.master_name || 'Hali biriktirilmagan'} phone={order.master_phone} />
+            <h3 className="font-bold text-slate-900 text-sm mb-1">{t('Ishtirokchilar')}</h3>
+            <ContactCard label={t('Mijoz')} name={order.client_name} phone={order.client_phone} />
+            <ContactCard label={t('Usta')} name={order.master_name || t('Hali biriktirilmagan')} phone={order.master_phone} />
             {!order.master_phone && isParticipant && order.master_id && (
-              <p className="text-[11px] text-slate-400">Telefon raqamlar usta buyurtmani qabul qilgandan keyin ko'rinadi.</p>
+              <p className="text-[11px] text-slate-400">{t('Telefon raqamlar usta buyurtmani qabul qilgandan keyin ko\'rinadi.')}</p>
             )}
           </div>
           )}
 
           {canRepeat && (
             <div className="card-pad space-y-2">
-              <h3 className="font-bold text-slate-900 text-sm">Yana kerak bo'lsa</h3>
+              <h3 className="font-bold text-slate-900 text-sm">{t('Yana kerak bo\'lsa')}</h3>
               {isInstant ? (
                 <Link to={`/call?repeat=${order.id}`} className="btn btn-accent w-full">
-                  <Zap className="w-4 h-4" /> Yana chaqirish
+                  <Zap className="w-4 h-4" /> {t('Yana chaqirish')}
                 </Link>
               ) : (
                 <button type="button" onClick={repeatCatalogOrder} disabled={repeating} className="btn btn-primary w-full">
-                  {repeating ? <Spinner className="w-4 h-4 text-white" /> : <><RotateCcw className="w-4 h-4" /> {order.master_id ? 'Shu ustaga yana buyurtma berish' : 'Yana buyurtma berish'}</>}
+                  {repeating ? <Spinner className="w-4 h-4 text-white" /> : <><RotateCcw className="w-4 h-4" /> {order.master_id ? t('Shu ustaga yana buyurtma berish') : t('Yana buyurtma berish')}</>}
                 </button>
               )}
               {order.master_id && (
                 <>
                   <FavoriteButton master={{ id: order.master_id, name: order.master_name }} variant="full" className="w-full" />
-                  <p className="hint">Sevimli ustangiz yaqin atrofda bo'sh bo'lsa, tezkor chaqiruv birinchi unga yuboriladi.</p>
+                  <p className="hint">{t('Sevimli ustangiz yaqin atrofda bo\'sh bo\'lsa, tezkor chaqiruv birinchi unga yuboriladi.')}</p>
                 </>
               )}
             </div>
@@ -258,13 +261,13 @@ export default function OrderDetailPage() {
 
           {user.role !== 'admin' && (order.client_id === user.id || order.master_id === user.id) && (
             <button type="button" onClick={() => setReporting(true)} className="btn btn-ghost w-full text-slate-500">
-              <LifeBuoy className="w-4 h-4" /> Muammo haqida xabar berish
+              <LifeBuoy className="w-4 h-4" /> {t('Muammo haqida xabar berish')}
             </button>
           )}
 
           {order.review_rating && (
             <div className="card-pad">
-              <h3 className="font-bold text-slate-900 text-sm mb-2">Mijoz sharhi</h3>
+              <h3 className="font-bold text-slate-900 text-sm mb-2">{t('Mijoz sharhi')}</h3>
               <StarRating value={order.review_rating} />
               {order.review_comment && <p className="text-sm text-slate-600 mt-2">{order.review_comment}</p>}
             </div>
@@ -281,7 +284,7 @@ export default function OrderDetailPage() {
             />
           ) : (
             <div className="card p-6 text-center text-sm text-slate-500">
-              {isInstant ? 'Usta topilgach u bilan shu yerda yozishishingiz mumkin.' : 'Chat buyurtmani qabul qilgandan keyin ochiladi.'}
+              {isInstant ? t('Usta topilgach u bilan shu yerda yozishishingiz mumkin.') : t('Chat buyurtmani qabul qilgandan keyin ochiladi.')}
             </div>
           )}
         </div>
@@ -292,11 +295,11 @@ export default function OrderDetailPage() {
 
       {pendingAction && (
         <ConfirmDialog
-          title={pendingAction.status === 'completed' ? 'Ish yakunlandimi?' : 'Buyurtmani bekor qilasizmi?'}
+          title={pendingAction.status === 'completed' ? t('Ish yakunlandimi?') : t('Buyurtmani bekor qilasizmi?')}
           description={pendingAction.status === 'completed'
-            ? 'Buyurtma yakunlangan deb belgilanadi va mijoz sharh qoldira oladi.'
-            : 'Bu amalni qaytarib bo\'lmaydi.'}
-          confirmLabel={pendingAction.label}
+            ? t('Buyurtma yakunlangan deb belgilanadi va mijoz sharh qoldira oladi.')
+            : t('Bu amalni qaytarib bo\'lmaydi.')}
+          confirmLabel={t(pendingAction.label)}
           tone={pendingAction.tone === 'success' ? 'success' : 'danger'}
           loading={updating}
           onConfirm={() => changeStatus(pendingAction)}

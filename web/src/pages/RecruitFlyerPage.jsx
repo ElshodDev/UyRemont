@@ -8,6 +8,7 @@ import { api, BACKEND_URL } from '../lib/api';
 import { shortUrl } from '../lib/print';
 import { useSpecializations } from '../lib/useSpecializations';
 import { mainVerticals } from '../data/catalog';
+import { t, specName } from '../i18n';
 
 const STRIPS = 7;
 
@@ -34,38 +35,38 @@ export default function RecruitFlyerPage() {
   const qrSrc = `${BACKEND_URL}/api/qr/ustalar?format=svg`;
   const link = shortUrl(window.location.origin, '/ustalar');
   const groups = mainVerticals
-    .map((v) => ({ name: v.name, items: specializations.filter((s) => s.vertical === v.id).map((s) => s.name_uz) }))
+    .map((v) => ({ name: t(v.name), items: specializations.filter((s) => s.vertical === v.id).map((s) => specName(s)) }))
     .filter((g) => g.items.length > 0);
 
   const benefits = [
-    'Yaqin atrofingizdagi buyurtmalar telefoningizga keladi',
-    'Xohlagan paytda ishlaysiz, xohlagan paytda dam olasiz',
-    `Ro'yxatdan o'tish bepul, komissiya faqat bajarilgan ishdan (${config.commission_percent}%)`,
-    'Shaxsiy sahifa, sharhlar va QR kod — mijozlar sizni o\'zi topadi'
+    t('Yaqin atrofingizdagi buyurtmalar telefoningizga keladi'),
+    t('Xohlagan paytda ishlaysiz, xohlagan paytda dam olasiz'),
+    t('Ro\'yxatdan o\'tish bepul, komissiya faqat bajarilgan ishdan ({percent}%)', { percent: config.commission_percent }),
+    t('Shaxsiy sahifa, sharhlar va QR kod — mijozlar sizni o\'zi topadi')
   ];
   const steps = [
-    { icon: Smartphone, title: 'Skanerlang', text: 'Telefon kamerasini QR kodga qarating' },
-    { icon: ClipboardList, title: 'Profil to\'ldiring', text: 'Ism, soha, tuman, ishlaringiz rasmlari' },
-    { icon: ShieldCheck, title: 'Tasdiqdan o\'ting', text: 'Pasport rasmini yuklang — buyurtmalar keladi' }
+    { icon: Smartphone, title: t('Skanerlang'), text: t('Telefon kamerasini QR kodga qarating') },
+    { icon: ClipboardList, title: t('Profil to\'ldiring'), text: t('Ism, soha, tuman, ishlaringiz rasmlari') },
+    { icon: ShieldCheck, title: t('Tasdiqdan o\'ting'), text: t('Pasport rasmini yuklang — buyurtmalar keladi') }
   ];
   const contactLine = [contacts?.phone, contacts?.telegram && `Telegram: @${contacts.telegram}`].filter(Boolean).join('   ·   ');
 
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full flex-1 print:p-0 print:max-w-none">
       <FlyerToolbar
-        title="Usta jalb qilish varaqasi"
-        description="A4 qog'ozga chop eting va bozorlar, qurilish mollari do'konlari, avtoservislar yoniga yopishtiring. Pastki qirqimlarni usta yirtib oladi."
+        title={t('Usta jalb qilish varaqasi')}
+        description={t('A4 qog\'ozga chop eting va bozorlar, qurilish mollari do\'konlari, avtoservislar yoniga yopishtiring. Pastki qirqimlarni usta yirtib oladi.')}
       />
 
-      <PrintSheet label="Usta jalb qilish varaqasi">
+      <PrintSheet label={t('Usta jalb qilish varaqasi')}>
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ background: FLYER.gradient, color: '#ffffff', padding: '9mm 14mm 8mm' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <FlyerLogo size={13} light />
               <span style={{ fontSize: '11pt', fontWeight: 700, opacity: 0.85 }}>{shortUrl(window.location.origin)}</span>
             </div>
-            <p style={{ marginTop: '6mm', fontSize: '38pt', fontWeight: 900, lineHeight: 1.02, letterSpacing: '-0.02em' }}>Ustamisiz?</p>
-            <p style={{ marginTop: '2mm', fontSize: '24pt', fontWeight: 800, lineHeight: 1.15 }}>Mijozlar sizni o'zi topadi</p>
+            <p style={{ marginTop: '6mm', fontSize: '38pt', fontWeight: 900, lineHeight: 1.02, letterSpacing: '-0.02em' }}>{t('Ustamisiz?')}</p>
+            <p style={{ marginTop: '2mm', fontSize: '24pt', fontWeight: 800, lineHeight: 1.15 }}>{t('Mijozlar sizni o\'zi topadi')}</p>
           </div>
 
           <div style={{ flex: 1, minHeight: 0, padding: '7mm 14mm 0', display: 'flex', flexDirection: 'column', gap: '5mm' }}>
@@ -79,8 +80,8 @@ export default function RecruitFlyerPage() {
                 ))}
               </ul>
               <div style={{ width: '58mm', flexShrink: 0, textAlign: 'center', border: `0.6mm solid ${FLYER.blue}`, borderRadius: '5mm', padding: '3.5mm' }}>
-                <img src={qrSrc} alt={`QR kod: ${link}`} style={{ width: '48mm', height: '48mm', display: 'block', margin: '0 auto' }} />
-                <p style={{ marginTop: '2mm', fontSize: '11pt', fontWeight: 800, color: FLYER.blue }}>Skanerlang</p>
+                <img src={qrSrc} alt={t('QR kod: {link}', { link })} style={{ width: '48mm', height: '48mm', display: 'block', margin: '0 auto' }} />
+                <p style={{ marginTop: '2mm', fontSize: '11pt', fontWeight: 800, color: FLYER.blue }}>{t('Skanerlang')}</p>
                 <p style={{ fontSize: '9pt', fontWeight: 600, color: FLYER.muted, wordBreak: 'break-all' }}>{link}</p>
               </div>
             </div>
@@ -100,7 +101,7 @@ export default function RecruitFlyerPage() {
 
             {groups.length > 0 && (
               <div>
-                <p style={{ fontSize: '12pt', fontWeight: 800, color: FLYER.ink }}>Qaysi ustalar kerak:</p>
+                <p style={{ fontSize: '12pt', fontWeight: 800, color: FLYER.ink }}>{t('Qaysi ustalar kerak:')}</p>
                 <div style={{ marginTop: '2mm', display: 'flex', flexDirection: 'column', gap: '1.6mm' }}>
                   {groups.map((g) => (
                     <p key={g.name} style={{ fontSize: '9.5pt', lineHeight: 1.35, color: FLYER.muted }}>
@@ -113,7 +114,7 @@ export default function RecruitFlyerPage() {
 
             {contactLine && (
               <p style={{ fontSize: '11pt', fontWeight: 700, color: FLYER.ink }}>
-                Savollar bo'yicha: <span style={{ color: FLYER.blue }}>{contactLine}</span>
+                {t('Savollar bo\'yicha:')} <span style={{ color: FLYER.blue }}>{contactLine}</span>
               </p>
             )}
           </div>
@@ -134,7 +135,7 @@ export default function RecruitFlyerPage() {
                 >
                   <img src={qrSrc} alt="" style={{ width: '19mm', height: '19mm' }} />
                   <p style={{ marginTop: '1.5mm', fontSize: '10pt', fontWeight: 900, color: FLYER.ink }}>Usta24</p>
-                  <p style={{ fontSize: '7.5pt', fontWeight: 600, color: FLYER.muted, lineHeight: 1.2 }}>ustalar uchun ish</p>
+                  <p style={{ fontSize: '7.5pt', fontWeight: 600, color: FLYER.muted, lineHeight: 1.2 }}>{t('ustalar uchun ish')}</p>
                   <p style={{ marginTop: '1mm', fontSize: '6.5pt', fontWeight: 700, color: FLYER.blue, wordBreak: 'break-all', lineHeight: 1.15 }}>{link}</p>
                 </div>
               ))}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
 import { useAuth } from '../context/AuthContext';
+import { t } from '../i18n';
 
 /**
  * Foydalanuvchining saqlangan manzillari ("Uy", "Ish")
@@ -52,10 +53,20 @@ export function useSavedAddresses() {
 // Nomga mos belgi
 export const addressIcon = (label) => {
   const value = String(label || '').toLowerCase();
-  if (/^uy|uyim|home/.test(value)) return '🏠';
-  if (/ish|ofis|work/.test(value)) return '💼';
-  if (/ona|ota|dacha|hovli/.test(value)) return '🏡';
+  if (/^uy|uyim|home|^дом/.test(value)) return '🏠';
+  if (/ish|ofis|work|работ|офис/.test(value)) return '💼';
+  if (/ona|ota|dacha|hovli|дач|родител/.test(value)) return '🏡';
   return '📍';
 };
 
+// Tayyor nomlar bazada o'zbekcha saqlanadi, ko'rsatishda tarjima qilinadi (addressLabel)
 export const ADDRESS_LABELS = ['Uy', 'Ish', 'Ota-onamnikiga'];
+// Nom kiritilmasa saqlanadigan nom
+export const DEFAULT_ADDRESS_LABEL = 'Manzil';
+
+/**
+ * Manzil nomi joriy tilda: tayyor nomlar tarjima qilinadi, foydalanuvchi yozgan nom o'zgarmaydi
+ */
+export const addressLabel = (label) => (
+  ADDRESS_LABELS.includes(label) || label === DEFAULT_ADDRESS_LABEL ? t(label) : label
+);
