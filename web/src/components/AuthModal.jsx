@@ -3,6 +3,7 @@ import { Phone, ShieldCheck, User, ArrowLeft, KeyRound, Send, MessageSquare } fr
 import Modal from './Modal';
 import Spinner from './Spinner';
 import { api } from '../lib/api';
+import { storedRef, forgetRef } from '../lib/referral';
 import { formatPhone } from '../lib/format';
 import { TELEGRAM_BUTTON, useLoginMethods, usePolling } from '../lib/telegram';
 import { t } from '../i18n';
@@ -129,8 +130,10 @@ export default function AuthModal({ onClose, onSuccess }) {
     try {
       const { data } = await api('/auth/verify-otp', {
         method: 'POST',
-        body: { phone: normalizedPhone, code, accept_terms: acceptTerms }
+        // Taklif havolasi orqali kelgan bo'lsa - yangi hisob taklif qilgan odamga bog'lanadi
+        body: { phone: normalizedPhone, code, accept_terms: acceptTerms, ref: storedRef() || undefined }
       });
+      forgetRef();
       if (data.requires_2fa) {
         // Ikki bosqichli kirish: authenticator ilovasidagi kod
         setChallenge(data.challenge_token);

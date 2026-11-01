@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Copy, ReceiptText, ArrowDownLeft, ArrowUpRight, SlidersHorizontal, Info } from 'lucide-react';
+import { Wallet, Copy, ReceiptText, ArrowDownLeft, ArrowUpRight, SlidersHorizontal, Info, Gift } from 'lucide-react';
 import { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
 import { api } from '../lib/api';
@@ -18,7 +18,7 @@ const TONES = {
   blocked: 'from-red-600 to-rose-700'
 };
 
-const ENTRY_ICONS = { commission: ArrowUpRight, payment: ArrowDownLeft, adjustment: SlidersHorizontal };
+const ENTRY_ICONS = { commission: ArrowUpRight, payment: ArrowDownLeft, adjustment: SlidersHorizontal, bonus: Gift };
 
 function EntryRow({ entry }) {
   const Icon = ENTRY_ICONS[entry.kind];
@@ -146,6 +146,19 @@ export default function MasterBalancePage() {
           {data.totals.last_payment_at && <p className="text-[11px] text-slate-400">{t('oxirgisi {date}', { date: formatDate(data.totals.last_payment_at, false) })}</p>}
         </div>
       </div>
+
+      {/* Referal: bonus komissiyadan chegiriladi */}
+      <Link to="/taklif" className="card p-4 flex items-center gap-3 hover:border-rose-200 transition">
+        <span className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0" aria-hidden="true"><Gift className="w-5 h-5" /></span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-bold text-slate-900">{t('Bonus oling: do\'stlarni taklif qiling')}</span>
+          <span className="block text-xs text-slate-500">
+            {data.totals.bonus > 0
+              ? t('Olingan bonuslar: {sum}. Ular komissiyadan chegiriladi.', { sum: formatSum(data.totals.bonus) })
+              : t('Taklif qilgan ustangiz yoki mijozingiz birinchi ishini bajarganda bonus komissiyadan chegiriladi.')}
+          </span>
+        </span>
+      </Link>
 
       <section className="card p-5" aria-labelledby="history-title">
         <h2 id="history-title" className="font-bold text-slate-900">{t('Tarix')}</h2>

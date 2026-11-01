@@ -13,6 +13,7 @@ const {
     accrueCommission, afterAccrual, isOverLimit, formatSum,
 } = require('../services/commission.service');
 const dispatchConfig = require('../config/dispatch');
+const { grantReferralRewards, notifyReferralRewards } = require('../services/referral.service');
 const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
 const { notifyNewOrderForMaster, notifyFinalPrice } = require('../services/telegram/notify');
 const {
@@ -473,12 +474,12 @@ const updateOrderStatus = async (req, res, next) => {
                     prices?.finalPrice ?? null, prices?.laborPrice ?? null, prices?.materialsPrice ?? 0, priceDueHours]
             );
             const row = result.rows[0];
-            if (!row || !prices) return { updated: row, accrued: null };
+            if (!row || !prices) return { updated: row, accrued: null, rewards: [] };
             const accrued = await accrueCommission(client, row);
             if (accrued && isOverLimit(accrued.due)) {
                 await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [row.master_id]);
             }
-            return { updated: row, accrued };
+            return { updated: row, accrued, rewards: await grantReferralRewards(client, row) };
         });
 
         if (!outcome.updated) {
@@ -491,6 +492,7 @@ const updateOrderStatus = async (req, res, next) => {
         const updated = outcome.updated;
         emitOrderUpdate(updated, { actor });
         if (outcome.accrued) afterAccrual(updated.master_id, outcome.accrued);
+        notifyReferralRewards(outcome.rewards);
         if (actor === 'admin') {
             await logAdminAction(req, {
                 action: 'order.status',
@@ -540,14 +542,14 @@ const updateInstantStatus = async (req, res, order, status) => {
             [status, order.id, order.status, finalPrice, laborPrice, materialsPrice]
         );
         const updated = result.rows[0];
-        if (!updated || status !== 'completed') return { updated, accrued: null };
+        if (!updated || status !== 'completed') return { updated, accrued: null, rewards: [] };
 
         const accrued = await accrueCommission(client, updated);
         // Qarz limitdan oshdi: ish rejimi o'chadi, to'lamaguncha yangi takliflar kelmaydi
         if (accrued && isOverLimit(accrued.due)) {
             await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [updated.master_id]);
         }
-        return { updated, accrued };
+        return { updated, accrued, rewards: await grantReferralRewards(client, updated) };
     });
 
     if (!outcome.updated) {
@@ -558,6 +560,7 @@ const updateInstantStatus = async (req, res, order, status) => {
     }
     emitOrderUpdate(outcome.updated);
     if (outcome.accrued) afterAccrual(outcome.updated.master_id, outcome.accrued);
+    notifyReferralRewards(outcome.rewards);
     res.status(200).json({
         success: true,
         message: 'Buyurtma holati yangilandi',
@@ -594,10 +597,11 @@ const setFinalPrice = async (req, res, next) => {
             if (accrued && isOverLimit(accrued.due)) {
                 await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [updated.master_id]);
             }
-            return { updated, accrued };
+            return { updated, accrued, rewards: await grantReferralRewards(client, updated) };
         });
 
         if (outcome.accrued) afterAccrual(outcome.updated.master_id, outcome.accrued);
+        notifyReferralRewards(outcome.rewards);
         notifyFinalPrice(outcome.updated);
         res.status(200).json({
             success: true,

@@ -123,6 +123,7 @@ const loadMasterLedger = async (masterId, { limit = 100 } = {}) => {
             `SELECT COALESCE(SUM(amount) FILTER (WHERE kind = 'commission'), 0) as commission_total,
                     COALESCE(-SUM(amount) FILTER (WHERE kind = 'payment'), 0) as paid_total,
                     COALESCE(SUM(amount) FILTER (WHERE kind = 'adjustment'), 0) as adjustments_total,
+                    COALESCE(-SUM(amount) FILTER (WHERE kind = 'bonus'), 0) as bonus_total,
                     MAX(created_at) FILTER (WHERE kind = 'payment') as last_payment_at
              FROM master_ledger WHERE master_id = $1`,
             [masterId]
@@ -151,6 +152,7 @@ const loadMasterLedger = async (masterId, { limit = 100 } = {}) => {
             commission: Number(t.commission_total),
             paid: Number(t.paid_total),
             adjustments: Number(t.adjustments_total),
+            bonus: Number(t.bonus_total),
             last_payment_at: t.last_payment_at,
         },
         entries: entries.rows.map((row) => ({

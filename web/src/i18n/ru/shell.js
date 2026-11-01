@@ -326,5 +326,52 @@ export default {
   'Hisobni va shaxsiy ma\'lumotlarni o\'chirish: Profil → Xavfsizlik → «Hisobni o\'chirish». Hujjatlar, rasmlar va murojaatlar ham o\'chiriladi; bajarilgan buyurtmalar ikkinchi tomon tarixi uchun, ustaning komissiya hisobi esa buxgalteriya uchun ismsiz holda qoladi.': 'Удаление учётной записи и персональных данных: Профиль → Безопасность → «Удалить аккаунт». Документы, фотографии и обращения также удаляются; выполненные заказы сохраняются в обезличенном виде для истории другой стороны, а счёт комиссии мастера — для бухгалтерского учёта.',
   'Rozilikni qaytarib olish va savollar: [email], [telefon].': 'Отзыв согласия и вопросы: [email], [телефон].',
   '6. Qurilmada saqlanadigan ma\'lumotlar': '6. Данные, хранящиеся на устройстве',
-  'Tizimga kirganingizni eslab qolish uchun brauzerda kirish tokeni saqlanadi. «Chiqish» yoki «Barcha qurilmalardan chiqish» uni bekor qiladi.': 'Чтобы запомнить ваш вход в систему, в браузере сохраняется токен доступа. Действия «Выйти» и «Выйти на всех устройствах» аннулируют его.'
+  'Tizimga kirganingizni eslab qolish uchun brauzerda kirish tokeni saqlanadi. «Chiqish» yoki «Barcha qurilmalardan chiqish» uni bekor qiladi.': 'Чтобы запомнить ваш вход в систему, в браузере сохраняется токен доступа. Действия «Выйти» и «Выйти на всех устройствах» аннулируют его.',
+  // Referal dasturi
+  'Do\'stlarni taklif qilish': 'Пригласить друзей',
+  'Ustalarni taklif qiling': 'Пригласите мастеров',
+  'Taklif qilgan ustangiz birinchi ishini bajarganda ikkalangizga bonus': 'Когда приглашённый мастер выполнит первую работу, вы оба получите бонус',
+  'Usta24 da ishlang: buyurtmalar telefoningizga keladi, ro\'yxatdan o\'tish bepul. Mening havolam orqali qo\'shiling:':
+    'Работайте в Usta24: заказы приходят на телефон, регистрация бесплатная. Присоединяйтесь по моей ссылке:',
+  'Usta24 — uy, avto va texnika ustalari: narxi, reytingi va sharhlari bilan. Mening havolam:':
+    'Usta24 — мастера по дому, авто и технике: с ценами, рейтингом и отзывами. Моя ссылка:',
+  'Havolangizni ulashing: do\'stlaringiz ishonchli usta topadi yoki usta bo\'lib ishlaydi.':
+    'Поделитесь ссылкой: друзья найдут надёжного мастера или начнут работать мастером.',
+  'Sizning havolangiz': 'Ваша ссылка',
+  'Taklif havolasi': 'Пригласительная ссылка',
+  'Kod: {code} — do\'stingiz havolani ochib, ro\'yxatdan o\'tishi kerak.': 'Код: {code} — другу нужно открыть ссылку и зарегистрироваться.',
+  'QR kod': 'QR-код',
+  'Do\'stingiz telefon kamerasini QR kodga qaratsin.': 'Пусть друг наведёт камеру телефона на QR-код.',
+  'Bonuslar': 'Бонусы',
+  'Bonus': 'Бонус',
+  'Usta taklif qiling': 'Пригласите мастера',
+  'U birinchi ishini bajarganda sizga {bonus}, unga {welcome} bonus.': 'Когда он выполнит первую работу: вам {bonus}, ему {welcome} бонусом.',
+  'Mijoz taklif qiling': 'Пригласите клиента',
+  'Uning birinchi buyurtmasini boshqa usta bajarganda sizga {bonus}.': 'Когда его первый заказ выполнит другой мастер — вам {bonus}.',
+  'Bonus komissiya hisobingizga yoziladi va komissiyadan chegiriladi. Ish haqi kamida {min} bo\'lgan ishlar hisobga olinadi.':
+    'Бонус зачисляется на счёт комиссии и вычитается из комиссии. Учитываются работы с оплатой не менее {min}.',
+  'Bonuslar ustalar uchun (komissiya hisobiga). Siz usta bo\'lsangiz, taklif qilgan do\'stlaringiz uchun bonus olasiz.':
+    'Бонусы — для мастеров (на счёт комиссии). Если вы станете мастером, будете получать бонусы за приглашённых друзей.',
+  'Taklif qilinganlar': 'Приглашено',
+  'Ulardan ustalar': 'Из них мастеров',
+  'Faol (ish bajarilgan)': 'Активные (есть работа)',
+  'Olingan bonus': 'Получено бонусов',
+  'Siz taklif qilganlar': 'Ваши приглашённые',
+  'Hali hech kim yo\'q. Havolani birinchi do\'stingizga yuboring!': 'Пока никого. Отправьте ссылку первому другу!',
+  'Ismsiz': 'Без имени',
+  'Ish bajarildi': 'Работа выполнена',
+  'Ro\'yxatdan o\'tdi': 'Зарегистрировался',
+  'Bonus oling: do\'stlarni taklif qiling': 'Получайте бонусы: приглашайте друзей',
+  'Olingan bonuslar: {sum}. Ular komissiyadan chegiriladi.': 'Получено бонусов: {sum}. Они вычитаются из комиссии.',
+  'Taklif qilgan ustangiz yoki mijozingiz birinchi ishini bajarganda bonus komissiyadan chegiriladi.':
+    'Когда приглашённый вами мастер или клиент получит первую выполненную работу, бонус вычтется из комиссии.',
+  '{name} sizni Usta24 ga taklif qildi': '{name} приглашает вас в Usta24',
+  'Sizni Usta24 ga taklif qilishdi': 'Вас пригласили в Usta24',
+  'Uy, avto va texnika ustalari — tasdiqlangan, narxi va sharhlari bilan.': 'Мастера по дому, авто и технике — проверенные, с ценами и отзывами.',
+  'Siz allaqachon ro\'yxatdan o\'tgansiz: taklif faqat yangi hisoblar uchun.': 'Вы уже зарегистрированы: приглашение действует только для новых аккаунтов.',
+  'Usta kerakmi?': 'Нужен мастер?',
+  'Eng yaqin ustani bir tugma bilan chaqiring yoki katalogdan tanlang.': 'Вызовите ближайшего мастера одной кнопкой или выберите в каталоге.',
+  '1 daqiqada ro\'yxatdan o\'ting va buyurtmalar oling. Birinchi ishingizda {bonus} bonus.':
+    'Зарегистрируйтесь за 1 минуту и получайте заказы. За первую работу — бонус {bonus}.',
+  '1 daqiqada ro\'yxatdan o\'ting va buyurtmalar oling.': 'Зарегистрируйтесь за 1 минуту и получайте заказы.'
 };

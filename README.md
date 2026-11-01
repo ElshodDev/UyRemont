@@ -73,6 +73,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/masters/specializations` | Mutaxassisliklar katalogi (4 bo'lim) |
 | `GET /api/masters/:id` | Usta profili, portfolio, sharhlar |
 | `PUT /api/masters/profile` | Usta profilini tahrirlash (faqat usta) |
+| `GET /api/referrals/me`, `GET /api/referrals/:code`, `GET /api/referrals/:code/qr` | Referal: o'z havolasi va statistika, taklif sahifasi (faqat ism), QR kod |
 | `POST /api/masters/quick-start` | 1 daqiqada usta bo'lish: `{ specialization_ids, district, name? }` - rol, profil va sohalar bitta tranzaksiyada (narx, tajriba keyin) |
 | `GET/POST/DELETE /api/masters/portfolio` | Portfolio rasmlari (fayl yuklash, 8 MB gacha, EXIF/GPS o'chiriladi) |
 | `POST /api/orders` | Buyurtma: aniq ustaga yoki mutaxassislik bo'yicha ochiq buyurtma (`photo_ids` bilan) |
@@ -257,6 +258,23 @@ Mijoz ish haqini ustaga to'g'ridan-to'g'ri to'laydi, usta esa platformaga komiss
   - Har bir amal jurnalga yoziladi, limitdan oshgan ustalar soni tab yonida qizil belgida ko'rinadi.
 - **Hisobning tuzilishi:** `master_ledger` jadvalida har bir yozuv qarzga ta'sirini saqlaydi: komissiya `+`, to'lov `−`, tuzatish `±`. `master_profiles.commission_due` shu yig'indining tezkor nusxasi va har doim bitta tranzaksiyada yangilanadi.
 
+### 🎁 Referal dasturi
+
+Har bir foydalanuvchining shaxsiy havolasi bor: `https://<domen>/r/KOD` (Menyu → «Do'stlarni taklif qilish», `/taklif`).
+- **Taklif sahifasi** (`/r/KOD`): «{Ism} sizni Usta24 ga taklif qildi» va ikkita yo'l — «Usta kerakmi?» yoki «Ustamisiz?» (1 daqiqada usta bo'lish).
+- Kod 30 kun eslab qolinadi (`?ref=KOD` istalgan sahifada ham ishlaydi) va ro'yxatdan o'tishda yuboriladi.
+- **Faqat yangi hisob** taklif qilgan odamga bog'lanadi (`users.referred_by`). Mavjud hisob yoki noto'g'ri kod hech narsani o'zgartirmaydi.
+- **Bonuslar** ustalarning komissiya hisobiga `bonus` yozuvi sifatida tushadi va qarzni kamaytiradi (ortiqchasi oldindan to'lov bo'ladi):
+  - **usta taklif qilsa** — taklif qilingan usta birinchi ishini bajarganda taklif qilgan ustaga `REFERRAL_MASTER_BONUS` (20 000), yangi ustaga `REFERRAL_WELCOME_BONUS` (20 000);
+  - **mijoz taklif qilsa** — taklif qilingan mijozning birinchi buyurtmasini usta bajarganda taklif qilgan ustaga `REFERRAL_CLIENT_BONUS` (5 000).
+- **Himoya:**
+  - ish haqi `REFERRAL_MIN_LABOR` (50 000) dan kam bo'lgan buyurtma bonus bermaydi;
+  - har bir taklif qilingan odam uchun bonus bir marta beriladi (`referral_rewards`);
+  - o'zaro buyurtma bonus bermaydi: taklif qilgan odamning o'zi shu buyurtmaning ustasi yoki mijozi bo'lsa;
+  - taklif qilgan odam mijoz bo'lsa (komissiya hisobi yo'q), unga bonus yozilmaydi, yangi ustaning xush kelibsiz bonusi esa beriladi.
+- Bonus yozilganda ustaga saytda va Telegram'da xabar boradi («🎁 Siz taklif qilgan usta … birinchi ishini bajardi»).
+- `/taklif` sahifasida havola, nusxalash, ulashish, Telegram va QR kod (`GET /api/referrals/:kod/qr`) bor. U yerda bonus shartlari, statistika (taklif qilinganlar, ustalar, faollar, olingan bonus) va taklif qilinganlar ro'yxati (faqat ism) ham ko'rinadi.
+
 ### 🔒 Komissiyani chetlab o'tishga qarshi
 
 **Telefon raqamlar buyurtma qabul qilinmaguncha ko'rinmaydi.**
@@ -363,6 +381,8 @@ Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ |
 | `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |
 | `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi, ish haqidan % (standart: 10) |
 | `CATALOG_COMMISSION_PERCENT` | Oddiy (katalog) buyurtma komissiyasi, % (standart: `PLATFORM_COMMISSION_PERCENT` bilan bir xil; `0` — olinmaydi) |
+| `REFERRAL_MASTER_BONUS`, `REFERRAL_WELCOME_BONUS`, `REFERRAL_CLIENT_BONUS` | Referal bonuslari, so'm (standart: 20 000, 20 000, 5 000; `0` — berilmaydi) |
+| `REFERRAL_MIN_LABOR` | Bonus beriladigan buyurtmaning eng kam ish haqi, so'm (standart: 50 000) |
 | `PRICE_ENTRY_HOURS` | Mijoz yakunlagan oddiy buyurtmaning summasini usta kiritadigan muddat, soat (standart: 24) |
 | `COMMISSION_DEBT_LIMIT` | Komissiya qarzi limiti, so'm (standart: 200 000; `0` — cheklov yo'q) |
 | `COMMISSION_PAYMENT_INFO` | Ustalarga ko'rsatiladigan to'lov rekvizitlari |
