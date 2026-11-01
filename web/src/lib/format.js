@@ -1,11 +1,15 @@
 // =============================================
 // Formatlash va holat yorliqlari
+// Yorliqlar xaritalari o'zbekcha qoladi: ko'rsatishda t(LABELS[x].label) qilinadi.
+// Matn yasaydigan funksiyalar t() ni chaqirish paytida ishlatadi (til almashganda yangilanadi).
 // =============================================
+
+import { t } from '../i18n/index.js';
 
 export const formatPrice = (value) => {
   const num = Number(value);
-  if (!Number.isFinite(num) || num <= 0) return 'Kelishiladi';
-  return `${Math.round(num).toLocaleString('ru-RU')} so'm`;
+  if (!Number.isFinite(num) || num <= 0) return t('Kelishiladi');
+  return t('{amount} so\'m', { amount: Math.round(num).toLocaleString('ru-RU') });
 };
 
 export const formatRating = (value) => Number(value || 0).toFixed(1);
@@ -46,6 +50,7 @@ export const ROLE_LABELS = {
 
 /**
  * Backenddagi TRANSITIONS jadvaliga mos: joriy foydalanuvchi bajara oladigan amallar
+ * (label joriy tilda qaytadi - ko'rsatishda qayta t() qilinmaydi)
  */
 export function getOrderActions(order, user) {
   // Tezkor chaqiruv amallari InstantOrderPanel komponentida
@@ -59,21 +64,21 @@ export function getOrderActions(order, user) {
   switch (order.status) {
     case 'pending':
       if (isMaster || (user.role === 'master' && isOpen && !isClient) || (isAdmin && order.master_id)) {
-        actions.push({ status: 'accepted', label: isOpen ? 'Buyurtmani olish' : 'Qabul qilish', tone: 'primary' });
+        actions.push({ status: 'accepted', label: isOpen ? t('Buyurtmani olish') : t('Qabul qilish'), tone: 'primary' });
       }
       if (isClient || isMaster || isAdmin) {
-        actions.push({ status: 'cancelled', label: isMaster ? 'Rad etish' : 'Bekor qilish', tone: 'danger', confirm: true });
+        actions.push({ status: 'cancelled', label: isMaster ? t('Rad etish') : t('Bekor qilish'), tone: 'danger', confirm: true });
       }
       break;
     case 'accepted':
-      if (isMaster || isAdmin) actions.push({ status: 'in_progress', label: 'Ishni boshlash', tone: 'primary' });
+      if (isMaster || isAdmin) actions.push({ status: 'in_progress', label: t('Ishni boshlash'), tone: 'primary' });
       if (isClient || isMaster || isAdmin) {
-        actions.push({ status: 'cancelled', label: 'Bekor qilish', tone: 'danger', confirm: true });
+        actions.push({ status: 'cancelled', label: t('Bekor qilish'), tone: 'danger', confirm: true });
       }
       break;
     case 'in_progress':
       if (isClient || isMaster || isAdmin) {
-        actions.push({ status: 'completed', label: 'Ish yakunlandi', tone: 'success', confirm: true });
+        actions.push({ status: 'completed', label: t('Ish yakunlandi'), tone: 'success', confirm: true });
       }
       break;
     default:
@@ -82,10 +87,10 @@ export function getOrderActions(order, user) {
   return actions;
 }
 
-// 80000 -> "80 ming", 3500000 -> "3,5 mln"
+// 80000 -> "80 ming", 3500000 -> "3,5 mln" (ruschada "80 тыс.", "3,5 млн")
 const compactMoney = (value) => {
-  if (value >= 1000000) return `${Number((value / 1000000).toFixed(1)).toLocaleString('ru-RU')} mln`;
-  if (value >= 1000) return `${Math.round(value / 1000).toLocaleString('ru-RU')} ming`;
+  if (value >= 1000000) return t('{n} mln', { n: Number((value / 1000000).toFixed(1)).toLocaleString('ru-RU') });
+  if (value >= 1000) return t('{n} ming', { n: Math.round(value / 1000).toLocaleString('ru-RU') });
   return Math.round(value).toLocaleString('ru-RU');
 };
 const unitOf = (text) => text.split(' ')[1] || '';
@@ -96,12 +101,12 @@ const amountOf = (text) => text.split(' ')[0];
  */
 export const formatPriceRange = (min, max) => {
   const low = compactMoney(Number(min) || 0);
-  if (max === null || max === undefined) return `${low} so'mdan`;
-  if (Number(max) === Number(min)) return `${low} so'm`;
+  if (max === null || max === undefined) return t('{amount} so\'mdan', { amount: low });
+  if (Number(max) === Number(min)) return t('{amount} so\'m', { amount: low });
   const high = compactMoney(Number(max));
-  return unitOf(low) === unitOf(high)
-    ? `${amountOf(low)}–${high} so'm`
-    : `${low} – ${high} so'm`;
+  return t('{amount} so\'m', {
+    amount: unitOf(low) === unitOf(high) ? `${amountOf(low)}–${high}` : `${low} – ${high}`
+  });
 };
 
 export const PRICE_UNITS = {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star } from 'lucide-react';
+import { t } from '../i18n';
 
 /**
  * Yulduzli reyting: onChange berilsa tanlash mumkin
@@ -16,7 +17,7 @@ export default function StarRating({ value = 0, onChange, size = 'w-5 h-5' }) {
             type="button"
             onClick={() => onChange(star)}
             className="p-0.5 hover:scale-110 transition"
-            aria-label={`${star} yulduz`}
+            aria-label={t('{n} yulduz', { n: star })}
           >
             {icon}
           </button>

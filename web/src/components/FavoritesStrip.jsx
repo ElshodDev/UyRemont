@@ -6,6 +6,7 @@ import { specializationLabel } from './MasterCard';
 import { api } from '../lib/api';
 import { formatRating } from '../lib/format';
 import { useFavorites } from '../context/FavoritesContext';
+import { t } from '../i18n';
 
 /**
  * Bosh sahifa: sevimli ustalar qatori (bir bosishda qayta buyurtma)
@@ -30,9 +31,9 @@ export default function FavoritesStrip({ onView, onOrder }) {
     <section className="mb-8" aria-labelledby="favorites-strip-title">
       <div className="flex items-center justify-between mb-3">
         <h2 id="favorites-strip-title" className="font-bold text-slate-900 flex items-center gap-2">
-          <Heart className="w-4 h-4 text-rose-500 fill-current" /> Sevimli ustalaringiz
+          <Heart className="w-4 h-4 text-rose-500 fill-current" /> {t('Sevimli ustalaringiz')}
         </h2>
-        <Link to="/favorites" className="link text-xs min-h-9 inline-flex items-center">Barchasi</Link>
+        <Link to="/favorites" className="link text-xs min-h-9 inline-flex items-center">{t('Barchasi')}</Link>
       </div>
       <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
         {visible.map((m) => (
@@ -48,7 +49,7 @@ export default function FavoritesStrip({ onView, onOrder }) {
               </span>
             </button>
             <button type="button" onClick={() => onOrder(m)} className="btn btn-sm btn-primary w-full min-h-10">
-              Buyurtma berish
+              {t('Buyurtma berish')}
             </button>
           </div>
         ))}

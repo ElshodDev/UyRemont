@@ -12,8 +12,15 @@ import { districtsList } from '../data/catalog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatPhone } from '../lib/format';
+import { t, specName } from '../i18n';
 
 const inputClass = 'input';
+
+// Tarjima matnidagi {name} o'rniga React element (so'z tartibi tilga qarab o'zgaradi)
+const withElement = (template, element) => {
+  const [before, after = ''] = template.split('{name}');
+  return <>{before}{element}{after}</>;
+};
 
 /**
  * Buyurtma berish: master berilsa shu ustaga, aks holda tanlangan sohadagi barcha ustalarga ochiq.
@@ -71,7 +78,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
         }
       });
       setCreated(data);
-      toast.success('Buyurtma yuborildi');
+      toast.success(t('Buyurtma yuborildi'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -82,13 +89,13 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
   // Telegramga xabar formatini tayyorlash
   const telegramShareUrl = () => {
     const lines = [
-      '🏠 Yangi Buyurtma (Usta24 Platformasi):',
+      t('🏠 Yangi Buyurtma (Usta24 Platformasi):'),
       '',
-      `👤 Mijoz: ${user?.name || ''}`,
-      `📞 Telefon: ${formatPhone(user?.phone)}`,
-      `📍 Manzil: ${created.address}`,
-      master ? `🛠️ Usta: ${master.name} (${specializationLabel(master)})` : null,
-      `📝 Ish: ${created.title}${created.description ? ` — ${created.description}` : ''}`
+      t('👤 Mijoz: {name}', { name: user?.name || '' }),
+      t('📞 Telefon: {phone}', { phone: formatPhone(user?.phone) }),
+      t('📍 Manzil: {address}', { address: created.address }),
+      master ? t('🛠️ Usta: {name} ({spec})', { name: master.name, spec: specializationLabel(master) }) : null,
+      t('📝 Ish: {text}', { text: `${created.title}${created.description ? ` — ${created.description}` : ''}` })
     ].filter((line) => line !== null);
     return `https://t.me/share/url?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(lines.join('\n'))}`;
   };
@@ -100,18 +107,18 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8" />
           </div>
-          <h3 id="order-modal-title" className="text-xl font-bold text-slate-900 mb-1">Buyurtma qabul qilindi!</h3>
+          <h3 id="order-modal-title" className="text-xl font-bold text-slate-900 mb-1">{t('Buyurtma qabul qilindi!')}</h3>
           <p className="text-xs text-slate-500 mb-6">
             {master
-              ? <>Usta <strong>{master.name}</strong> buyurtmani qabul qilgach, uning holati va chat shu yerda ko'rinadi.</>
-              : 'Buyurtmangiz mos ustalarga ko\'rsatildi. Birinchi qabul qilgan usta siz bilan bog\'lanadi.'}
+              ? withElement(t('Usta {name} buyurtmani qabul qilgach, uning holati va chat shu yerda ko\'rinadi.'), <strong>{master.name}</strong>)
+              : t('Buyurtmangiz mos ustalarga ko\'rsatildi. Birinchi qabul qilgan usta siz bilan bog\'lanadi.')}
           </p>
 
           {master && (
             <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl mb-4 text-left">
-              <span className="text-xs text-sky-800 font-bold block mb-1">Tezkor tasdiqlash:</span>
+              <span className="text-xs text-sky-800 font-bold block mb-1">{t('Tezkor tasdiqlash:')}</span>
               <p className="text-[11px] text-sky-700 mb-3">
-                Buyurtmani Telegram orqali ham ustaga yuborib, tezroq kelishishingiz mumkin.
+                {t('Buyurtmani Telegram orqali ham ustaga yuborib, tezroq kelishishingiz mumkin.')}
               </p>
               <a
                 href={telegramShareUrl()}
@@ -120,7 +127,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
                 className="btn w-full bg-sky-500 text-white font-bold hover:bg-sky-600"
               >
                 <Send className="w-4 h-4" />
-                Telegram orqali yuborish
+                {t('Telegram orqali yuborish')}
               </a>
             </div>
           )}
@@ -130,26 +137,26 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
               onClick={onClose}
               className="btn btn-secondary w-full"
             >
-              Yopish
+              {t('Yopish')}
             </button>
             <Link
               to={`/orders/${created.id}`}
               onClick={onClose}
               className="btn btn-primary w-full font-bold"
             >
-              Buyurtmani ko'rish
+              {t('Buyurtmani ko\'rish')}
             </Link>
           </div>
         </div>
       ) : (
         <div>
           <h3 id="order-modal-title" className="text-lg font-bold text-slate-900 mb-1 pr-10">
-            {master ? 'Buyurtma berish' : 'Ochiq buyurtma qoldirish'}
+            {master ? t('Buyurtma berish') : t('Ochiq buyurtma qoldirish')}
           </h3>
           <p className="text-xs text-slate-500 mb-4">
             {master
-              ? <>Usta: <strong className="text-blue-600">{master.name}</strong> ({specializationLabel(master)})</>
-              : 'Usta tanlamasdan ish tavsifini qoldiring — mos ustalar o\'zlari taklif bilan chiqadi.'}
+              ? <>{t('Usta:')} <strong className="text-blue-600">{master.name}</strong> ({specializationLabel(master)})</>
+              : t('Usta tanlamasdan ish tavsifini qoldiring — mos ustalar o\'zlari taklif bilan chiqadi.')}
           </p>
 
           {error && (
@@ -159,7 +166,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
           <form onSubmit={handleSubmit} className="space-y-3">
             {specOptions.length > 0 && (
               <div>
-                <label className="label" htmlFor="order-field-1">Xizmat turi {master ? '' : '*'}</label>
+                <label className="label" htmlFor="order-field-1">{t('Xizmat turi')} {master ? '' : '*'}</label>
                 <select
                   id="order-field-1"
                   className={inputClass}
@@ -167,22 +174,22 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
                   value={form.specialization_id}
                   onChange={update('specialization_id')}
                 >
-                  {!master && <option value="">Tanlang...</option>}
+                  {!master && <option value="">{t('Tanlang...')}</option>}
                   {specOptions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.icon} {s.name_uz}</option>
+                    <option key={s.id} value={s.id}>{s.icon} {specName(s)}</option>
                   ))}
                 </select>
               </div>
             )}
 
             <div>
-              <label className="label" htmlFor="order-field-2">Nima qilish kerak? *</label>
+              <label className="label" htmlFor="order-field-2">{t('Nima qilish kerak? *')}</label>
               <input
                 id="order-field-2"
                 required
                 minLength={3}
                 maxLength={200}
-                placeholder="Masalan: Oshxonadagi kran oqyapti"
+                placeholder={t('Masalan: Oshxonadagi kran oqyapti')}
                 className={inputClass}
                 value={form.title}
                 onChange={update('title')}
@@ -190,12 +197,12 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
             </div>
 
             <div>
-              <label className="label" htmlFor="order-field-3">Batafsil tavsif</label>
+              <label className="label" htmlFor="order-field-3">{t('Batafsil tavsif')}</label>
               <textarea
                 id="order-field-3"
                 rows="3"
                 maxLength={2000}
-                placeholder="Muammo, o'lchamlar, materiallar bor-yo'qligi..."
+                placeholder={t('Muammo, o\'lchamlar, materiallar bor-yo\'qligi...')}
                 className={inputClass}
                 value={form.description}
                 onChange={update('description')}
@@ -206,20 +213,20 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="label" htmlFor="order-field-4">Tuman</label>
+                <label className="label" htmlFor="order-field-4">{t('Tuman')}</label>
                 <select id="order-field-4" className={inputClass} value={form.district} onChange={update('district')}>
-                  <option value="">Tanlang...</option>
-                  {districtsList.slice(1).map((d) => <option key={d} value={d}>{d}</option>)}
+                  <option value="">{t('Tanlang...')}</option>
+                  {districtsList.slice(1).map((d) => <option key={d} value={d}>{t(d)}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label" htmlFor="order-field-5">Manzil *</label>
+                <label className="label" htmlFor="order-field-5">{t('Manzil *')}</label>
                 <input
                   id="order-field-5"
                   required
                   minLength={3}
                   maxLength={500}
-                  placeholder="9-mavze, 12-uy"
+                  placeholder={t('9-mavze, 12-uy')}
                   className={inputClass}
                   value={form.address}
                   onChange={update('address')}
@@ -229,20 +236,20 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="label" htmlFor="order-field-6">Byudjet (so'm)</label>
+                <label className="label" htmlFor="order-field-6">{t('Byudjet (so\'m)')}</label>
                 <input
                   id="order-field-6"
                   type="number"
                   min="0"
                   step="1000"
-                  placeholder="Kelishiladi"
+                  placeholder={t('Kelishiladi')}
                   className={inputClass}
                   value={form.budget}
                   onChange={update('budget')}
                 />
               </div>
               <div>
-                <label className="label" htmlFor="order-field-7">Qulay vaqt</label>
+                <label className="label" htmlFor="order-field-7">{t('Qulay vaqt')}</label>
                 <input
                   id="order-field-7"
                   type="datetime-local"
@@ -254,12 +261,12 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
             </div>
 
             <div>
-              <span className="label">Rasm (ixtiyoriy)</span>
+              <span className="label">{t('Rasm (ixtiyoriy)')}</span>
               <PhotoPicker onChange={setPhotoIds} onBusyChange={setPhotosBusy} />
             </div>
 
             <p className="hint">
-              Aloqa uchun raqamingiz ({formatPhone(user?.phone)}) usta buyurtmani qabul qilgandan keyin ko'rinadi.
+              {t('Aloqa uchun raqamingiz ({phone}) usta buyurtmani qabul qilgandan keyin ko\'rinadi.', { phone: formatPhone(user?.phone) })}
             </p>
 
             <button
@@ -267,7 +274,7 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
               disabled={submitting || photosBusy}
               className="btn btn-primary w-full min-h-12 font-bold shadow-md shadow-blue-500/20 mt-2"
             >
-              {submitting ? <Spinner className="w-4 h-4 text-white" /> : 'Buyurtmani tasdiqlash'}
+              {submitting ? <Spinner className="w-4 h-4 text-white" /> : t('Buyurtmani tasdiqlash')}
             </button>
           </form>
         </div>

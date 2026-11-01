@@ -3,6 +3,7 @@ import { getSocket } from '../lib/socket';
 import { SUPPORT_STATUSES } from '../lib/support';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 /**
  * Hisobga oid jonli xabarlar: murojaatga javob, ustani tasdiqlash natijasi, komissiya hisobi
@@ -17,11 +18,12 @@ export default function AccountEvents() {
     if (!socket) return undefined;
 
     const onSupport = ({ number, status }) => {
-      toast.info(`Murojaat #${number}: ${SUPPORT_STATUSES[status]?.label.toLowerCase() || status}`);
+      const label = SUPPORT_STATUSES[status]?.label;
+      toast.info(t('Murojaat #{number}: {status}', { number, status: label ? t(label).toLowerCase() : status }));
     };
     const onVerification = ({ status, note }) => {
-      if (status === 'verified') toast.success('Profilingiz tasdiqlandi! Endi ishga chiqishingiz mumkin');
-      else toast.error(`Profilingiz hali tasdiqlanmadi: ${note}`);
+      if (status === 'verified') toast.success(t('Profilingiz tasdiqlandi! Endi ishga chiqishingiz mumkin'));
+      else toast.error(t('Profilingiz hali tasdiqlanmadi: {note}', { note }));
       refresh();
     };
 

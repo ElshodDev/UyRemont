@@ -4,6 +4,7 @@ import Spinner from './Spinner';
 import { api } from '../lib/api';
 import { downscaleImage } from '../lib/images';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -32,7 +33,7 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
     setItems((list) => [...list, { key, preview, status: 'uploading' }]);
     try {
       const blob = await downscaleImage(file);
-      if (blob.size > MAX_BYTES) throw new Error('Rasm hajmi 8 MB dan oshmasligi kerak');
+      if (blob.size > MAX_BYTES) throw new Error(t('Rasm hajmi 8 MB dan oshmasligi kerak'));
       const form = new FormData();
       form.append('image', blob, 'photo.jpg');
       const { data } = await api('/orders/photos', { method: 'POST', body: form });
@@ -47,7 +48,7 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
     const free = max - items.length;
-    if (files.length > free) toast.info(`Ko'pi bilan ${max} ta rasm qo'shish mumkin`);
+    if (files.length > free) toast.info(t('Ko\'pi bilan {max} ta rasm qo\'shish mumkin', { max }));
     files.slice(0, Math.max(0, free)).forEach(uploadOne);
   };
 
@@ -63,7 +64,7 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
       <div className="grid grid-cols-3 gap-2">
         {items.map((item, index) => (
           <div key={item.key} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-            <img src={item.preview} alt={`Muammo rasmi ${index + 1}`} className="w-full h-full object-cover" />
+            <img src={item.preview} alt={t('Muammo rasmi {n}', { n: index + 1 })} className="w-full h-full object-cover" />
             {item.status === 'uploading' && (
               <div className="absolute inset-0 bg-ink/40 flex items-center justify-center">
                 <Spinner className="w-6 h-6 text-white" />
@@ -71,14 +72,14 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
             )}
             {item.status === 'error' && (
               <div className="absolute inset-0 bg-red-600/60 flex flex-col items-center justify-center text-white text-[11px] font-bold gap-1">
-                <AlertCircle className="w-5 h-5" /> Yuklanmadi
+                <AlertCircle className="w-5 h-5" /> {t('Yuklanmadi')}
               </div>
             )}
             <button
               type="button"
               onClick={() => remove(item)}
               className="absolute top-1 right-1 w-9 h-9 rounded-full bg-ink/70 text-white flex items-center justify-center hover:bg-ink"
-              aria-label={`${index + 1}-rasmni olib tashlash`}
+              aria-label={t('{n}-rasmni olib tashlash', { n: index + 1 })}
             >
               <X className="w-4 h-4" />
             </button>
@@ -87,7 +88,7 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
         {items.length < max && (
           <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-blue-400 text-slate-500 flex flex-col items-center justify-center gap-1 cursor-pointer transition focus-within:ring-2 focus-within:ring-blue-500">
             <Camera className="w-6 h-6" />
-            <span className="text-[11px] font-semibold text-center leading-tight px-1">Rasm qo'shish</span>
+            <span className="text-[11px] font-semibold text-center leading-tight px-1">{t('Rasm qo\'shish')}</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/*"
@@ -99,7 +100,7 @@ export default function PhotoPicker({ max = 3, onChange, onBusyChange }) {
         )}
       </div>
       <p className="hint mt-2">
-        Ko'pi bilan {max} ta. Rasmni faqat siz va buyurtmani oladigan usta ko'radi, joylashuv ma'lumotlari o'chiriladi.
+        {t('Ko\'pi bilan {max} ta. Rasmni faqat siz va buyurtmani oladigan usta ko\'radi, joylashuv ma\'lumotlari o\'chiriladi.', { max })}
       </p>
     </div>
   );

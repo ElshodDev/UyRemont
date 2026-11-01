@@ -1,4 +1,5 @@
 // 4 ta asosiy vertikal bo'lim (mutaxassisliklar API dan keladi: /api/masters/specializations)
+// Matnlar o'zbekcha qoladi (kalit), ko'rsatishda tarjima qilinadi: t(v.name), t(district), t(s.label)
 export const mainVerticals = [
   {
     id: 'home',

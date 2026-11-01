@@ -1,6 +1,7 @@
 import React from 'react';
 import { Moon, Smartphone, Sun } from 'lucide-react';
 import { THEME_OPTIONS, useTheme } from '../lib/theme';
+import { t } from '../i18n';
 
 const ICONS = { system: Smartphone, light: Sun, dark: Moon };
 
@@ -10,7 +11,7 @@ const ICONS = { system: Smartphone, light: Sun, dark: Moon };
 export function ThemeSegmented() {
   const { preference, setPreference } = useTheme();
   return (
-    <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-100" role="radiogroup" aria-label="Ko'rinish">
+    <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-100" role="radiogroup" aria-label={t('Ko\'rinish')}>
       {THEME_OPTIONS.map(({ id, label }) => {
         const Icon = ICONS[id];
         const active = preference === id;
@@ -25,7 +26,7 @@ export function ThemeSegmented() {
               active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Icon className="w-4 h-4" /> {label}
+            <Icon className="w-4 h-4" /> {t(label)}
           </button>
         );
       })}
@@ -45,8 +46,8 @@ export function ThemeToggleButton({ className = '' }) {
       type="button"
       onClick={() => setPreference(next)}
       className={`icon-btn ${className}`}
-      aria-label={next === 'dark' ? 'Qorong\'i rejimni yoqish' : 'Yorug\' rejimni yoqish'}
-      title={next === 'dark' ? 'Qorong\'i rejim' : 'Yorug\' rejim'}
+      aria-label={next === 'dark' ? t('Qorong\'i rejimni yoqish') : t('Yorug\' rejimni yoqish')}
+      title={next === 'dark' ? t('Qorong\'i rejim') : t('Yorug\' rejim')}
     >
       <Icon className="w-5 h-5" />
     </button>

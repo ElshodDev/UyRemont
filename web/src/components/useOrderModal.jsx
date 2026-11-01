@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import OrderModal from './OrderModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 /**
  * Buyurtma oynasini ochish: kirmagan bo'lsa avval kirish, faqat mijoz hisobidan
@@ -16,8 +17,8 @@ export function useOrderModal({ specializations = [] } = {}) {
     requireAuth((current) => {
       if (current.role !== 'client') {
         toast.error(current.role === 'master'
-          ? 'Buyurtma berish uchun profilingizda mijoz rejimiga o\'ting'
-          : 'Administrator hisobidan buyurtma berib bo\'lmaydi');
+          ? t('Buyurtma berish uchun profilingizda mijoz rejimiga o\'ting')
+          : t('Administrator hisobidan buyurtma berib bo\'lmaydi'));
         return;
       }
       setTarget({ master, initial });

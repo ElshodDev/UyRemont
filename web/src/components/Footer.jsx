@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { t } from '../i18n';
 
 export default function Footer() {
   return (
@@ -8,16 +9,16 @@ export default function Footer() {
         <div className="flex items-center gap-2 flex-wrap justify-center">
           <span className="text-xl">🛠️</span>
           <span className="font-bold text-white text-base">Usta24</span>
-          <span>— Uy, Avto va Texnika ustalari SuperApp platformasi</span>
+          <span>— {t('Uy, Avto va Texnika ustalari SuperApp platformasi')}</span>
         </div>
         <div className="flex items-center gap-4 flex-wrap justify-center">
-          <Link to="/prices" className="text-white/80 hover:text-white font-semibold">Narxlar</Link>
-          <Link to="/rules" className="text-white/80 hover:text-white font-semibold">Ishlash qoidalari</Link>
-          <Link to="/ustalar" className="text-white/80 hover:text-white font-semibold">Ustalar uchun</Link>
-          <Link to="/support" className="text-white/80 hover:text-white font-semibold">Yordam</Link>
-          <Link to="/terms" className="text-white/80 hover:text-white">Shartlar</Link>
-          <Link to="/privacy" className="text-white/80 hover:text-white">Maxfiylik</Link>
-          <span>© {new Date().getFullYear()} Usta24 Marketplace. Barcha huquqlar himoyalangan.</span>
+          <Link to="/prices" className="text-white/80 hover:text-white font-semibold">{t('Narxlar')}</Link>
+          <Link to="/rules" className="text-white/80 hover:text-white font-semibold">{t('Ishlash qoidalari')}</Link>
+          <Link to="/ustalar" className="text-white/80 hover:text-white font-semibold">{t('Ustalar uchun')}</Link>
+          <Link to="/support" className="text-white/80 hover:text-white font-semibold">{t('Yordam')}</Link>
+          <Link to="/terms" className="text-white/80 hover:text-white">{t('Shartlar')}</Link>
+          <Link to="/privacy" className="text-white/80 hover:text-white">{t('Maxfiylik')}</Link>
+          <span>© {new Date().getFullYear()} Usta24 Marketplace. {t('Barcha huquqlar himoyalangan.')}</span>
         </div>
       </div>
     </footer>
