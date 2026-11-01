@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle,
-  UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, Tag, BadgeCheck, LifeBuoy, Bug
+  LayoutDashboard, Users, ClipboardList, Search, ShieldCheck, Ban, CheckCircle, UserCheck, Wrench, Star, TrendingUp, Zap, Radar, Power, ScrollText, Tag, BadgeCheck, LifeBuoy, Bug, Wallet
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -10,6 +9,7 @@ import { ErrorState } from '../components/EmptyState';
 import OrdersPage from './OrdersPage';
 import AdminPricesTab from './AdminPricesTab';
 import AdminAnalytics from './AdminAnalytics';
+import AdminCommissionTab from './AdminCommissionTab';
 import { VerificationsTab, SupportTab, ErrorsTab } from './AdminMvpTabs';
 import TwoFactorRequired, { isTwoFactorError } from '../components/TwoFactorRequired';
 import { api } from '../lib/api';
@@ -22,6 +22,7 @@ const TABS = [
   { id: 'users', label: 'Foydalanuvchilar', icon: Users },
   { id: 'verifications', label: 'Ustalar', icon: BadgeCheck, queue: 'verifications' },
   { id: 'orders', label: 'Buyurtmalar', icon: ClipboardList },
+  { id: 'commission', label: 'Komissiya', icon: Wallet, queue: 'commission' },
   { id: 'support', label: 'Murojaatlar', icon: LifeBuoy, queue: 'tickets' },
   { id: 'prices', label: 'Narxlar', icon: Tag },
   { id: 'audit', label: 'Jurnal', icon: ScrollText },
@@ -41,7 +42,9 @@ const AUDIT_ACTIONS = {
   'price.call_fee': 'Chiqish narxini o\'zgartirdi',
   'support.update': 'Murojaatni ko\'rib chiqdi',
   'master.approve': 'Ustani tasdiqladi',
-  'master.reject': 'Ustani rad etdi'
+  'master.reject': 'Ustani rad etdi',
+  'commission.payment': 'Ustadan komissiya to\'lovini qabul qildi',
+  'commission.adjust': 'Komissiya hisobini tuzatdi'
 };
 
 function AuditTab() {
@@ -447,6 +450,7 @@ export default function AdminPage() {
       {tab === 'users' && <UsersTab />}
       {tab === 'orders' && <OrdersPage embedded />}
       {tab === 'verifications' && <VerificationsTab onChanged={loadQueues} />}
+      {tab === 'commission' && <AdminCommissionTab onChanged={loadQueues} />}
       {tab === 'support' && <SupportTab onChanged={loadQueues} />}
       {tab === 'errors' && <ErrorsTab onChanged={loadQueues} />}
       {tab === 'prices' && <AdminPricesTab />}

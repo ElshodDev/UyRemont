@@ -6,11 +6,12 @@ import {
 import MapView from '../components/MapView';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { useDispatch } from '../context/DispatchContext';
-import { formatPrice, formatRating, ORDER_STATUSES } from '../lib/format';
+import { formatRating, ORDER_STATUSES } from '../lib/format';
 import { DISTRICT_COORDS, TASHKENT_CENTER } from '../lib/geo';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { useLoginMethods } from '../lib/telegram';
+import { debtStatus, formatSum } from '../lib/commission';
 
 function Stat({ icon: Icon, label, value, hint }) {
   return (
@@ -100,6 +101,11 @@ export default function MasterWorkPage() {
               Kamida bitta mutaxassislik tanlangan — <Link to="/master/profile" className="underline">profilni tahrirlash</Link>
             </Requirement>
             <Requirement ok={req.rating_ok}>Reyting {config?.min_rating ?? 4} dan past emas</Requirement>
+            {req.commission_ok === false && (
+              <Requirement ok={false}>
+                Komissiya qarzi limitdan oshmagan — <Link to="/master/hisob" className="underline">to'lash</Link>
+              </Requirement>
+            )}
           </ul>
         </div>
       )}
@@ -135,8 +141,8 @@ export default function MasterWorkPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Stat icon={Briefcase} label="Bugun bajarilgan" value={state.today.jobs} />
-        <Stat icon={Wallet} label="Bugungi daromad" value={formatPrice(state.today.earnings)} hint={`Sof: ${formatPrice(state.today.net)}`} />
-        <Stat icon={Percent} label={`Komissiya (${config?.commission_percent ?? 10}%)`} value={formatPrice(state.today.commission)} />
+        <Stat icon={Wallet} label="Bugungi daromad" value={formatSum(state.today.earnings)} hint={`Sof: ${formatSum(state.today.net)}`} />
+        <Stat icon={Percent} label={`Bugungi komissiya (${config?.commission_percent ?? 10}%)`} value={formatSum(state.today.commission)} hint="faqat tezkor chaqiruvlar" />
         <Stat icon={Star} label="Reyting" value={formatRating(state.rating)} hint={`${state.reviews_count} ta sharh`} />
         <Stat
           icon={CheckCircle}
@@ -146,6 +152,27 @@ export default function MasterWorkPage() {
         />
         <Stat icon={XCircle} label="Voz kechilgan ishlar" value={state.cancelled_jobs} />
       </div>
+
+      {state.commission && (() => {
+        const { due, limit } = state.commission;
+        const status = debtStatus(due, limit);
+        const tone = {
+          ok: 'border-emerald-200', normal: 'border-slate-200', warn: 'border-amber-300 bg-amber-50', blocked: 'border-red-300 bg-red-50'
+        }[status.tone];
+        return (
+          <Link to="/master/hisob" className={`flex items-center gap-3 rounded-2xl border p-4 hover:shadow-sm transition bg-white ${tone}`}>
+            <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <Wallet className="w-5 h-5" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-xs font-semibold text-slate-500">Komissiya qarzi</span>
+              <span className="block text-lg font-black text-slate-900 tabular-nums">{formatSum(Math.max(0, due))}</span>
+              <span className={`block text-xs ${status.tone === 'blocked' ? 'text-red-700 font-semibold' : status.tone === 'warn' ? 'text-amber-800 font-semibold' : 'text-slate-500'}`}>{status.text}</span>
+            </span>
+            <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden="true" />
+          </Link>
+        );
+      })()}
 
       <section className="card p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">

@@ -94,7 +94,10 @@ export function DispatchProvider({ children }) {
     socket.on('offer_closed', onClosed);
     socket.on('dispatch_offline', onOffline);
     socket.on('order_updated', onOrderUpdated);
+    // Komissiya qarzi limitdan oshsa ish rejimi o'chadi, to'lovdan keyin yana yoqish mumkin
+    socket.on('commission_updated', onOrderUpdated);
     return () => {
+      socket.off('commission_updated', onOrderUpdated);
       socket.off('order_offer', onOffer);
       socket.off('offer_closed', onClosed);
       socket.off('dispatch_offline', onOffline);

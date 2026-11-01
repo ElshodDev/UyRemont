@@ -123,6 +123,7 @@ describe('Telegram bot', () => {
         before(async () => {
             master = await app.tokenFor(MASTER_PHONE);
             await app.db('UPDATE master_profiles SET is_verified = TRUE WHERE user_id = $1', [master.id]);
+            await app.resetCommission(master.id);
             const clientPhone = randomPhone();
             client = await app.tokenFor(clientPhone, { name: 'Telegram Mijoz' });
             await linkTelegram(master.token, MASTER_PHONE, masterChat);

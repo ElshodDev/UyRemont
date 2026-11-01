@@ -89,6 +89,9 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/favorites`, `GET /api/favorites/ids`, `POST/DELETE /api/favorites/:masterId` | Sevimli ustalar |
 | `GET /api/masters/u/:slug`, `GET /api/masters/u/:slug/qr` | Ustaning ommaviy sahifasi va QR kodi (`?format=svg` — chop etish uchun) |
 | `GET /api/qr/ustalar` | Ustalar uchun qo'llanmaga olib boruvchi QR kod (`?format=svg`) |
+| `GET /api/masters/me/commission` | Ustaning komissiya hisobi: qarz, limit, rekvizitlar, tarix |
+| `GET /api/admin/commission?filter=&q=`, `GET /api/admin/commission/:masterId` | Ustalar qarzi va bitta ustaning hisobi |
+| `POST /api/admin/commission/:masterId/payments`, `.../adjustments` | To'lovni qabul qilish, hisobni tuzatish (jurnalga yoziladi) |
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 | `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yuborish, o'z murojaatlari |
@@ -190,6 +193,30 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 ---
 
+## 💳 Komissiya hisobi (qo'lda yig'ish)
+
+Mijoz ish haqini ustaga to'g'ridan-to'g'ri to'laydi, usta esa platformaga komissiya qarzdor bo'ladi.
+
+- **Yozilishi:** tezkor chaqiruv yakunlanganda (yakuniy summa bilan) ustaning hisobiga `PLATFORM_COMMISSION_PERCENT` foiz yoziladi. Foiz yozilgan paytdagisi saqlanadi, bitta buyurtmaga bir marta yoziladi. Oddiy (katalog) buyurtmalardan komissiya olinmaydi.
+- **Qarz limiti** (`COMMISSION_DEBT_LIMIT`, sukut bo'yicha 200 000 so'm; `0` — cheklov yo'q):
+  - qarz limitdan oshsa, ish rejimi o'chadi va usta to'lamaguncha ishga chiqa olmaydi;
+  - bunday ustaga dispetcher taklif yubormaydi;
+  - limitning 80% iga yetganda ogohlantirish keladi.
+- **Usta:**
+  - «Ish rejimi» sahifasida qarz kartasi;
+  - **Komissiya hisobi** sahifasi (`/master/hisob`): qarz, limit, to'lov rekvizitlari (`COMMISSION_PAYMENT_INFO`) va tarix.
+  - O'zgarish sahifani yangilamasdan va Telegram'da keladi.
+- **Admin → «Komissiya»:**
+  - jami qarz, limitdan oshganlar, 30 kunda yozilgan va yig'ilgan summa;
+  - qarzdorlar ro'yxati, ism yoki telefon bo'yicha qidiruv;
+  - **To'lov qabul qilish:** karta, naqd, bank o'tkazmasi yoki boshqa usul;
+  - **Tuzatish:** chegirma yoki xato yozuvni qaytarish, sabab majburiy;
+  - ustaning to'liq tarixi.
+  - Har bir amal jurnalga yoziladi, limitdan oshgan ustalar soni tab yonida qizil belgida ko'rinadi.
+- **Hisobning tuzilishi:** `master_ledger` jadvalida har bir yozuv qarzga ta'sirini saqlaydi: komissiya `+`, to'lov `−`, tuzatish `±`. `master_profiles.commission_due` shu yig'indining tezkor nusxasi va har doim bitta tranzaksiyada yangilanadi.
+
+---
+
 ## 🧪 Avtomatik testlar
 
 Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DATABASE_URL` `backend/.env` dagi `DATABASE_URL` bilan bir xil bo'lsa testlar to'xtaydi).
@@ -199,13 +226,13 @@ Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DA
 createdb uyremont_test
 
 cd backend
-TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 85+ test, ~15 soniya
+TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 100 test, ~20 soniya
 cd ../web && npm test && npm run build
 ```
 
 Windows PowerShell'da: `$env:TEST_DATABASE_URL="postgresql://..."; npm test`.
 
-- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola, murojaatlar, ustani tasdiqlash va hujjatlar, statistika, xatolar jurnali, havola ko'rinishi (Open Graph).
+- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola, murojaatlar, ustani tasdiqlash va hujjatlar, statistika, xatolar jurnali, havola ko'rinishi (Open Graph), komissiya hisobi.
 - **GitHub Actions** (`.github/workflows/ci.yml`): har bir push'da avtomatik:
   - testlar PostgreSQL bilan ishlaydi;
   - `npm audit` (yuqori daraja) va sayt build'i tekshiriladi;
@@ -256,6 +283,8 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 | `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
 | `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |
 | `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi (standart: 10) |
+| `COMMISSION_DEBT_LIMIT` | Komissiya qarzi limiti, so'm (standart: 200 000; `0` — cheklov yo'q) |
+| `COMMISSION_PAYMENT_INFO` | Ustalarga ko'rsatiladigan to'lov rekvizitlari |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |
 | `DISPATCH_REQUIRE_VERIFIED` | `false` bo'lsa tasdiqlanmagan ustalar ham tezkor chaqiruv oladi |
 

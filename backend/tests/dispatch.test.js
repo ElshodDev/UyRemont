@@ -30,6 +30,7 @@ describe('tezkor chaqiruv', () => {
         far = await app.tokenFor(FAR_MASTER);
         // Ish rejimiga chiqish uchun ikkala usta ham tasdiqlangan bo'lishi kerak
         await app.db('UPDATE master_profiles SET is_verified = TRUE WHERE user_id = ANY($1::uuid[])', [[near.id, far.id]]);
+        await app.resetCommission(near.id, far.id);
     });
     after(() => app.close());
 

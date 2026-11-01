@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle, Heart, LifeBuoy, Printer } from 'lucide-react';
+import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle, Heart, LifeBuoy, Printer, Wallet } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SecuritySettings from '../components/SecuritySettings';
 import TelegramSettings from '../components/TelegramSettings';
@@ -160,7 +160,8 @@ export default function ProfilePage() {
           { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' },
           ...(user.role === 'master' ? [
             { to: '/ustalar', icon: Wrench, label: 'Ustalar uchun qo\'llanma' },
-            { to: '/master/varaqa', icon: Printer, label: 'Varaqa va vizitka (chop etish)' }
+            { to: '/master/varaqa', icon: Printer, label: 'Varaqa va vizitka (chop etish)' },
+            { to: '/master/hisob', icon: Wallet, label: 'Komissiya hisobi' }
           ] : []),
           ...(user.role !== 'admin' ? [{ to: '/support', icon: LifeBuoy, label: 'Yordam va murojaatlarim' }] : [])
         ].map(({ to, icon: Icon, label }) => (

@@ -62,6 +62,7 @@ const ELIGIBLE_MASTERS_SQL = `
       AND mp.lat IS NOT NULL AND mp.lng IS NOT NULL
       AND mp.location_updated_at > NOW() - (${config.LOCATION_STALE_MIN} * INTERVAL '1 minute')
       ${config.REQUIRE_VERIFIED ? 'AND mp.is_verified = TRUE' : ''}
+      ${config.COMMISSION_DEBT_LIMIT > 0 ? `AND mp.commission_due <= ${Number(config.COMMISSION_DEBT_LIMIT)}` : ''}
       AND u.id <> $5
       AND EXISTS (
           SELECT 1 FROM master_specializations ms

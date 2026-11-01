@@ -80,7 +80,7 @@ const PRIVACY = {
     ]],
     ['5. Sizning huquqlaringiz', [
       'Ma\'lumotlaringizni ko\'rish va tuzatish: Profil sahifasida.',
-      'Hisobni va shaxsiy ma\'lumotlarni o\'chirish: Profil → Xavfsizlik → «Hisobni o\'chirish». Hujjatlar, rasmlar va murojaatlar ham o\'chiriladi; bajarilgan buyurtmalar ikkinchi tomon tarixi uchun ismsiz holda qoladi.',
+      'Hisobni va shaxsiy ma\'lumotlarni o\'chirish: Profil → Xavfsizlik → «Hisobni o\'chirish». Hujjatlar, rasmlar va murojaatlar ham o\'chiriladi; bajarilgan buyurtmalar ikkinchi tomon tarixi uchun, ustaning komissiya hisobi esa buxgalteriya uchun ismsiz holda qoladi.',
       'Rozilikni qaytarib olish va savollar: [email], [telefon].'
     ]],
     ['6. Qurilmada saqlanadigan ma\'lumotlar', [

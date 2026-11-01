@@ -597,3 +597,27 @@ CREATE TABLE IF NOT EXISTS error_logs (
     resolved BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE INDEX IF NOT EXISTS idx_error_logs_last_seen ON error_logs(resolved, last_seen DESC);
+
+-- =============================================
+-- 16. Komissiya hisobi: ustaning platformaga qarzi va to'lovlari
+-- =============================================
+
+-- Har bir yozuv qarzga ta'sirini saqlaydi: komissiya (+), to'lov (-), tuzatish (+/-).
+-- Qarz = SUM(amount); master_profiles.commission_due shu yig'indining tezkor nusxasi
+CREATE TABLE IF NOT EXISTS master_ledger (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    master_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind VARCHAR(12) NOT NULL CHECK (kind IN ('commission', 'payment', 'adjustment')),
+    amount NUMERIC(12, 2) NOT NULL,
+    order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    percent NUMERIC(5, 2),
+    base_amount NUMERIC(12, 2),
+    method VARCHAR(10) CHECK (method IN ('card', 'cash', 'transfer', 'other')),
+    note TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- Bitta buyurtma uchun komissiya faqat bir marta yoziladi
+CREATE UNIQUE INDEX IF NOT EXISTS idx_master_ledger_commission_order ON master_ledger(order_id) WHERE kind = 'commission';
+CREATE INDEX IF NOT EXISTS idx_master_ledger_master ON master_ledger(master_id, created_at DESC);
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS commission_due NUMERIC(12, 2) NOT NULL DEFAULT 0;

@@ -12,7 +12,7 @@ import { useToast } from '../context/ToastContext';
 
 const DOCUMENT_LABELS = { passport: 'Pasport / ID', selfie: 'Selfi', certificate: 'Sertifikat' };
 
-function FilterChips({ options, value, onChange, counts = {} }) {
+export function FilterChips({ options, value, onChange, counts = {} }) {
   return (
     <div className="flex gap-2 overflow-x-auto no-scrollbar" role="radiogroup" aria-label="Filtr">
       {options.map(([id, label]) => (
@@ -32,7 +32,7 @@ function FilterChips({ options, value, onChange, counts = {} }) {
   );
 }
 
-function useAdminList(path) {
+export function useAdminList(path) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(() => {

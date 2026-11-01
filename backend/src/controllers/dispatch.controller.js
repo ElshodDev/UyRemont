@@ -26,6 +26,7 @@ const { logAdminAction } = require('../services/audit.service');
 const { parsePhotoIds, attachPhotos } = require('./photos.controller');
 const offersService = require('../services/offers.service');
 const { syncOfferMessage, notifyOrderEvent } = require('../services/telegram/notify');
+const { formatSum, isOverLimit } = require('../services/commission.service');
 
 const ACTIVE_INSTANT_STATUSES = ['searching', 'accepted', 'arrived', 'in_progress'];
 const CLIENT_CANCEL_REASONS = ['Rejalar o\'zgardi', 'Usta uzoq kutdirmoqda', 'Usta bilan kelisha olmadik', 'Xato buyurtma berdim', 'Boshqa sabab'];
@@ -54,6 +55,8 @@ const getRequirements = (profile) => {
         has_specializations: profile.specializations_count > 0,
         rating_ok: ratingOk,
         active: profile.is_active,
+        // Komissiya qarzi limitdan oshmagan (cheklov o'chirilgan bo'lsa doim true)
+        commission_ok: !(config.COMMISSION_DEBT_LIMIT > 0 && Number(profile.commission_due) > config.COMMISSION_DEBT_LIMIT),
     };
     return { ...requirements, can_go_online: Object.values(requirements).every(Boolean) };
 };
@@ -84,6 +87,7 @@ const getConfig = (req, res) => {
             max_missed_offers: config.MAX_MISSED_OFFERS,
             free_cancel_min: config.FREE_CANCEL_MIN,
             commission_percent: config.COMMISSION_PERCENT,
+            commission_debt_limit: config.COMMISSION_DEBT_LIMIT,
             min_rating: config.MIN_RATING,
             min_reviews_for_rating: config.MIN_REVIEWS_FOR_RATING,
             require_verified: config.REQUIRE_VERIFIED,
@@ -322,7 +326,7 @@ const getMasterState = async (req, res, next) => {
         const userId = req.user.id;
         const profile = await loadMasterProfile(userId);
 
-        const [statsResult, activeResult, offerResult] = await Promise.all([
+        const [statsResult, activeResult, offerResult, commissionResult] = await Promise.all([
             query(
                 `SELECT COUNT(*)::int as jobs,
                         COALESCE(SUM(COALESCE(final_price, budget, 0)), 0) as earnings
@@ -343,10 +347,17 @@ const getMasterState = async (req, res, next) => {
                  LIMIT 1`,
                 [userId]
             ),
+            // Bugun yozilgan komissiya (faqat tezkor chaqiruvlar, yozilgan paytdagi foiz bilan)
+            query(
+                `SELECT COALESCE(SUM(amount), 0) as total FROM master_ledger
+                 WHERE master_id = $1 AND kind = 'commission'
+                   AND (created_at AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date`,
+                [userId]
+            ),
         ]);
 
         const earnings = Number(statsResult.rows[0].earnings);
-        const commission = Math.round((earnings * config.COMMISSION_PERCENT) / 100);
+        const commission = Number(commissionResult.rows[0].total);
 
         res.status(200).json({
             success: true,
@@ -370,6 +381,11 @@ const getMasterState = async (req, res, next) => {
                     net: earnings - commission,
                 },
                 requirements: getRequirements(profile),
+                commission: {
+                    due: Number(profile.commission_due),
+                    limit: config.COMMISSION_DEBT_LIMIT,
+                    blocked: isOverLimit(profile.commission_due),
+                },
                 active_job: activeResult.rows[0] || null,
                 pending_offer: offerResult.rows[0] ? await buildOfferPayload(offerResult.rows[0].id) : null,
             },
@@ -397,6 +413,9 @@ const setOnline = async (req, res, next) => {
                 if (!requirements.verified) reasons.push('profilingiz administrator tomonidan tasdiqlanmagan');
                 if (!requirements.has_specializations) reasons.push('mutaxassislik tanlanmagan');
                 if (!requirements.rating_ok) reasons.push(`reytingingiz ${config.MIN_RATING} dan past`);
+                if (!requirements.commission_ok) {
+                    reasons.push(`komissiya qarzingiz ${formatSum(profile.commission_due)} — limitdan (${formatSum(config.COMMISSION_DEBT_LIMIT)}) oshgan, avval to'lang`);
+                }
                 throw new HttpError(403, `Ishga chiqib bo'lmaydi: ${reasons.join(', ')}`);
             }
             const { lat, lng } = parseLocation(req.body);

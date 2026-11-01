@@ -100,6 +100,15 @@ const startApp = async () => {
         return { token: jwt.sign({ userId: user.id, tv: user.token_version }, TEST_JWT_SECRET, { expiresIn: '1h' }), id: user.id };
     };
 
+    /**
+     * Doimiy (seed) ustalarning komissiya hisobini nolga qaytarish: testlar qayta ishga tushirilganda
+     * qarz limitga yetib, ish rejimiga chiqish to'xtab qolmasin
+     */
+    const resetCommission = async (...userIds) => {
+        await db('DELETE FROM master_ledger WHERE master_id = ANY($1::uuid[])', [userIds]);
+        await db('UPDATE master_profiles SET commission_due = 0 WHERE user_id = ANY($1::uuid[])', [userIds]);
+    };
+
     const close = async () => {
         stopDispatcher();
         stopTelegramBot();
@@ -109,7 +118,7 @@ const startApp = async () => {
         await pool.end();
     };
 
-    return { url, api, db, tokenFor, telegram, close };
+    return { url, api, db, tokenFor, resetCommission, telegram, close };
 };
 
 /**

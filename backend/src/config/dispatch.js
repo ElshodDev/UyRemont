@@ -23,6 +23,10 @@ module.exports = {
     FREE_CANCEL_MIN: 3,
     // Platforma komissiyasi (yakuniy narxdan, foizda)
     COMMISSION_PERCENT: numberFromEnv('PLATFORM_COMMISSION_PERCENT', 10),
+    // Komissiya qarzi shu summadan (so'm) oshsa, usta to'lamaguncha ishga chiqa olmaydi va taklif olmaydi. 0 - cheklov yo'q
+    COMMISSION_DEBT_LIMIT: numberFromEnv('COMMISSION_DEBT_LIMIT', 200000),
+    // Ustalarga ko'rsatiladigan to'lov rekvizitlari (karta raqami, egasi, izohga nima yozish)
+    COMMISSION_PAYMENT_INFO: (process.env.COMMISSION_PAYMENT_INFO || '').trim().slice(0, 500),
     // Liniyaga chiqish uchun minimal reyting (kamida MIN_REVIEWS_FOR_RATING ta sharh bo'lganda)
     MIN_RATING: 4.0,
     MIN_REVIEWS_FOR_RATING: 5,

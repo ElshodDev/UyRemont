@@ -73,7 +73,7 @@ wait_healthy() {
 }
 
 write_env() {
-    local domain admin_phone login eskiz_email="" eskiz_password="" telegram_token="" support_phone support_telegram
+    local domain admin_phone login eskiz_email="" eskiz_password="" telegram_token="" support_phone support_telegram payment_info
     echo
     echo "${BOLD}Usta24 sozlamalari${RESET} (keyin deploy/.env faylida o'zgartirish mumkin)"
     echo
@@ -116,6 +116,7 @@ write_env() {
     support_phone="$(ask "Yordam telefoni (ixtiyoriy, masalan +998 71 200 00 00)")"
     support_telegram="$(ask "Yordam Telegram username (ixtiyoriy, @ siz)")"
     support_telegram="${support_telegram#@}"
+    payment_info="$(ask "Ustalar komissiyani qayerga to'laydi (karta raqami va egasi, ixtiyoriy)")"
 
     umask 077
     cat > .env <<EOF
@@ -144,6 +145,8 @@ SUPPORT_PHONE=$support_phone
 SUPPORT_TELEGRAM=$support_telegram
 
 PLATFORM_COMMISSION_PERCENT=10
+COMMISSION_DEBT_LIMIT=200000
+COMMISSION_PAYMENT_INFO=$payment_info
 DISPATCH_REQUIRE_VERIFIED=true
 
 BACKUP_HOUR=3
