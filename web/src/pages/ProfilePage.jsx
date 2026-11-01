@@ -6,12 +6,14 @@ import SecuritySettings from '../components/SecuritySettings';
 import TelegramSettings from '../components/TelegramSettings';
 import SavedAddressesCard from '../components/SavedAddressesCard';
 import { ThemeSegmented } from '../components/ThemeSwitch';
+import LanguageSwitch from '../components/LanguageSwitch';
 import { openOnboarding } from '../components/Onboarding';
 import Spinner from '../components/Spinner';
 import { api } from '../lib/api';
 import { formatDate, formatPhone, ROLE_LABELS } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -28,7 +30,7 @@ export default function ProfilePage() {
     try {
       const { data } = await api('/auth/me', { method: 'PUT', body: { name } });
       setUser(data);
-      toast.success('Ma\'lumotlar saqlandi');
+      toast.success(t('Ma\'lumotlar saqlandi'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -41,7 +43,7 @@ export default function ProfilePage() {
     try {
       const { data } = await api('/auth/set-role', { method: 'PUT', body: { role: 'client' } });
       setUser(data);
-      toast.success('Mijoz rejimiga o\'tdingiz. Usta profilingiz saqlanib qoladi');
+      toast.success(t('Mijoz rejimiga o\'tdingiz. Usta profilingiz saqlanib qoladi'));
       setSwitchOpen(false);
     } catch (err) {
       toast.error(err.message);
@@ -58,17 +60,17 @@ export default function ProfilePage() {
             {(user.name || '?').charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900">{user.name || 'Ism kiritilmagan'}</h1>
+            <h1 className="text-xl font-extrabold text-slate-900">{user.name || t('Ism kiritilmagan')}</h1>
             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {formatPhone(user.phone)}</p>
             <span className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
               {user.role === 'admin' && <ShieldCheck className="w-3 h-3" />}
-              {ROLE_LABELS[user.role]}
+              {t(ROLE_LABELS[user.role])}
             </span>
           </div>
         </div>
 
         <form onSubmit={saveName} className="space-y-3">
-          <label className="label" htmlFor="profile-name">Ism va familiya</label>
+          <label className="label" htmlFor="profile-name">{t('Ism va familiya')}</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -87,10 +89,10 @@ export default function ProfilePage() {
               disabled={saving || name.trim() === (user.name || '')}
               className="btn btn-primary px-5 font-bold"
             >
-              {saving ? <Spinner className="w-4 h-4 text-white" /> : 'Saqlash'}
+              {saving ? <Spinner className="w-4 h-4 text-white" /> : t('Saqlash')}
             </button>
           </div>
-          <p className="text-[11px] text-slate-400">Ro'yxatdan o'tgan sana: {formatDate(user.created_at, false)}</p>
+          <p className="text-[11px] text-slate-400">{t('Ro\'yxatdan o\'tgan sana: {date}', { date: formatDate(user.created_at, false) })}</p>
         </form>
       </div>
 
@@ -100,12 +102,12 @@ export default function ProfilePage() {
             <Wrench className="w-6 h-6 flex-shrink-0" />
             <div>
               <h3 className="font-bold">
-                {user.master_profile_id ? 'Usta rejimiga qaytish' : 'Usta bo\'lib ishlang'}
+                {user.master_profile_id ? t('Usta rejimiga qaytish') : t('Usta bo\'lib ishlang')}
               </h3>
               <p className="text-xs text-white/80">
                 {user.master_profile_id
-                  ? 'Usta profilingiz saqlangan. Qaytadan buyurtmalar qabul qilishingiz mumkin.'
-                  : 'Profil yarating va buyurtmalar qabul qiling.'}
+                  ? t('Usta profilingiz saqlangan. Qaytadan buyurtmalar qabul qilishingiz mumkin.')
+                  : t('Profil yarating va buyurtmalar qabul qiling.')}
               </p>
             </div>
           </div>
@@ -113,30 +115,30 @@ export default function ProfilePage() {
             onClick={() => navigate('/master/setup')}
             className="btn bg-snow text-primary-700 font-bold hover:bg-primary-50 whitespace-nowrap"
           >
-            {user.master_profile_id ? 'Usta rejimiga o\'tish' : 'Usta profilini yaratish'}
+            {user.master_profile_id ? t('Usta rejimiga o\'tish') : t('Usta profilini yaratish')}
           </button>
         </div>
       )}
 
       {user.role === 'master' && (
         <div className="card p-5 sm:p-6 space-y-3">
-          <h3 className="font-bold text-slate-900">Usta hisobi</h3>
+          <h3 className="font-bold text-slate-900">{t('Usta hisobi')}</h3>
           <div className="flex flex-col sm:flex-row gap-2">
             <Link
               to="/master/profile"
               className="btn btn-primary flex-1 font-bold"
             >
-              <Wrench className="w-4 h-4" /> Usta profilini tahrirlash
+              <Wrench className="w-4 h-4" /> {t('Usta profilini tahrirlash')}
             </Link>
             <button
               onClick={() => setSwitchOpen(true)}
               className="btn btn-secondary flex-1"
             >
-              <Repeat className="w-4 h-4" /> Mijoz rejimiga o'tish
+              <Repeat className="w-4 h-4" /> {t('Mijoz rejimiga o\'tish')}
             </button>
           </div>
           <p className="text-[11px] text-slate-400">
-            Mijoz rejimida boshqa ustalarga buyurtma bera olasiz, lekin katalogda ko'rinmaysiz.
+            {t('Mijoz rejimida boshqa ustalarga buyurtma bera olasiz, lekin katalogda ko\'rinmaysiz.')}
           </p>
         </div>
       )}
@@ -147,23 +149,27 @@ export default function ProfilePage() {
 
       <section className="card p-5 sm:p-6 space-y-4" aria-labelledby="appearance-title">
         <div>
-          <h3 id="appearance-title" className="font-bold text-slate-900">Ko'rinish</h3>
-          <p className="text-xs text-slate-500">Qorong'i rejim kechqurun ko'zni charchatmaydi va batareyani tejaydi.</p>
+          <h3 id="appearance-title" className="font-bold text-slate-900">{t('Ko\'rinish')}</h3>
+          <p className="text-xs text-slate-500">{t('Qorong\'i rejim kechqurun ko\'zni charchatmaydi va batareyani tejaydi.')}</p>
         </div>
         <ThemeSegmented />
+        <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100">
+          <span className="text-sm font-semibold text-slate-800">{t('Til')}</span>
+          <LanguageSwitch />
+        </div>
       </section>
 
-      <section className="card overflow-hidden" aria-label="Yordam">
+      <section className="card overflow-hidden" aria-label={t('Yordam')}>
         {[
-          ...(user.role === 'client' ? [{ to: '/favorites', icon: Heart, label: 'Sevimli ustalar' }] : []),
-          { to: '/prices', icon: Tag, label: 'Taxminiy narxlar' },
-          { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' },
+          ...(user.role === 'client' ? [{ to: '/favorites', icon: Heart, label: t('Sevimli ustalar') }] : []),
+          { to: '/prices', icon: Tag, label: t('Taxminiy narxlar') },
+          { to: '/rules', icon: BookOpen, label: t('Ishlash qoidalari') },
           ...(user.role === 'master' ? [
-            { to: '/ustalar', icon: Wrench, label: 'Ustalar uchun qo\'llanma' },
-            { to: '/master/varaqa', icon: Printer, label: 'Varaqa va vizitka (chop etish)' },
-            { to: '/master/hisob', icon: Wallet, label: 'Komissiya hisobi' }
+            { to: '/ustalar', icon: Wrench, label: t('Ustalar uchun qo\'llanma') },
+            { to: '/master/varaqa', icon: Printer, label: t('Varaqa va vizitka (chop etish)') },
+            { to: '/master/hisob', icon: Wallet, label: t('Komissiya hisobi') }
           ] : []),
-          ...(user.role !== 'admin' ? [{ to: '/support', icon: LifeBuoy, label: 'Yordam va murojaatlarim' }] : [])
+          ...(user.role !== 'admin' ? [{ to: '/support', icon: LifeBuoy, label: t('Yordam va murojaatlarim') }] : [])
         ].map(({ to, icon: Icon, label }) => (
           <Link key={to} to={to} className="flex items-center justify-between gap-3 px-5 min-h-14 border-b border-slate-100 hover:bg-slate-50">
             <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><Icon className="w-4 h-4 text-blue-600" /> {label}</span>
@@ -171,7 +177,7 @@ export default function ProfilePage() {
           </Link>
         ))}
         <button type="button" onClick={openOnboarding} className="w-full flex items-center justify-between gap-3 px-5 min-h-14 hover:bg-slate-50 text-left">
-          <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><PlayCircle className="w-4 h-4 text-blue-600" /> Qisqa tanishtiruv: ilova qanday ishlaydi</span>
+          <span className="flex items-center gap-3 text-sm font-semibold text-slate-800"><PlayCircle className="w-4 h-4 text-blue-600" /> {t('Qisqa tanishtiruv: ilova qanday ishlaydi')}</span>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </button>
       </section>
@@ -179,16 +185,16 @@ export default function ProfilePage() {
       <SecuritySettings />
 
       <p className="text-center text-xs text-slate-400">
-        <Link to="/terms" className="inline-block py-3 hover:text-slate-600">Foydalanish shartlari</Link>
+        <Link to="/terms" className="inline-block py-3 hover:text-slate-600">{t('Foydalanish shartlari')}</Link>
         {' · '}
-        <Link to="/privacy" className="inline-block py-3 hover:text-slate-600">Maxfiylik siyosati</Link>
+        <Link to="/privacy" className="inline-block py-3 hover:text-slate-600">{t('Maxfiylik siyosati')}</Link>
       </p>
 
       {switchOpen && (
         <ConfirmDialog
-          title="Mijoz rejimiga o'tasizmi?"
-          description="Profilingiz katalogdan yashiriladi va yangi buyurtmalar kelmaydi. Istalgan vaqtda qaytishingiz mumkin."
-          confirmLabel="O'tish"
+          title={t('Mijoz rejimiga o\'tasizmi?')}
+          description={t('Profilingiz katalogdan yashiriladi va yangi buyurtmalar kelmaydi. Istalgan vaqtda qaytishingiz mumkin.')}
+          confirmLabel={t('O\'tish')}
           tone="primary"
           loading={switching}
           onConfirm={switchToClient}

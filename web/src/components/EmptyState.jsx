@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../i18n';
 
 export default function EmptyState({ icon = '🔍', title, description, action }) {
   return (
@@ -17,14 +18,14 @@ export function ErrorState({ message, onRetry }) {
   return (
     <EmptyState
       icon="⚠️"
-      title="Ma'lumotlarni yuklab bo'lmadi"
+      title={t('Ma\'lumotlarni yuklab bo\'lmadi')}
       description={message}
       action={onRetry && (
         <button
           onClick={onRetry}
           className="btn btn-primary"
         >
-          Qayta urinish
+          {t('Qayta urinish')}
         </button>
       )}
     />

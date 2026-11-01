@@ -23,7 +23,7 @@ export default function AccountEvents() {
     };
     const onVerification = ({ status, note }) => {
       if (status === 'verified') toast.success(t('Profilingiz tasdiqlandi! Endi ishga chiqishingiz mumkin'));
-      else toast.error(t('Profilingiz hali tasdiqlanmadi: {note}', { note }));
+      else toast.error(t('Profilingiz hali tasdiqlanmadi: {note}', { note: note || '' }));
       refresh();
     };
 

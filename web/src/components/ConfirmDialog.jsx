@@ -2,11 +2,12 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
+import { t } from '../i18n';
 
 export default function ConfirmDialog({
   title,
   description,
-  confirmLabel = 'Tasdiqlash',
+  confirmLabel = t('Tasdiqlash'),
   tone = 'danger',
   loading = false,
   onConfirm,
@@ -28,7 +29,7 @@ export default function ConfirmDialog({
             disabled={loading}
             className="btn btn-secondary"
           >
-            Ortga
+            {t('Ortga')}
           </button>
           <button
             onClick={onConfirm}
