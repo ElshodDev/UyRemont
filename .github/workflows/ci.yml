@@ -69,3 +69,25 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  docker:
+    name: Docker (production imijlari)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker-compose.yml tekshiruvi
+        working-directory: deploy
+        run: cp env.example .env && sed -i 's/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=ci/' .env && docker compose config --quiet
+      - name: Skriptlar sintaksisi
+        run: bash -n deploy/usta24.sh && sh -n deploy/backup.sh
+      - name: Backend imiji
+        run: docker build --target backend --build-arg PUBLIC_APP_URL=https://usta24.example.uz -t usta24-backend .
+      - name: Sayt imiji (Caddy)
+        run: docker build --target web --build-arg PUBLIC_APP_URL=https://usta24.example.uz -t usta24-web .
+      - name: Caddyfile tekshiruvi
+        run: docker run --rm -e DOMAIN=usta24.example.uz usta24-web caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Havola kartochkasi shriftlari
+        run: |
+          docker run --rm --entrypoint fc-list usta24-backend : family | sort -u
+          docker run --rm --entrypoint sh usta24-backend -c "fc-list : family | grep -qi 'DejaVu Sans'"

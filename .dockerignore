@@ -1,0 +1,12 @@
+# Docker build'ga kirmaydigan fayllar (maxfiy sozlamalar, kompyuterdagi paketlar va yuklangan rasmlar)
+.git
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+web/dist
+backend/uploads
+backend/private_uploads
+deploy/backups
+deploy/.env
+*.log

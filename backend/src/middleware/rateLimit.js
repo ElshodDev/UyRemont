@@ -34,4 +34,13 @@ const clientErrorLimiter = rateLimit({
     message: limitMessage('Juda ko\'p xato hisoboti'),
 });
 
-module.exports = { apiLimiter, otpLimiter, clientErrorLimiter };
+// Havola ko'rinishi (Telegram, WhatsApp va boshqalar sahifani va kartochka rasmini oladi)
+const previewLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    limit: 300,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: limitMessage('Juda ko\'p so\'rov yuborildi. Birozdan so\'ng urinib ko\'ring'),
+});
+
+module.exports = { apiLimiter, otpLimiter, clientErrorLimiter, previewLimiter };

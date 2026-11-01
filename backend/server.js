@@ -7,14 +7,15 @@ const { Server } = require('socket.io');
 
 const routes = require('./src/routes');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
-const { apiLimiter } = require('./src/middleware/rateLimit');
+const { apiLimiter, previewLimiter } = require('./src/middleware/rateLimit');
+const { getPublicMasterPage, getMasterOgImage } = require('./src/controllers/og.controller');
 const { initChatSocket } = require('./src/socket/chat.socket');
-const { startDispatcher } = require('./src/services/dispatch.service');
+const { startDispatcher, stopDispatcher } = require('./src/services/dispatch.service');
 const { UPLOAD_DIR } = require('./src/middleware/upload');
-const { checkDatabase, describeTarget } = require('./src/config/database');
+const { checkDatabase, describeTarget, pool } = require('./src/config/database');
 const { validateSecurityConfig } = require('./src/config/security');
 const { isSmsConfigured } = require('./src/services/sms.service');
-const { startTelegramBot, telegramWebhook } = require('./src/services/telegram/bot');
+const { startTelegramBot, stopTelegramBot, telegramWebhook } = require('./src/services/telegram/bot');
 const { isTelegramConfigured } = require('./src/services/telegram/client');
 
 const app = express();
@@ -57,6 +58,11 @@ app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 
 // Telegram webhook (production). Telegram serverlaridan keladi, umumiy so'rovlar cheklovidan oldin
 app.post('/api/telegram/webhook', telegramWebhook);
+
+// Ustaning ommaviy sahifasi va havola kartochkasi (Telegram/WhatsApp ko'rinishi uchun).
+// Production'da proksi /u/* so'rovlarini shu yerga yuboradi (deploy/Caddyfile)
+app.get('/u/:slug', previewLimiter, getPublicMasterPage);
+app.get('/api/masters/u/:slug/og.png', previewLimiter, getMasterOgImage);
 
 // Asosiy API yo'nalishi
 app.use('/api', apiLimiter, routes);
@@ -116,6 +122,30 @@ if (require.main === module) {
         startDispatcher(io);
         startTelegramBot();
     });
+
+    // To'xtatish (Docker, systemd, Ctrl+C): yangi ulanishlar qabul qilinmaydi, boshlangan so'rovlar
+    // tugatiladi, keyin baza ulanishlari yopiladi. 10 soniyada tugamasa majburan to'xtatiladi
+    let shuttingDown = false;
+    const shutdown = (signal) => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        console.log(`🛑 ${signal}: server to'xtatilmoqda...`);
+        setTimeout(() => {
+            console.error('⚠️ 10 soniyada to\'xtamadi, majburan yopildi');
+            process.exit(1);
+        }, 10000).unref();
+        stopDispatcher();
+        stopTelegramBot();
+        // io.close() HTTP serverni ham yopadi
+        io.close(() => {
+            pool.end().catch(() => {}).finally(() => {
+                console.log('👋 Server to\'xtadi');
+                process.exit(0);
+            });
+        });
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 module.exports = { app, server, io };

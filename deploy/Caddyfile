@@ -1,0 +1,55 @@
+# =============================================
+# Usta24 - veb-server (Caddy)
+# - DOMAIN uchun HTTPS sertifikati (Let's Encrypt) avtomatik olinadi va yangilanadi, http -> https
+# - /api, /socket.io, /uploads va /u/<usta> backendga uzatiladi, qolgani - sayt fayllari
+# DOMAIN (va ixtiyoriy WWW_DOMAIN) deploy/.env dan olinadi
+# =============================================
+
+{$DOMAIN} {$WWW_DOMAIN} {
+	encode zstd gzip
+
+	# www.domen -> domen (WWW_DOMAIN berilganda)
+	@www host www.{$DOMAIN}
+	redir @www https://{$DOMAIN}{uri} permanent
+
+	# Xavfsizlik sarlavhalari (backend javoblari uchun ham, shuning uchun "defer")
+	header {
+		defer
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
+		# Sayt faqat o'z skriptlarini ishlatadi; shriftlar - Google Fonts, xarita - OpenStreetMap
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' wss://{host}; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+		-X-Powered-By
+	}
+
+	# Yuklanadigan rasmlar 8 MB gacha (backend o'zi ham tekshiradi)
+	request_body {
+		max_size 12MB
+	}
+
+	@backend path /api/* /socket.io/* /uploads/* /u/*
+	handle @backend {
+		reverse_proxy backend:5000
+	}
+
+	handle {
+		root * /srv
+
+		# Build fayllari nomida xesh bor: abadiy keshlanadi
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@static path /icons/* /og.png
+		header @static Cache-Control "public, max-age=86400"
+		# Qolgani (index.html, sw.js va boshqalar) har safar tekshiriladi - yangilanish darhol ko'rinadi
+		@other not path /assets/* /icons/* /og.png
+		header @other Cache-Control "no-cache"
+
+		# Sayt sahifalari (React Router): fayl bo'lmasa index.html
+		try_files {path} /index.html
+		file_server
+	}
+}
