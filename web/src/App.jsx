@@ -15,6 +15,7 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import MasterSetupPage from './pages/MasterSetupPage';
+import BecomeMasterPage from './pages/BecomeMasterPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 import CallMasterPage from './pages/CallMasterPage';
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/prices" element={<PricesPage />} />
         <Route path="/u/:slug" element={<PublicMasterPage />} />
         <Route path="/ustalar" element={<MasterGuidePage />} />
+        <Route path="/usta-bolish" element={<BecomeMasterPage />} />
         <Route path="/ustalar/varaqa" element={<RecruitFlyerPage />} />
         <Route path="/master/varaqa" element={<RequireAuth roles={['master']}><MasterFlyerPage /></RequireAuth>} />
         <Route path="/master/hisob" element={<RequireAuth roles={['master']}><MasterBalancePage /></RequireAuth>} />

@@ -35,7 +35,7 @@ function useDebounced(value, delay = 350) {
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { requireAuth } = useAuth();
+  const { user, requireAuth } = useAuth();
   const toast = useToast();
   const { specializations } = useSpecializations();
   const resultsRef = useRef(null);
@@ -422,7 +422,7 @@ export default function HomePage() {
               {t('Batafsil')}
             </Link>
             <button
-              onClick={() => requireAuth((current) => navigate(current.role === 'master' ? '/master/profile' : '/master/setup'))}
+              onClick={() => navigate(user?.role === 'master' ? '/master/profile' : '/usta-bolish')}
               className="btn bg-snow text-ink font-bold hover:bg-primary-50 whitespace-nowrap px-5"
             >
               {t('Usta bo\'lib qo\'shilish')}

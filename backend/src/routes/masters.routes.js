@@ -13,6 +13,7 @@ const {
     uploadPortfolio,
     deletePortfolioItem,
     getSpecializations,
+    quickStart,
 } = require('../controllers/masters.controller');
 const verification = require('../controllers/verification.controller');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -42,6 +43,9 @@ router.delete('/me/documents/:id', authenticate, authorize('master'), verificati
 
 // Usta o'z profilini yangilashi
 router.put('/profile', authenticate, authorize('master'), updateProfile);
+
+// 1 daqiqada usta bo'lish (mijoz ham, usta ham chaqira oladi: rol shu yerda o'zgaradi; admin - 400)
+router.post('/quick-start', authenticate, quickStart);
 
 // Portfolio (rasm fayli yoki URL)
 router.get('/portfolio/my', authenticate, authorize('master'), getMyPortfolio);

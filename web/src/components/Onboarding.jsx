@@ -177,7 +177,7 @@ export default function Onboarding() {
                   type="button"
                   onClick={() => {
                     close();
-                    navigate('/master/setup');
+                    navigate('/usta-bolish');
                   }}
                   className="btn btn-ghost w-full text-xs"
                 >

@@ -73,6 +73,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/masters/specializations` | Mutaxassisliklar katalogi (4 bo'lim) |
 | `GET /api/masters/:id` | Usta profili, portfolio, sharhlar |
 | `PUT /api/masters/profile` | Usta profilini tahrirlash (faqat usta) |
+| `POST /api/masters/quick-start` | 1 daqiqada usta bo'lish: `{ specialization_ids, district, name? }` - rol, profil va sohalar bitta tranzaksiyada (narx, tajriba keyin) |
 | `GET/POST/DELETE /api/masters/portfolio` | Portfolio rasmlari (fayl yuklash, 8 MB gacha, EXIF/GPS o'chiriladi) |
 | `POST /api/orders` | Buyurtma: aniq ustaga yoki mutaxassislik bo'yicha ochiq buyurtma (`photo_ids` bilan) |
 | `POST /api/orders/photos`, `DELETE /api/orders/photos/:id` | Muammo rasmi (buyurtmadan oldin yuklanadi, ko'pi bilan 3 ta) |
@@ -120,7 +121,11 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
   - **Saralash:** "Tavsiya etilgan" (standart) - bo'sh va tasdiqlangan ustalar oldinda, reyting sharhlar soni bilan tortiladi (1 ta 5.0 sharh 50 ta 4.9 sharhdan yuqori chiqmaydi), shuningdek reyting, sharhlar, tajriba, narx bo'yicha.
   - Qidiruvda soha tanlanmagan bo'lsa, hamma bo'limlar bo'yicha qidiriladi. Barcha tanlovlar URL da saqlanadi (havolani ulashish mumkin).
 - **Telefon + SMS kod orqali kirish**, yangi foydalanuvchidan ism so'raladi.
-- **Usta profili:** portfolio, sharhlar, bajarilgan buyurtmalar soni, qo'ng'iroq tugmasi.
+- **Usta profili:** portfolio, sharhlar, bajarilgan buyurtmalar soni. Telefon raqami buyurtma qabul qilingach ochiladi.
+- **1 daqiqada usta bo'lish (`/usta-bolish`):** 3 qadam - soha (bir nechta), tuman, telefon raqamni tasdiqlash (kirish oynasi oxirida ochiladi). Tanlov sahifa yangilansa ham saqlanadi. Shu zahoti katalogga qo'shiladi, tabrik sahifasida keyingi qadamlar: Telegram'ni ulash, hujjat yuborish, narx, tajriba va ish rasmlarini qo'shish.
+  - Hamma "usta bo'lish" tugmalari (sarlavha menyusi, bosh sahifa, `/ustalar`, onboarding, profil) shu sahifaga olib boradi. `/master/setup` usta bo'lmaganlarni ham shu yerga yo'naltiradi.
+  - Usta profilida **«Profilni to'ldiring»** ro'yxati va foiz ko'rsatkichi bor: narx, tajriba, o'zi haqida (30+ belgi), 3+ ish rasmi, hujjatlar, Telegram. Hammasi bajarilsa ro'yxat yo'qoladi.
+  - Narx va tajriba ixtiyoriy: bo'sh bo'lsa katalogda «Narx kelishiladi» va «Yangi usta» ko'rinadi.
 - **Buyurtma berish:** aniq ustaga yoki "Usta tanlamasdan buyurtma qoldirish", Telegram orqali ulashish.
 - **Buyurtmalarim:** holat filtrlari, buyurtma sahifasida holat bosqichlari, amallar, real-time chat va sharh qoldirish.
 - **Usta kabineti:** profil yaratish/tahrirlash, mutaxassisliklar, "Band/Bo'sh" holati, portfolio yuklash, ochiq buyurtmalarni olish.

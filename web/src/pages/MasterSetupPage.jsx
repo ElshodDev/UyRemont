@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Wrench, ImagePlus, Trash2, ShieldCheck, Star } from 'lucide-react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Wrench, ImagePlus, Trash2, ShieldCheck, Star, Check, Circle } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PublicLinkCard from '../components/PublicLinkCard';
 import VerificationCard from '../components/VerificationCard';
@@ -15,7 +15,7 @@ import { t, specName } from '../i18n';
 
 const inputClass = 'input';
 
-function PortfolioManager() {
+function PortfolioManager({ onCount }) {
   const toast = useToast();
   const fileRef = useRef(null);
   const [items, setItems] = useState(null);
@@ -24,6 +24,10 @@ function PortfolioManager() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [confirmItem, setConfirmItem] = useState(null);
+
+  useEffect(() => {
+    if (items) onCount?.(items.length);
+  }, [items, onCount]);
 
   useEffect(() => {
     api('/masters/portfolio/my')
@@ -75,7 +79,7 @@ function PortfolioManager() {
   };
 
   return (
-    <section className="card p-5 sm:p-6">
+    <section id="portfolio" className="card p-5 sm:p-6 scroll-mt-24">
       <h2 className="font-bold text-slate-900 mb-1">{t('Portfolio')}</h2>
       <p className="text-xs text-slate-500 mb-4">{t('Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 8 MB gacha). Rasmdagi joylashuv (GPS) ma\'lumotlari avtomatik o\'chiriladi.')}</p>
 
@@ -139,18 +143,74 @@ function PortfolioManager() {
   );
 }
 
+/**
+ * "Profilni to'ldiring": 1 daqiqada ro'yxatdan o'tgan usta keyin to'ldiradigan narsalar.
+ * Hammasi bajarilsa ko'rinmaydi
+ */
+function ProfileChecklist({ user, portfolioCount }) {
+  const items = [
+    { id: 'price', done: Number(user.hourly_rate) > 0, label: t('Boshlang\'ich narx'), href: '#profil-forma' },
+    { id: 'experience', done: Number(user.experience_years) > 0, label: t('Tajriba'), href: '#profil-forma' },
+    { id: 'bio', done: (user.bio || '').trim().length >= 30, label: t('O\'zingiz haqingizda (kamida 30 belgi)'), href: '#profil-forma' },
+    { id: 'portfolio', done: portfolioCount !== null && portfolioCount >= 3, label: t('Kamida 3 ta ish rasmi'), href: '#portfolio' },
+    { id: 'verified', done: Boolean(user.is_verified), label: t('Hujjatlar (tasdiqlangan belgisi)'), href: '#tasdiqlash' },
+    { id: 'telegram', done: Boolean(user.telegram), label: t('Telegram (buyurtma xabarlari)'), to: '/profile#telegram' }
+  ];
+  if (portfolioCount === null) return null;
+  const doneCount = items.filter((item) => item.done).length;
+  if (doneCount === items.length) return null;
+  const percent = Math.round(((doneCount + 2) / (items.length + 2)) * 100); // soha va tuman - bor
+
+  return (
+    <section className="card p-5 sm:p-6 border-blue-200" aria-labelledby="checklist-title">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="checklist-title" className="font-bold text-slate-900">{t('Profilni to\'ldiring')}</h2>
+        <span className="text-sm font-black text-blue-700 tabular-nums">{percent}%</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label={t('Profil to\'liqligi')}>
+        <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${percent}%` }} />
+      </div>
+      <p className="text-xs text-slate-500 mt-2">{t('To\'liq profilli ustani mijozlar ko\'proq tanlaydi.')}</p>
+      <ul className="mt-3 grid sm:grid-cols-2 gap-1.5">
+        {items.map((item) => {
+          const content = (
+            <>
+              {item.done
+                ? <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+                : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0" aria-hidden="true" />}
+              <span className={item.done ? 'text-slate-400 line-through' : 'text-slate-800 font-semibold'}>{item.label}</span>
+              <span className="sr-only">{item.done ? t('bajarilgan') : t('bajarilmagan')}</span>
+            </>
+          );
+          const className = 'flex items-center gap-2 min-h-10 px-2 rounded-lg text-sm';
+          if (item.done) return <li key={item.id} className={className}>{content}</li>;
+          return (
+            <li key={item.id}>
+              {item.to
+                ? <Link to={item.to} className={`${className} hover:bg-slate-50`}>{content}</Link>
+                : <a href={item.href} className={`${className} hover:bg-slate-50`}>{content}</a>}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export default function MasterSetupPage() {
   const { user, refresh } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
+  const location = useLocation();
   const { specializations } = useSpecializations();
   const isMaster = user.role === 'master';
+  const [portfolioCount, setPortfolioCount] = useState(null);
 
+  // Narx va tajriba ixtiyoriy: bo'sh qolsa katalogda "Narx kelishiladi" / "Yangi usta"
   const [form, setForm] = useState({
     name: user.name || '',
     bio: user.bio || '',
-    experience_years: user.experience_years ?? 1,
-    hourly_rate: user.hourly_rate ? Math.round(Number(user.hourly_rate)) : 80000,
+    experience_years: Number(user.experience_years) > 0 ? user.experience_years : '',
+    hourly_rate: Number(user.hourly_rate) > 0 ? Math.round(Number(user.hourly_rate)) : '',
     district: user.district || 'Chilonzor',
     is_available: user.is_available ?? true,
     specialization_ids: user.specialization_ids || []
@@ -164,6 +224,13 @@ export default function MasterSetupPage() {
     if (first) setVertical(first.vertical);
     // faqat katalog yuklanganda
   }, [specializations]);
+
+  // "Profilni to'ldiring" dan: forma maydonlariga o'tish
+  useEffect(() => {
+    if (location.hash === '#profil-forma') {
+      document.getElementById('profil-forma')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [location.hash]);
 
   const verticalSpecs = useMemo(
     () => specializations.filter((s) => s.vertical === vertical),
@@ -187,20 +254,17 @@ export default function MasterSetupPage() {
     }
     setSaving(true);
     try {
-      if (!isMaster) {
-        await api('/auth/set-role', { method: 'PUT', body: { role: 'master' } });
-      }
+      const { experience_years: experience, hourly_rate: rate, ...rest } = form;
       await api('/masters/profile', {
         method: 'PUT',
         body: {
-          ...form,
-          experience_years: Number(form.experience_years),
-          hourly_rate: Number(form.hourly_rate)
+          ...rest,
+          ...(experience !== '' && { experience_years: Number(experience) }),
+          ...(rate !== '' && { hourly_rate: Number(rate) })
         }
       });
       await refresh();
-      toast.success(isMaster ? t('Profil yangilandi') : t('Xush kelibsiz! Profilingiz katalogga qo\'shildi'));
-      if (!isMaster) navigate('/master/profile', { replace: true });
+      toast.success(t('Profil yangilandi'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -208,13 +272,8 @@ export default function MasterSetupPage() {
     }
   };
 
-  if (user.role === 'admin') {
-    return (
-      <main className="max-w-xl mx-auto px-4 py-16 w-full flex-1 text-center text-sm text-slate-500">
-        {t('Administrator hisobi usta profiliga ega bo\'la olmaydi.')}
-      </main>
-    );
-  }
+  // Yangi usta (yoki usta rejimiga qaytayotgan mijoz) - 1 daqiqalik ro'yxatdan o'tish sahifasiga
+  if (!isMaster) return <Navigate to="/usta-bolish" replace />;
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full flex-1 space-y-4">
@@ -222,34 +281,29 @@ export default function MasterSetupPage() {
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-600"><Wrench className="w-6 h-6" /></div>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900">
-              {isMaster ? t('Usta profilim') : t('Usta sifatida qo\'shilish')}
-            </h1>
-            <p className="text-xs text-slate-500">
-              {isMaster ? t('Ma\'lumotlaringiz katalogda shunday ko\'rinadi') : t('Qaysi sohada xizmat ko\'rsatishingizni tanlang va profil yarating')}
-            </p>
+            <h1 className="text-2xl font-extrabold text-slate-900">{t('Usta profilim')}</h1>
+            <p className="text-xs text-slate-500">{t('Ma\'lumotlaringiz katalogda shunday ko\'rinadi')}</p>
           </div>
         </div>
-        {isMaster && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold">
-              <Star className="w-3.5 h-3.5 fill-current" /> {formatRating(user.rating)} ({user.reviews_count || 0})
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-bold">
+            <Star className="w-3.5 h-3.5 fill-current" /> {formatRating(user.rating)} ({user.reviews_count || 0})
+          </span>
+          {user.is_verified ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5" /> {t('Tasdiqlangan')}
             </span>
-            {user.is_verified ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> {t('Tasdiqlangan')}
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 font-semibold">{t('Tasdiqlanmagan')}</span>
-            )}
-          </div>
-        )}
+          ) : (
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 font-semibold">{t('Tasdiqlanmagan')}</span>
+          )}
+        </div>
       </div>
 
-      {isMaster && <VerificationCard />}
-      {isMaster && <PublicLinkCard />}
+      <ProfileChecklist user={user} portfolioCount={portfolioCount} />
+      <VerificationCard />
+      <PublicLinkCard />
 
-      <form onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs">
+      <form id="profil-forma" onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs scroll-mt-24">
         <div>
           <label className="font-semibold text-slate-700 block mb-1.5">{t('Xizmat sohasi va mutaxassislik *')}</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
@@ -312,25 +366,27 @@ export default function MasterSetupPage() {
             </select>
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">{t('Tajriba (yil) *')}</label>
+            <label className="font-semibold text-slate-700 block mb-1" htmlFor="experience-years">{t('Tajriba (yil)')}</label>
             <input
+              id="experience-years"
               type="number"
-              required
               min="0"
               max="60"
               className={inputClass}
+              placeholder={t('Masalan: 5')}
               value={form.experience_years}
               onChange={(e) => setForm({ ...form, experience_years: e.target.value })}
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">{t('Boshlang\'ich narx (so\'m) *')}</label>
+            <label className="font-semibold text-slate-700 block mb-1" htmlFor="hourly-rate">{t('Boshlang\'ich narx (so\'m)')}</label>
             <input
+              id="hourly-rate"
               type="number"
-              required
               min="0"
               step="5000"
               className={inputClass}
+              placeholder={t('Bo\'sh qolsa: «Narx kelishiladi»')}
               value={form.hourly_rate}
               onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
             />
@@ -371,11 +427,11 @@ export default function MasterSetupPage() {
           disabled={saving}
           className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
         >
-          {saving ? <Spinner className="w-4 h-4 text-white" /> : isMaster ? t('O\'zgarishlarni saqlash') : t('Profilni saqlash')}
+          {saving ? <Spinner className="w-4 h-4 text-white" /> : t('O\'zgarishlarni saqlash')}
         </button>
       </form>
 
-      {isMaster && <PortfolioManager />}
+      <PortfolioManager onCount={setPortfolioCount} />
     </main>
   );
 }
