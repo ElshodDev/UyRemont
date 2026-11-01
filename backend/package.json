@@ -10,7 +10,7 @@
     "db:seed": "node scripts/db-setup.js --seed",
     "reset-2fa": "node scripts/reset-2fa.js",
     "pretest": "node tests/setup-db.js",
-    "test": "node --test --test-concurrency=1 tests/*.test.js"
+    "test": "node --require ./tests/env.js --test --test-concurrency=1 tests/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -6,7 +6,12 @@ const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { startApp, randomPhone, waitFor } = require('./helpers');
+const { startApp, randomPhone, waitFor, resolveTestDatabaseUrl } = require('./helpers');
+
+// Bazaga ulanadigan modul startApp dan oldin yuklansa ham faqat test bazasi ishlatilsin
+// (src/config/database.js ulanishni yuklanish paytida backend/.env dagi DATABASE_URL bilan ochadi)
+process.env.DATABASE_URL = resolveTestDatabaseUrl();
+
 const i18n = require('../src/i18n');
 const ru = require('../src/i18n/ru');
 
@@ -58,7 +63,7 @@ describe('i18n: tarjima mexanizmi', () => {
         );
         assert.equal(
             i18n.translate('ru', 'To\'lov qabul qilindi: 20 000 so\'m. Qolgan qarz: 40 000 so\'m. Endi ishga chiqishingiz mumkin.'),
-            'Платёж принят: 20 000 сум. Остаток долга: 40 000 сум. Теперь Вы можете выйти на линию.'
+            'Платёж принят: 20 000 сум. Остаток долга: 40 000 сум. Теперь вы можете выйти на линию.'
         );
         // {note:raw}: administrator yozgan izoh tarjima qilinmaydi
         assert.equal(
@@ -257,7 +262,7 @@ describe('i18n: lug\'at to\'liqligi (statik tekshiruv)', () => {
         const samples = {
             'Noto\'g\'ri kod. Yana 4 ta urinish qoldi': 'Неверный код. Осталось попыток: 4',
             'Kodni qayta yuborish uchun 42 soniya kuting': 'Подождите 42 сек. перед повторной отправкой кода',
-            'Sizda 5 ta ochiq murojaat bor. Ular ko\'rib chiqilishini kuting': 'У Вас уже есть открытые обращения (5). Дождитесь их рассмотрения',
+            'Sizda 5 ta ochiq murojaat bor. Ular ko\'rib chiqilishini kuting': 'У вас уже есть открытые обращения (5). Дождитесь их рассмотрения',
             'Ko\'pi bilan 3 ta rasm biriktirish mumkin': 'Можно прикрепить не более 3 фото',
             'Murojaatingiz qabul qilindi (#17). Javob shu yerda va Telegram\'da ko\'rinadi': 'Ваше обращение принято (#17). Ответ появится здесь и в Telegram',
             'Yuborishdan oldin qo\'shing: ism, pasport (ID karta) rasmi': 'Перед отправкой добавьте: имя, фото паспорта (ID-карты)',
@@ -268,8 +273,18 @@ describe('i18n: lug\'at to\'liqligi (statik tekshiruv)', () => {
     });
 
     it('kod ichidagi ro\'yxatlar (taklif natijasi, murojaat holati) tarjima qilingan', () => {
-        const { OFFER_RESULT } = require('../src/services/telegram/notify');
-        const dynamic = [...Object.values(OFFER_RESULT), 'ko\'rib chiqilmoqda', 'hal qilindi', 'rad etildi'];
+        // Modul yuklanmaydi (bazaga ulanmasligi uchun): obyektlar manba matnidan o'qiladi
+        const objectValues = (file, name) => {
+            const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
+            const start = src.indexOf(`const ${name} = {`);
+            assert.ok(start >= 0, `${file}: ${name}`);
+            return expressionStrings(src, src.indexOf('{', start)).map((literal) => literal.value);
+        };
+        const dynamic = [
+            ...objectValues('src/services/telegram/notify.js', 'OFFER_RESULT'),
+            ...objectValues('src/controllers/support.controller.js', 'STATUS_TEXT'),
+        ];
+        assert.equal(dynamic.length, 7);
         assert.deepEqual(dynamic.filter((key) => !hasKey(key)), []);
     });
 });
@@ -423,7 +438,7 @@ describe('i18n: API, socket va Telegram', () => {
 
             const empty = await app.api('/auth/me', { method: 'PUT', token: user.token, body: {} });
             assert.equal(empty.status, 400);
-            assert.equal(empty.data.message, 'Ism majburiy');
+            assert.equal(empty.data.message, 'Ism kamida 2 belgidan iborat bo\'lishi kerak');
             const shortName = await app.api('/auth/me', { method: 'PUT', token: user.token, body: { name: 'A', language: 'ru' } });
             assert.equal(shortName.status, 400);
         });
@@ -489,7 +504,7 @@ describe('i18n: API, socket va Telegram', () => {
                 method: 'POST', token: client.token, body: { title: 'Kran <b>oqyapti</b>', address: 'Uy 7', master_id: master.id },
             });
             assert.equal(order.status, 201);
-            const message = await waitMessage(masterChat, /Новый заказ для Вас/);
+            const message = await waitMessage(masterChat, /Новый заказ для вас/);
             assert.ok(message, 'ustaga ruscha xabar keldi');
             assert.ok(message.text.includes('Kran &lt;b&gt;oqyapti&lt;/b&gt;'), 'HTML xavfsiz');
             assert.ok(message.text.includes('💰 Бюджет: по договорённости'));
@@ -508,7 +523,7 @@ describe('i18n: API, socket va Telegram', () => {
                 method: 'POST', token: client.token, body: { specialization_id: 1, ...POINT, address: 'Rus ko\'chasi 1' },
             });
             assert.equal(order.status, 201);
-            const offer = await waitMessage(masterChat, /Новый заказ/);
+            const offer = await waitMessage(masterChat, /🔔 <b>Новый заказ<\/b>/);
             assert.ok(offer, 'taklif keldi');
             assert.ok(offer.text.includes(`Вызов: ${specRu}`), offer.text);
             assert.ok(offer.text.includes('💰 Стоимость выезда:'));

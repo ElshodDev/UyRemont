@@ -4,7 +4,7 @@
 // Atamalar: usta - мастер, mijoz - клиент, buyurtma - заказ, tezkor chaqiruv - срочный вызов,
 // chiqish narxi - стоимость выезда, ish haqi - оплата работы, material - материалы, komissiya - комиссия,
 // qarz - долг, murojaat - обращение, ish rejimi - рабочий режим, ishga chiqish - выйти на линию,
-// taklif - предложение, so'm - сум. Murojaat «Вы» bilan.
+// taklif - предложение, so'm - сум. «Вы» bilan murojaat: gap boshida «Вы», o'rtasida «вы» (sayt lug'atlari bilan bir xil).
 // Ruscha ko'plik shakllari ishlatilmaydi: «не более {n} фото», «Осталось попыток: {n}», «{n} сек.».
 // =============================================
 
@@ -84,7 +84,7 @@ module.exports = {
     'Administrator uchun ikki bosqichli kirishni (2FA) yoqing: Profil → Xavfsizlik':
         'Администратору необходимо включить двухэтапный вход (2FA): Профиль → Безопасность',
     'Avval tizimga kiring': 'Сначала войдите в систему',
-    'Bu amalni bajarishga ruxsatingiz yo\'q': 'У Вас нет прав на это действие',
+    'Bu amalni bajarishga ruxsatingiz yo\'q': 'У вас нет прав на это действие',
 
     // ---------- Kirish va hisob (auth.controller, otp.service) ----------
     'Noto\'g\'ri telefon raqam formati. +998XXXXXXXXX formatida kiriting': 'Неверный формат номера телефона. Введите номер в формате +998XXXXXXXXX',
@@ -118,8 +118,8 @@ module.exports = {
     'Barcha qurilmalardan chiqildi': 'Выполнен выход на всех устройствах',
     'Hisobni o\'chirishni tasdiqlang': 'Подтвердите удаление аккаунта',
     'Administrator hisobini o\'chirib bo\'lmaydi. Avval boshqa administrator rolingizni o\'zgartirsin':
-        'Аккаунт администратора удалить нельзя. Сначала другой администратор должен изменить Вашу роль',
-    'Sizda faol buyurtmalar bor. Avval ularni yakunlang yoki bekor qiling': 'У Вас есть активные заказы. Сначала завершите или отмените их',
+        'Аккаунт администратора удалить нельзя. Сначала другой администратор должен изменить вашу роль',
+    'Sizda faol buyurtmalar bor. Avval ularni yakunlang yoki bekor qiling': 'У вас есть активные заказы. Сначала завершите или отмените их',
     'Hisobingiz va shaxsiy ma\'lumotlaringiz o\'chirildi': 'Ваш аккаунт и персональные данные удалены',
     'Bu raqamga bugun juda ko\'p kod so\'raldi. Ertaga qayta urinib ko\'ring': 'На этот номер сегодня запрошено слишком много кодов. Попробуйте завтра',
     'Kodni qayta yuborish uchun {n:num} soniya kuting': 'Подождите {n} сек. перед повторной отправкой кода',
@@ -143,7 +143,7 @@ module.exports = {
     'Buyurtma yaratildi': 'Заказ создан',
     'Noto\'g\'ri holat': 'Неверный статус',
     'Buyurtma topilmadi': 'Заказ не найден',
-    'Bu buyurtmani ko\'rishga ruxsatingiz yo\'q': 'У Вас нет доступа к этому заказу',
+    'Bu buyurtmani ko\'rishga ruxsatingiz yo\'q': 'У вас нет доступа к этому заказу',
     'Ruxsat yo\'q': 'Нет доступа',
     'Buyurtmani bu holatga o\'tkazib bo\'lmaydi': 'Нельзя перевести заказ в этот статус',
     'Buyurtma holati allaqachon o\'zgargan. Sahifani yangilang': 'Статус заказа уже изменился. Обновите страницу',
@@ -157,7 +157,7 @@ module.exports = {
     'Usta profili topilmadi': 'Профиль мастера не найден',
     'Xizmat turini tanlang': 'Выберите вид услуги',
     'Xizmat turi topilmadi': 'Вид услуги не найден',
-    'Sizda faol chaqiruv bor. Avval uni yakunlang yoki bekor qiling': 'У Вас уже есть активный вызов. Сначала завершите или отмените его',
+    'Sizda faol chaqiruv bor. Avval uni yakunlang yoki bekor qiling': 'У вас уже есть активный вызов. Сначала завершите или отмените его',
     'Usta qidirilmoqda': 'Ищем мастера',
     'Bu buyurtmani bekor qilib bo\'lmaydi': 'Этот заказ нельзя отменить',
     'Ish boshlangan. Bekor qilish uchun usta bilan kelishing yoki qo\'llab-quvvatlashga murojaat qiling':
@@ -185,7 +185,7 @@ module.exports = {
     'Usta topildi va yo\'lga chiqdi': 'Мастер найден и уже в пути',
     'Taklif allaqachon yopilgan': 'Предложение уже закрыто',
     'Ketma-ket {n} ta buyurtmaga javob bermaganingiz uchun ish rejimingiz o\'chirildi':
-        'Рабочий режим выключен: Вы не ответили на заказы несколько раз подряд (пропущено: {n})',
+        'Рабочий режим выключен: вы не ответили на заказы несколько раз подряд (пропущено: {n})',
     // Bekor qilish sabablari (saytda tanlanadi, Telegram xabarida ko'rsatiladi)
     'Rejalar o\'zgardi': 'Планы изменились',
     'Usta uzoq kutdirmoqda': 'Слишком долгое ожидание мастера',
@@ -212,7 +212,7 @@ module.exports = {
     'Rasm tanlanmagan': 'Фото не выбрано',
     'Juda ko\'p rasm yuklandi. Avval buyurtmani yuboring yoki keyinroq urinib ko\'ring':
         'Загружено слишком много фото. Сначала отправьте заказ или попробуйте позже',
-    'Bu rasmni ko\'rishga ruxsatingiz yo\'q': 'У Вас нет доступа к этому фото',
+    'Bu rasmni ko\'rishga ruxsatingiz yo\'q': 'У вас нет доступа к этому фото',
     'Rasm fayli topilmadi': 'Файл фото не найден',
 
     // ---------- Manzillar, sevimlilar ----------
@@ -255,9 +255,9 @@ module.exports = {
 
     // ---------- Murojaatlar (support.controller) ----------
     'Murojaat turini tanlang': 'Выберите тип обращения',
-    'Bu turdagi murojaat sizning hisobingiz uchun emas': 'Этот тип обращения недоступен для Вашего аккаунта',
+    'Bu turdagi murojaat sizning hisobingiz uchun emas': 'Этот тип обращения недоступен для вашего аккаунта',
     'Bu turdagi murojaat buyurtma sahifasidan yuboriladi': 'Обращение этого типа отправляется со страницы заказа',
-    'Sizda {n:num} ta ochiq murojaat bor. Ular ko\'rib chiqilishini kuting': 'У Вас уже есть открытые обращения ({n}). Дождитесь их рассмотрения',
+    'Sizda {n:num} ta ochiq murojaat bor. Ular ko\'rib chiqilishini kuting': 'У вас уже есть открытые обращения ({n}). Дождитесь их рассмотрения',
     'Bugun juda ko\'p murojaat yuborildi. Ertaga qayta urinib ko\'ring': 'Сегодня отправлено слишком много обращений. Попробуйте завтра',
     'Murojaatingiz qabul qilindi (#{number:num}). Javob shu yerda va Telegram\'da ko\'rinadi':
         'Ваше обращение принято (#{number}). Ответ появится здесь и в Telegram',
@@ -291,7 +291,7 @@ module.exports = {
     '🧾 <b>Yangi usta tekshiruvga yubordi</b>: {name}': '🧾 <b>Новый мастер отправил заявку на проверку</b>: {name}',
     'Tekshirish': 'Проверить',
     '✅ <b>Profilingiz tasdiqlandi!</b>\n{name}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.':
-        '✅ <b>Ваш профиль подтверждён!</b>\n{name}, теперь Вы можете нажать «Выйти на линию» и получать срочные заказы.',
+        '✅ <b>Ваш профиль подтверждён!</b>\n{name}, теперь вы можете нажать «Выйти на линию» и получать срочные заказы.',
     'Ishga chiqish': 'Выйти на линию',
     '⚠️ <b>Profilingiz hali tasdiqlanmadi</b>\nSabab: {note}\n\nKamchilikni tuzatib, qayta yuboring.':
         '⚠️ <b>Ваш профиль пока не подтверждён</b>\nПричина: {note}\n\nИсправьте недочёты и отправьте заявку повторно.',
@@ -304,14 +304,14 @@ module.exports = {
     'Qarzingiz yo\'q': 'Долга нет',
     'To\'lov summasini kiriting': 'Укажите сумму платежа',
     'To\'lov usulini tanlang': 'Выберите способ оплаты',
-    'To\'lov qabul qilindi: {amount}. {due}. Endi ishga chiqishingiz mumkin.': 'Платёж принят: {amount}. {due}. Теперь Вы можете выйти на линию.',
+    'To\'lov qabul qilindi: {amount}. {due}. Endi ishga chiqishingiz mumkin.': 'Платёж принят: {amount}. {due}. Теперь вы можете выйти на линию.',
     'To\'lov qabul qilindi: {amount}. {due}.': 'Платёж принят: {amount}. {due}.',
     'To\'lov qabul qilindi. {due}': 'Платёж принят. {due}',
     'Tuzatish summasini kiriting (qarzni kamaytirish uchun manfiy)': 'Укажите сумму корректировки (отрицательную, чтобы уменьшить долг)',
     'Komissiya hisobingiz tuzatildi: {amount} ({note:raw}). {due}.': 'Счёт комиссии скорректирован: {amount} ({note}). {due}.',
     'Hisob tuzatildi. {due}': 'Счёт скорректирован. {due}',
     'Komissiya qarzingiz {due} — limitdan ({limit}) oshdi. To\'lamaguningizcha yangi takliflar kelmaydi.':
-        'Долг по комиссии {due} превысил лимит ({limit}). Пока Вы его не оплатите, новые предложения поступать не будут.',
+        'Долг по комиссии {due} превысил лимит ({limit}). Пока вы его не оплатите, новые предложения поступать не будут.',
     'Komissiya qarzingiz {due}. Limit — {limit}: oshsa, takliflar to\'xtaydi.':
         'Долг по комиссии: {due}. Лимит — {limit}: при превышении предложения перестанут поступать.',
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
@@ -362,7 +362,7 @@ module.exports = {
         '😔 К сожалению, поблизости нет свободных мастеров: <b>{title}</b>\nПопробуйте чуть позже или оставьте обычный заказ.',
     '⚡ Qayta chaqirish': '⚡ Вызвать снова',
     '🔄 Usta buyurtmadan voz kechdi. Yangi usta qidirilmoqda: <b>{title}</b>': '🔄 Мастер отказался от заказа. Ищем нового мастера: <b>{title}</b>',
-    '📋 <b>Sizga yangi buyurtma</b>': '📋 <b>Новый заказ для Вас</b>',
+    '📋 <b>Sizga yangi buyurtma</b>': '📋 <b>Новый заказ для вас</b>',
     '💰 Byudjet: {sum}': '💰 Бюджет: {sum}',
     '📷 Rasm: {n} ta': '📷 Фото: {n} шт.',
     '📋 Ko\'rish va qabul qilish': '📋 Посмотреть и принять',
@@ -380,13 +380,13 @@ module.exports = {
     '👋 Salom, {name}!\n\nUsta24 boti ulangan: <b>{phone}</b>\n• buyurtmalar va takliflar haqidagi xabarlar shu yerga keladi;\n• saytga kirishda «Telegram orqali» ni tanlasangiz, kod shu yerga keladi.\n\nXabarlarni o\'chirish: /stop':
         '👋 Здравствуйте, {name}!\n\nБот Usta24 подключён: <b>{phone}</b>\n• уведомления о заказах и предложениях приходят сюда;\n• если при входе на сайт выбрать «Через Telegram», код придёт сюда.\n\nОтключить уведомления: /stop',
     '👋 <b>Usta24</b> botiga xush kelibsiz!\n\nBu yerda:\n• saytga kirish kodini olasiz (SMS shart emas);\n• usta bo\'lsangiz, yangi buyurtmalarni ilova yopiq bo\'lsa ham olasiz va shu yerda qabul qilasiz;\n• mijoz bo\'lsangiz, usta yo\'lga chiqqani va yetib kelgani haqida xabar olasiz.\n\nBoshlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.':
-        '👋 Добро пожаловать в бот <b>Usta24</b>!\n\nЗдесь Вы:\n• получаете код для входа на сайт (SMS не нужно);\n• если Вы мастер — получаете новые заказы, даже когда приложение закрыто, и принимаете их прямо здесь;\n• если Вы клиент — узнаёте, когда мастер выехал и когда прибыл.\n\nЧтобы начать, нажмите кнопку «📱 Отправить номер» ниже.',
+        '👋 Добро пожаловать в бот <b>Usta24</b>!\n\nЗдесь вы:\n• получаете код для входа на сайт (SMS не нужно);\n• если вы мастер — получаете новые заказы, даже когда приложение закрыто, и принимаете их прямо здесь;\n• если вы клиент — узнаёте, когда мастер выехал и когда прибыл.\n\nЧтобы начать, нажмите кнопку «📱 Отправить номер» ниже.',
     '⌛ Bu havola eskirgan yoki allaqachon ishlatilgan. Saytda «Telegram orqali» tugmasini qaytadan bosing.':
         '⌛ Эта ссылка устарела или уже использована. Нажмите на сайте «Через Telegram» ещё раз.',
     '👋 <b>Usta24</b> ga kirish\n\nSaytda kiritilgan raqam: <b>{phone}</b>\nBu sizning raqamingiz ekanini tasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing. Kod shu yerga keladi.':
-        '👋 Вход в <b>Usta24</b>\n\nНомер, указанный на сайте: <b>{phone}</b>\nЧтобы подтвердить, что это Ваш номер, нажмите кнопку «📱 Отправить номер» ниже. Код придёт сюда.',
+        '👋 Вход в <b>Usta24</b>\n\nНомер, указанный на сайте: <b>{phone}</b>\nЧтобы подтвердить, что это ваш номер, нажмите кнопку «📱 Отправить номер» ниже. Код придёт сюда.',
     '✅ Telegram hisobingizga ulandi. Buyurtmalar haqidagi xabarlar shu yerga keladi.':
-        '✅ Telegram подключён к Вашему аккаунту. Уведомления о заказах будут приходить сюда.',
+        '✅ Telegram подключён к вашему аккаунту. Уведомления о заказах будут приходить сюда.',
     '🔗 Usta24 hisobini ulash: <b>{phone}</b>\nTasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.':
         '🔗 Подключение аккаунта Usta24: <b>{phone}</b>\nДля подтверждения нажмите кнопку «📱 Отправить номер» ниже.',
     '⚠️ Faqat o\'zingizning raqamingizni yuboring: pastdagi «📱 Raqamni yuborish» tugmasini bosing.':
