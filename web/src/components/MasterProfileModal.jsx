@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Star, Lock, ShieldCheck, MapPin, Briefcase, CheckCircle, Share2 } from 'lucide-react';
+import { Star, Lock, ShieldCheck, MapPin, Briefcase, CheckCircle, Share2, Flag } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 import StarRating from './StarRating';
 import Avatar from './Avatar';
 import FavoriteButton from './FavoriteButton';
+import ComplaintDialog from './ComplaintDialog';
 import { specializationLabel } from './MasterCard';
 import { api, assetUrl } from '../lib/api';
 import { formatDate, formatPrice, formatRating } from '../lib/format';
 import { shareLink } from '../lib/share';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { t } from '../i18n';
 
 export const masterPublicUrl = (master) => (master?.public_slug ? `${window.location.origin}/u/${master.public_slug}` : null);
@@ -19,7 +21,10 @@ export const masterPublicUrl = (master) => (master?.public_slug ? `${window.loca
  */
 export function MasterProfileView({ master, onOrder, titleId = 'master-profile-title' }) {
   const toast = useToast();
+  const { user, requireAuth } = useAuth();
+  const [complaining, setComplaining] = useState(false);
   const shareUrl = masterPublicUrl(master);
+  const isOwnProfile = user?.id === master.id;
 
   const share = async () => {
     const result = await shareLink({ url: shareUrl, title: master.name, text: `${master.name} — ${specializationLabel(master)} (Usta24)` });
@@ -136,7 +141,17 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
         >
           {t('Ushbu ustaga buyurtma berish')}
         </button>
+        {!isOwnProfile && user?.role !== 'admin' && (
+          <button
+            type="button"
+            onClick={() => requireAuth(() => setComplaining(true))}
+            className="mt-3 mx-auto flex items-center gap-1.5 min-h-10 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+          >
+            <Flag className="w-3.5 h-3.5" aria-hidden="true" /> {t('Shikoyat qilish')}
+          </button>
+        )}
       </div>
+      {complaining && <ComplaintDialog master={master} onClose={() => setComplaining(false)} />}
     </>
   );
 }

@@ -97,9 +97,10 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/admin/commission/payment-reviews?status=`, `POST .../payment-reviews/:orderId` | To'lov farqlari: farqdan komissiya yozish (`charge`) yoki yopish (`dismiss`) |
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
-| `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yuborish, o'z murojaatlari |
+| `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yoki shikoyat yuborish (`order_id` yoki `target_user_id` bilan), o'z murojaatlari va ogohlantirishlari |
 | `GET/POST /api/masters/me/verification`, `POST/GET/DELETE /api/masters/me/documents` | Ustaning tasdiqlash holati, hujjat yuklash va tekshiruvga yuborish |
-| `GET /api/admin/support`, `PUT /api/admin/support/:id` | Murojaatlar navbati, holat va javob |
+| `GET /api/admin/support?kind=complaint`, `PUT /api/admin/support/:id` | Murojaatlar navbati (yoki faqat shikoyatlar), holat va javob |
+| `POST /api/admin/users/:id/warnings` | Shikoyat qilingan foydalanuvchiga ogohlantirish (saytda, Telegram'da va «Yordam» sahifasida) |
 | `GET /api/admin/verifications`, `POST /api/admin/verifications/:userId/approve\|reject`, `GET /api/admin/documents/:id` | Ustalarni tekshirish navbati va hujjatlar |
 | `GET /api/admin/analytics?days=`, `GET /api/admin/queues` | MVP ko'rsatkichlari, navbatlardagi ishlar soni |
 | `POST /api/client-errors`, `GET /api/admin/errors`, `POST /api/admin/errors/:id/resolve` | Saytdagi xatolarni yig'ish va ko'rish |
@@ -190,6 +191,25 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 ## 🛟 Murojaatlar, ustani tasdiqlash, statistika
 
 **Murojaatlar markazi.** Mijoz yoki usta buyurtma sahifasidagi «Muammo haqida xabar berish» tugmasi yoki `/support` sahifasi orqali yozadi. Turlar rolga qarab: usta kelmadi, narx bo'yicha kelishmovchilik, ish sifati, mijoz to'lamadi, xulq-atvor, ilovadagi muammo, boshqa. Buyurtmaga oid turlar faqat o'sha buyurtma ishtirokchisidan qabul qilinadi. Cheklov: 5 ta ochiq va kuniga 10 ta murojaat. Administrator «Murojaatlar» bo'limida holatni o'zgartiradi va javob yozadi. Javob foydalanuvchiga darhol saytda, ulangan bo'lsa Telegram'da ham keladi. Kontaktlar `SUPPORT_PHONE` va `SUPPORT_TELEGRAM` dan olinadi.
+
+**Shikoyatlar.** Shikoyat - kimgadir qarshi murojaat (`support_tickets.target_user_id`), shu sababli hamma shikoyat bitta odam bo'yicha yig'iladi.
+- **Usta profilidan (buyurtmasiz).** Profil oynasi va `/u/:slug` pastida «Shikoyat qilish» tugmasi bor. Sabablar:
+  - soxta profil yoki boshqa odamning rasmi;
+  - noto'g'ri ma'lumot;
+  - nomaqbul rasm yoki matn;
+  - saytdan tashqari to'lov yoki raqam so'radi;
+  - firibgarlik;
+  - boshqa.
+
+  Izoh ixtiyoriy («Boshqa» uchun majburiy). Usta kim shikoyat qilganini bilmaydi.
+- **Buyurtma bo'yicha.** «Muammo haqida xabar berish» oynasidagi shikoyat turlari avtomatik ravishda buyurtmaning ikkinchi tomoniga qarshi yoziladi. «Saytdan tashqari to'lov» va «Firibgarlik» turlari ham qo'shildi.
+- Bitta odamga ochiq shikoyat faqat bitta bo'ladi (takrori 409). Kunlik va ochiq murojaatlar cheklovi umumiy.
+- **Admin → «Murojaatlar» → «Faqat shikoyatlar».**
+  - Har bir shikoyatda kimga qarshi ekani (telefon bilan) ko'rinadi.
+  - Unga qarshi jami shikoyatlar soni va necha kishidan kelgani (3 va undan ko'p kishi bo'lsa qizil), ogohlantirishlar soni ham chiqadi.
+  - **Ogohlantirish** tugmasi sababga mos tayyor matnni taklif qiladi. Ogohlantirish `user_warnings` jadvaliga yoziladi, foydalanuvchiga saytda, Telegram'da va «Yordam» sahifasida ko'rinadi.
+  - **Bloklash / Blokdan chiqarish:** bloklangan usta katalogda ko'rinmaydi va taklif olmaydi.
+  - Har bir amal jurnalga yoziladi.
 
 **Ustani tasdiqlash.** Usta profil sahifasining (`/master/profile`) yuqorisidagi tasdiqlash bo'limida pasport yoki ID karta rasmini (majburiy), selfi va sertifikatni (ixtiyoriy) yuklaydi va tekshiruvga yuboradi. Ism, kamida bitta mutaxassislik va pasport talab qilinadi. Hujjatlar ochiq papkada emas: `MASTER_DOC_DIR` da saqlanadi, faqat ustaning o'ziga va administratorga beriladi, EXIF/GPS o'chiriladi, hisob o'chirilganda fayllar ham o'chiriladi. Administrator «Ustalar» bo'limida hujjatlarni ko'rib tasdiqlaydi yoki sabab yozib rad etadi (jurnalga yoziladi). Tasdiqlangan usta darhol tezkor chaqiruv ola boshlaydi.
 

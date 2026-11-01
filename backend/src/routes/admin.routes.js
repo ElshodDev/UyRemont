@@ -4,7 +4,7 @@ const { getStats, getUsers, updateUser, getAuditLog } = require('../controllers/
 const {
     getAdminPrices, createPriceItem, updatePriceItem, deletePriceItem, updateCallFee,
 } = require('../controllers/prices.controller');
-const { listTickets, updateTicket } = require('../controllers/support.controller');
+const { listTickets, updateTicket, warnUser } = require('../controllers/support.controller');
 const {
     listErrors, resolveError, getAnalytics, getQueues,
 } = require('../controllers/monitoring.controller');
@@ -24,6 +24,7 @@ router.use(authenticate, authorize('admin'));
 router.get('/stats', getStats);
 router.get('/users', getUsers);
 router.patch('/users/:id', updateUser);
+router.post('/users/:id/warnings', warnUser);
 router.get('/audit', getAuditLog);
 
 // Narxlar ro'yxati va chiqish narxlari

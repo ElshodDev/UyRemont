@@ -272,6 +272,19 @@ module.exports = {
     'hal qilindi': 'решено',
     'rad etildi': 'отклонено',
     'Murojaatlarim': 'Мои обращения',
+    // Shikoyatlar va ogohlantirishlar
+    'Shikoyat sababini tanlang': 'Выберите причину жалобы',
+    'O\'zingiz haqingizda shikoyat qila olmaysiz': 'Нельзя пожаловаться на самого себя',
+    'Nima bo\'lganini yozing (kamida 10 belgi)': 'Опишите, что произошло (не менее 10 символов)',
+    'Bu foydalanuvchi haqidagi shikoyatingiz allaqachon ko\'rib chiqilmoqda': 'Ваша жалоба на этого пользователя уже рассматривается',
+    'Shikoyatingiz qabul qilindi (#{number:num}). Usta kim yuborganini bilmaydi':
+        'Жалоба принята (#{number}). Мастер не узнает, кто её отправил',
+    'Ogohlantirish matni': 'Текст предупреждения',
+    'Administratorga ogohlantirish yuborilmaydi': 'Администратору нельзя отправить предупреждение',
+    'Ogohlantirish yuborildi': 'Предупреждение отправлено',
+    '⚠️ <b>Usta24 ogohlantirishi</b>': '⚠️ <b>Предупреждение Usta24</b>',
+    'Takrorlansa, hisob bloklanishi mumkin.': 'При повторении аккаунт может быть заблокирован.',
+    'Ishlash qoidalari': 'Правила работы',
 
     // ---------- Ustani tasdiqlash (verification.controller) ----------
     'Hujjat turini tanlang': 'Выберите тип документа',

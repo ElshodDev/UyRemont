@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, CheckCircle, XCircle, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, ChevronDown, ChevronUp, Printer, Flag, AlertTriangle, Ban } from 'lucide-react';
 import ProtectedImage from '../components/ProtectedImage';
+import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
 import TwoFactorRequired, { isTwoFactorError } from '../components/TwoFactorRequired';
@@ -153,15 +155,120 @@ export function VerificationsTab({ onChanged }) {
   );
 }
 
+// Ogohlantirish matni uchun tayyor qoralama (admin o'zgartirishi mumkin)
+const WARNING_TEMPLATES = {
+  offsite_payment: 'Mijozlardan saytdan tashqari to\'lov yoki raqam so\'ramang. Barcha kelishuvlar Usta24 orqali bo\'lishi kerak.',
+  fraud: 'Sizga firibgarlik (oldindan pul so\'rash) bo\'yicha shikoyat tushdi. Bunday holat qaytarilsa, hisobingiz bloklanadi.',
+  fake_profile: 'Profilingizda boshqa odamning rasmi yoki noto\'g\'ri ma\'lumot borligi haqida shikoyat tushdi. 24 soat ichida profilingizni to\'g\'rilang.',
+  wrong_info: 'Profilingizdagi ma\'lumotlar (soha, narx, tajriba) noto\'g\'ri ekani haqida shikoyat tushdi. Iltimos, profilingizni yangilang.',
+  inappropriate: 'Profilingizda nomaqbul rasm yoki matn borligi haqida shikoyat tushdi. Ularni o\'chiring.',
+  behavior: 'Sizga qo\'pol muomala haqida shikoyat tushdi. Mijozlar va ustalar bilan hurmat bilan muomala qiling.',
+  master_no_show: 'Siz qabul qilgan buyurtmaga bormaganingiz haqida shikoyat tushdi. Bora olmasangiz, buyurtmani oldindan bekor qiling.',
+  client_no_pay: 'Usta bajarilgan ish uchun to\'lov olmagani haqida shikoyat qildi. Iltimos, ustaga to\'lovni amalga oshiring.'
+};
+
 /**
- * Murojaatlar: mijoz va ustalarning muammolari
+ * Ogohlantirish yuborish: foydalanuvchiga saytda, Telegram'da va "Yordam" sahifasida ko'rinadi
+ */
+function WarningDialog({ ticket, onClose, onSent }) {
+  const toast = useToast();
+  const [message, setMessage] = useState(WARNING_TEMPLATES[ticket.category] || '');
+  const [sending, setSending] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await api(`/admin/users/${ticket.target_user_id}/warnings`, { method: 'POST', body: { message, ticket_id: ticket.id } });
+      toast.success('Ogohlantirish yuborildi');
+      onSent();
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Modal onClose={sending ? () => {} : onClose} size="md" labelledBy="warning-title">
+      <h3 id="warning-title" className="text-lg font-bold text-slate-900 pr-8">Ogohlantirish: {ticket.target_name || 'foydalanuvchi'}</h3>
+      <p className="text-xs text-slate-500 mt-0.5">Saytda, Telegram'da va uning «Yordam» sahifasida ko'rinadi. Kim shikoyat qilgani aytilmaydi.</p>
+      <form onSubmit={submit} className="space-y-3 mt-4">
+        <textarea
+          className="input"
+          rows={4}
+          required
+          minLength={10}
+          maxLength={1000}
+          aria-label="Ogohlantirish matni"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <button type="submit" disabled={sending || message.trim().length < 10} className="btn btn-primary w-full font-bold">
+          {sending ? <Spinner className="w-4 h-4 text-white" /> : 'Ogohlantirish yuborish'}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+
+/**
+ * Shikoyat qilingan foydalanuvchi: unga qarshi jami shikoyatlar, ogohlantirishlar, bloklash
+ */
+function ComplaintTarget({ ticket, onWarn, onToggleBlock }) {
+  const many = ticket.target_reporters >= 3;
+  return (
+    <div className={`rounded-xl border p-3 text-xs space-y-2 ${many ? 'border-red-200 bg-red-50/60' : 'border-amber-200 bg-amber-50/50'}`}>
+      <p className="flex items-center gap-1.5 flex-wrap text-slate-700">
+        <Flag className="w-3.5 h-3.5 text-red-500" aria-hidden="true" />
+        <strong>Kimga qarshi:</strong> {ticket.target_name || 'Ismsiz'} ({ROLE_LABELS[ticket.target_role] || ticket.target_role})
+        {ticket.target_phone && <> · <a href={`tel:${ticket.target_phone}`} className="link">{formatPhone(ticket.target_phone)}</a></>}
+        {!ticket.target_is_active && <span className="px-2 py-0.5 rounded-full bg-slate-800 text-white font-bold">bloklangan</span>}
+      </p>
+      <p className={many ? 'text-red-700 font-semibold' : 'text-slate-600'}>
+        {many && <AlertTriangle className="w-3.5 h-3.5 inline mr-1 -mt-0.5" aria-hidden="true" />}
+        Unga qarshi jami {ticket.target_complaints} ta shikoyat ({ticket.target_reporters} kishidan), ochiq: {ticket.target_open} · ogohlantirishlar: {ticket.target_warnings}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className="btn btn-sm btn-secondary" onClick={() => onWarn(ticket)} disabled={!ticket.target_is_active}>
+          <AlertTriangle className="w-4 h-4" /> Ogohlantirish
+        </button>
+        <button type="button" className={`btn btn-sm ${ticket.target_is_active ? 'btn-danger-soft' : 'btn-secondary'}`} onClick={() => onToggleBlock(ticket)}>
+          <Ban className="w-4 h-4" /> {ticket.target_is_active ? 'Bloklash' : 'Blokdan chiqarish'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Murojaatlar: mijoz va ustalarning muammolari va shikoyatlari
  */
 export function SupportTab({ onChanged }) {
   const toast = useToast();
   const [status, setStatus] = useState('open');
-  const { result, error, load } = useAdminList(`/admin/support?status=${status}`);
+  const [kind, setKind] = useState('all');
+  const { result, error, load } = useAdminList(`/admin/support?status=${status}${kind === 'complaint' ? '&kind=complaint' : ''}`);
   const [replies, setReplies] = useState({});
   const [busy, setBusy] = useState(null);
+  const [warning, setWarning] = useState(null);
+  const [blocking, setBlocking] = useState(null);
+  const [blockBusy, setBlockBusy] = useState(false);
+
+  const toggleBlock = async () => {
+    setBlockBusy(true);
+    try {
+      await api(`/admin/users/${blocking.target_user_id}`, { method: 'PATCH', body: { is_active: !blocking.target_is_active } });
+      toast.success(blocking.target_is_active ? 'Foydalanuvchi bloklandi' : 'Blokdan chiqarildi');
+      setBlocking(null);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBlockBusy(false);
+    }
+  };
 
   if (isTwoFactorError(error)) return <TwoFactorRequired />;
   if (error) return <ErrorState message={error.message} onRetry={load} />;
@@ -182,12 +289,15 @@ export function SupportTab({ onChanged }) {
 
   return (
     <div className="space-y-4">
-      <FilterChips
-        options={Object.entries(SUPPORT_STATUSES).map(([id, s]) => [id, s.label])}
-        value={status}
-        onChange={setStatus}
-        counts={result?.counts}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FilterChips
+          options={Object.entries(SUPPORT_STATUSES).map(([id, s]) => [id, s.label])}
+          value={status}
+          onChange={setStatus}
+          counts={result?.counts}
+        />
+        <FilterChips options={[['all', 'Hammasi'], ['complaint', 'Faqat shikoyatlar']]} value={kind} onChange={setKind} />
+      </div>
       {!result && <PageLoader />}
       {result && result.data.length === 0 && <p className="card p-8 text-center text-sm text-slate-400">Murojaat yo'q</p>}
       {result?.data.map((t) => {
@@ -204,7 +314,10 @@ export function SupportTab({ onChanged }) {
               </div>
               <a href={`tel:${t.user_phone}`} className="btn btn-sm btn-secondary min-h-10"><Phone className="w-4 h-4" /> {formatPhone(t.user_phone)}</a>
             </div>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap break-words bg-slate-50 rounded-xl p-3">{t.message}</p>
+            {t.message
+              ? <p className="text-sm text-slate-700 whitespace-pre-wrap break-words bg-slate-50 rounded-xl p-3">{t.message}</p>
+              : <p className="text-xs text-slate-400">Izoh yozilmagan</p>}
+            {t.target_user_id && <ComplaintTarget ticket={t} onWarn={setWarning} onToggleBlock={setBlocking} />}
             {closed ? (
               <p className="text-sm text-slate-600"><strong>Javob:</strong> {t.admin_reply} <span className="text-[11px] text-slate-400">— {t.handled_by_name}</span></p>
             ) : (
@@ -236,6 +349,21 @@ export function SupportTab({ onChanged }) {
           </article>
         );
       })}
+
+      {warning && <WarningDialog ticket={warning} onClose={() => setWarning(null)} onSent={load} />}
+      {blocking && (
+        <ConfirmDialog
+          title={blocking.target_is_active ? `${blocking.target_name || 'Foydalanuvchi'} bloklansinmi?` : `${blocking.target_name || 'Foydalanuvchi'} blokdan chiqarilsinmi?`}
+          description={blocking.target_is_active
+            ? 'Hisobga kirib bo\'lmaydi, usta katalogda ko\'rinmaydi va taklif olmaydi. Keyin blokdan chiqarish mumkin.'
+            : 'Foydalanuvchi yana saytdan foydalana oladi.'}
+          confirmLabel={blocking.target_is_active ? 'Bloklash' : 'Blokdan chiqarish'}
+          tone={blocking.target_is_active ? 'danger' : 'primary'}
+          loading={blockBusy}
+          onConfirm={toggleBlock}
+          onClose={() => setBlocking(null)}
+        />
+      )}
     </div>
   );
 }

@@ -32,11 +32,18 @@ export default function AccountEvents() {
       else toast.info(message);
     };
 
+    // Administrator ogohlantirishi (shikoyat bo'yicha): matn "Yordam" sahifasida ham saqlanadi
+    const onWarning = ({ message }) => {
+      toast.error(t('Administrator ogohlantirishi: {message}', { message }));
+    };
+
     socket.on('support_updated', onSupport);
+    socket.on('account_warning', onWarning);
     socket.on('verification_updated', onVerification);
     socket.on('commission_updated', onCommission);
     return () => {
       socket.off('support_updated', onSupport);
+      socket.off('account_warning', onWarning);
       socket.off('verification_updated', onVerification);
       socket.off('commission_updated', onCommission);
     };
