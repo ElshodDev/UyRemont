@@ -173,6 +173,7 @@ module.exports = {
     'mutaxassislik tanlanmagan': 'не выбрана специализация',
     'reytingingiz {n:num} dan past': 'рейтинг ниже {n}',
     'komissiya qarzingiz {due} — limitdan ({limit}) oshgan, avval to\'lang': 'долг по комиссии {due} превышает лимит ({limit}), сначала оплатите его',
+    'yakunlangan buyurtmalarning summasi kiritilmagan': 'не указана итоговая сумма по завершённым заказам',
     'Siz ishdasiz. Buyurtmalar kutilmoqda': 'Вы на линии. Ожидайте заказы',
     'Ish rejimi o\'chirildi': 'Рабочий режим выключен',
     'Taklif topilmadi': 'Предложение не найдено',
@@ -330,6 +331,19 @@ module.exports = {
         'Долг по комиссии: {due}. Лимит — {limit}: при превышении предложения перестанут поступать.',
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
     'Komissiya hisobi': 'Счёт комиссии',
+
+    // ---------- Oddiy buyurtma komissiyasi: yakuniy summa ----------
+    'Avval yakunlangan buyurtmalarning summasini kiriting (Buyurtmalarim)': 'Сначала укажите итоговую сумму по завершённым заказам (Мои заказы)',
+    'Komissiya qarzingiz {due} — limitdan ({limit}) oshgan. Yangi buyurtma olish uchun avval to\'lang':
+        'Долг по комиссии {due} превышает лимит ({limit}). Чтобы брать новые заказы, сначала оплатите его',
+    'Yakuniy summani faqat buyurtmani bajargan usta kiritadi': 'Итоговую сумму указывает только мастер, выполнивший заказ',
+    'Yakuniy summa allaqachon kiritilgan': 'Итоговая сумма уже указана',
+    'Yakuniy summa faqat yakunlangan buyurtmaga kiritiladi': 'Итоговую сумму можно указать только для завершённого заказа',
+    'Yakuniy summa saqlandi': 'Итоговая сумма сохранена',
+    '✅ Mijoz ishni yakunlandi deb belgiladi: <b>{title}</b>\nYakuniy summani (ish haqi va material) {hours} soat ichida kiriting — aks holda yangi buyurtma ololmaysiz.':
+        '✅ Клиент отметил работу как завершённую: <b>{title}</b>\nУкажите итоговую сумму (оплата работы и материалы) в течение {hours} ч — иначе вы не сможете брать новые заказы.',
+    '💰 Summani kiritish': '💰 Указать сумму',
+    '💰 Usta yakuniy summani kiritdi: <b>{title}</b>': '💰 Мастер указал итоговую сумму: <b>{title}</b>',
 
     // ---------- 1 daqiqada usta bo'lish ----------
     'Administrator hisobi usta profiliga ega bo\'la olmaydi': 'У аккаунта администратора не может быть профиля мастера',

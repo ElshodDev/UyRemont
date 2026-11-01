@@ -86,15 +86,18 @@ describe('komissiya hisobi', () => {
         assert.equal((await ledger()).data.data.due, 30000);
     });
 
-    it('oddiy (katalog) buyurtmadan komissiya olinmaydi', async () => {
+    it('oddiy buyurtmani usta yakuniy summasiz yakunlay olmaydi (qarz o\'zgarmaydi)', async () => {
         const order = await app.api('/orders', {
             method: 'POST', token: client.token, body: { title: 'Rozetka o\'rnatish', address: 'Uy 5', master_id: master.id, budget: 100000 },
         });
         assert.equal(order.status, 201, order.data?.message);
-        for (const status of ['accepted', 'in_progress', 'completed']) {
+        for (const status of ['accepted', 'in_progress']) {
             const res = await app.api(`/orders/${order.data.data.id}/status`, { method: 'PUT', token: master.token, body: { status } });
             assert.equal(res.status, 200, `${status}: ${res.data?.message}`);
         }
+        const noPrice = await app.api(`/orders/${order.data.data.id}/status`, { method: 'PUT', token: master.token, body: { status: 'completed' } });
+        assert.equal(noPrice.status, 400);
+        assert.equal(noPrice.data.message, 'Ish haqini kiriting (chiqish narxi bilan birga)');
         const res = await ledger();
         assert.equal(res.data.data.due, 30000);
         assert.equal(res.data.data.entries.filter((e) => e.kind === 'commission').length, 1);

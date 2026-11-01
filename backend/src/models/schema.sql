@@ -749,3 +749,10 @@ CREATE TABLE IF NOT EXISTS user_warnings (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_user_warnings_user ON user_warnings(user_id, created_at DESC);
+
+-- =============================================
+-- 20. Oddiy buyurtma komissiyasi: usta yakunlasa yakuniy summani o'zi kiritadi. Mijoz (yoki admin) yakunlasa,
+-- usta summani price_due_at gacha kiritishi kerak - aks holda yangi buyurtma ololmaydi va ishga chiqa olmaydi
+-- =============================================
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS price_due_at TIMESTAMP WITH TIME ZONE;
+CREATE INDEX IF NOT EXISTS idx_orders_price_due ON orders(master_id, price_due_at) WHERE price_due_at IS NOT NULL;

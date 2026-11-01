@@ -1,7 +1,8 @@
 // =============================================
 // UyRemont - Komissiya hisobi (qo'lda yig'ish):
-// tezkor chaqiruv yakunlanganda ustaning qarziga komissiya yoziladi, administrator to'lovni qabul qilib
-// qarzni kamaytiradi. Qarz COMMISSION_DEBT_LIMIT dan oshsa usta ishga chiqa olmaydi va taklif olmaydi.
+// buyurtma yakuniy summasi bilan yakunlanganda ustaning qarziga komissiya yoziladi (tezkor chaqiruv -
+// COMMISSION_PERCENT, oddiy buyurtma - CATALOG_COMMISSION_PERCENT), administrator to'lovni qabul qilib
+// qarzni kamaytiradi. Qarz COMMISSION_DEBT_LIMIT dan oshsa usta ishga chiqa olmaydi, taklif va yangi buyurtma olmaydi.
 // =============================================
 
 const config = require('../config/dispatch');
@@ -42,14 +43,20 @@ const addLedgerEntry = async (client, entry) => {
 };
 
 /**
- * Yakunlangan tezkor chaqiruv uchun komissiya (foiz yozilgan paytdagisi saqlanadi; takror yozilmaydi)
+ * Buyurtma turiga qarab komissiya foizi: tezkor chaqiruv yoki oddiy (katalog) buyurtma
+ */
+const commissionPercentFor = (order) => (order.mode === 'instant' ? config.COMMISSION_PERCENT : config.CATALOG_COMMISSION_PERCENT);
+
+/**
+ * Yakuniy summasi bilan yakunlangan buyurtma uchun komissiya (foiz yozilgan paytdagisi saqlanadi; takror yozilmaydi)
  * @returns {Promise<{ amount: number, due: number }|null>}
  */
 const accrueCommission = async (client, order) => {
     // Komissiya ish haqidan (materiallarsiz); ish haqi yozilmagan eski buyurtmalarda - yakuniy summadan
     const base = Number(order.labor_price ?? order.final_price) || 0;
-    if (order.mode !== 'instant' || !order.master_id || base <= 0 || config.COMMISSION_PERCENT <= 0) return null;
-    const amount = Math.round((base * config.COMMISSION_PERCENT) / 100);
+    const percent = commissionPercentFor(order);
+    if (!order.master_id || base <= 0 || percent <= 0) return null;
+    const amount = Math.round((base * percent) / 100);
     if (amount <= 0) return null;
 
     const inserted = await client.query(
@@ -57,7 +64,7 @@ const accrueCommission = async (client, order) => {
          VALUES ($1, 'commission', $2, $3, $4, $5)
          ON CONFLICT (order_id) WHERE kind = 'commission' DO NOTHING
          RETURNING id`,
-        [order.master_id, amount, order.id, config.COMMISSION_PERCENT, base]
+        [order.master_id, amount, order.id, percent, base]
     );
     if (!inserted.rows[0]) return null;
     const profile = await client.query(
@@ -137,6 +144,7 @@ const loadMasterLedger = async (masterId, { limit = 100 } = {}) => {
         due,
         limit: config.COMMISSION_DEBT_LIMIT,
         percent: config.COMMISSION_PERCENT,
+        catalog_percent: config.CATALOG_COMMISSION_PERCENT,
         blocked: isOverLimit(due),
         payment_info: config.COMMISSION_PAYMENT_INFO || null,
         totals: {
@@ -164,4 +172,5 @@ module.exports = {
     afterAccrual,
     notifyCommission,
     loadMasterLedger,
+    commissionPercentFor,
 };

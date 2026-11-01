@@ -103,6 +103,11 @@ export default function MasterWorkPage() {
               {t('Kamida bitta mutaxassislik tanlangan')} — <Link to="/master/profile" className="underline">{t('profilni tahrirlash')}</Link>
             </Requirement>
             <Requirement ok={req.rating_ok}>{t('Reyting {min} dan past emas', { min: config?.min_rating ?? 4 })}</Requirement>
+            {req.prices_ok === false && (
+              <Requirement ok={false}>
+                {t('Mijoz yakunlagan buyurtmalarning summasi kiritilgan')} — <Link to="/orders" className="underline">{t('Buyurtmalarim')}</Link>
+              </Requirement>
+            )}
             {req.commission_ok === false && (
               <Requirement ok={false}>
                 {t('Komissiya qarzi limitdan oshmagan')} — <Link to="/master/hisob" className="underline">{t('to\'lash')}</Link>

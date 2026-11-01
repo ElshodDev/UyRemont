@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera, Zap, RotateCcw, LifeBuoy } from 'lucide-react';
+import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera, Zap, RotateCcw, LifeBuoy, Banknote, AlertTriangle } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
 import ReviewForm from '../components/ReviewForm';
 import PaymentConfirmCard from '../components/PaymentConfirmCard';
+import CompleteDialog from '../components/CompleteDialog';
+import { formatSum } from '../lib/commission';
 import InstantOrderPanel from '../components/InstantOrderPanel';
 import OrderPhotos from '../components/OrderPhotos';
 import FavoriteButton from '../components/FavoriteButton';
@@ -53,6 +55,31 @@ function ContactCard({ label, name, phone }) {
   );
 }
 
+/**
+ * Mijoz yakunlagan oddiy buyurtma: usta yakuniy summani muddatida kiritadi (aks holda yangi buyurtma ololmaydi)
+ */
+function FinalPriceCard({ order, onEnter }) {
+  const overdue = new Date(order.price_due_at).getTime() < Date.now();
+  return (
+    <section id="summa" aria-labelledby="final-price-title" className={`rounded-2xl border p-5 space-y-3 scroll-mt-24 ${overdue ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+      <div className="flex items-start gap-3">
+        <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${overdue ? 'text-red-600' : 'text-amber-600'}`} aria-hidden="true" />
+        <div>
+          <h3 id="final-price-title" className="font-bold text-slate-900">{t('Yakuniy summani kiriting')}</h3>
+          <p className="text-sm text-slate-700 mt-0.5">
+            {overdue
+              ? t('Muddat o\'tdi. Summani kiritmaguningizcha yangi buyurtma ololmaysiz va ishga chiqa olmaysiz.')
+              : t('Mijoz ishni yakunlandi deb belgiladi. Summani {date} gacha kiriting, aks holda yangi buyurtma ololmaysiz.', { date: formatDate(order.price_due_at) })}
+          </p>
+        </div>
+      </div>
+      <button type="button" onClick={onEnter} className="btn btn-primary w-full font-bold">
+        <Banknote className="w-4 h-4" aria-hidden="true" /> {t('Summani kiritish')}
+      </button>
+    </section>
+  );
+}
+
 export default function OrderDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -63,6 +90,9 @@ export default function OrderDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [repeating, setRepeating] = useState(false);
   const [reporting, setReporting] = useState(false);
+  // Usta oddiy buyurtmani yakunlaydi yoki mijoz yakunlagan buyurtmaning summasini kiritadi
+  const [priceDialog, setPriceDialog] = useState(null); // 'complete' | 'final'
+  const [dispatchConfig, setDispatchConfig] = useState(null);
   const { specializations } = useSpecializations();
   const orderModal = useOrderModal({ specializations });
 
@@ -80,6 +110,38 @@ export default function OrderDetailPage() {
     setOrder(null);
     load();
   }, [load]);
+
+  // Komissiya foizi (yakunlash oynasida ko'rsatiladi) - faqat ustaga kerak
+  const isOrderMaster = Boolean(order && user && order.master_id === user.id);
+  useEffect(() => {
+    if (!isOrderMaster || dispatchConfig) return;
+    api('/dispatch/config').then(({ data }) => setDispatchConfig(data)).catch(() => {});
+  }, [isOrderMaster, dispatchConfig]);
+
+  // Telegram'dagi "Summani kiritish" havolasi (#summa): kartaga o'tish
+  const needsFinalPrice = Boolean(order && isOrderMaster && order.mode === 'catalog' && order.status === 'completed'
+    && order.final_price === null && order.price_due_at);
+  useEffect(() => {
+    if (needsFinalPrice && window.location.hash === '#summa') {
+      document.getElementById('summa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [needsFinalPrice]);
+
+  const saveFinalPrice = async (prices) => {
+    try {
+      if (priceDialog === 'complete') {
+        await api(`/orders/${id}/status`, { method: 'PUT', body: { status: 'completed', ...prices } });
+        toast.success(t('Buyurtma holati yangilandi'));
+      } else {
+        const { message } = await api(`/orders/${id}/final-price`, { method: 'PUT', body: prices });
+        toast.success(message);
+      }
+      setPriceDialog(null);
+      await load();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const changeStatus = async (action) => {
     setUpdating(true);
@@ -166,6 +228,18 @@ export default function OrderDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-2 text-slate-600"><MapPin className="w-4 h-4 text-slate-400" />{orderPlace(order)}</div>
               <div className="flex items-center gap-2 text-slate-600"><Wallet className="w-4 h-4 text-slate-400" />{formatPrice(order.budget)}</div>
+              {Number(order.final_price) > 0 && (
+                <div className="flex items-center gap-2 text-slate-800 font-semibold sm:col-span-2">
+                  <Banknote className="w-4 h-4 text-emerald-600" />
+                  {Number(order.materials_price) > 0
+                    ? t('Yakuniy summa: {sum} (ish haqi {labor} + material {materials})', {
+                      sum: formatSum(order.final_price),
+                      labor: formatSum(order.labor_price ?? Number(order.final_price) - Number(order.materials_price)),
+                      materials: formatSum(order.materials_price)
+                    })
+                    : t('Yakuniy summa: {sum}', { sum: formatSum(order.final_price) })}
+                </div>
+              )}
               <div className="flex items-center gap-2 text-slate-600"><Calendar className="w-4 h-4 text-slate-400" />{t('Yaratilgan: {date}', { date: formatDate(order.created_at) })}</div>
               {order.scheduled_at && (
                 <div className="flex items-center gap-2 text-slate-600"><Clock className="w-4 h-4 text-slate-400" />{t('Qulay vaqt: {date}', { date: formatDate(order.scheduled_at) })}</div>
@@ -206,7 +280,12 @@ export default function OrderDetailPage() {
                   <button
                     key={action.status}
                     disabled={updating}
-                    onClick={() => (action.confirm ? setPendingAction(action) : changeStatus(action))}
+                    onClick={() => {
+                      // Usta oddiy buyurtmani yakuniy summa bilan yakunlaydi
+                      if (action.status === 'completed' && isOrderMaster) setPriceDialog('complete');
+                      else if (action.confirm) setPendingAction(action);
+                      else changeStatus(action);
+                    }}
                     className={`btn font-bold ${TONES[action.tone]}`}
                   >
                     {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : action.label}
@@ -237,7 +316,11 @@ export default function OrderDetailPage() {
           </div>
           )}
 
-          {isInstant && order.status === 'completed' && Number(order.final_price) > 0 && (
+          {needsFinalPrice && (
+            <FinalPriceCard order={order} onEnter={() => setPriceDialog('final')} />
+          )}
+
+          {order.status === 'completed' && Number(order.final_price) > 0 && (
             <PaymentConfirmCard order={order} user={user} onDone={load} />
           )}
 
@@ -298,11 +381,20 @@ export default function OrderDetailPage() {
       {orderModal.element}
       {reporting && <SupportDialog orderId={order.id} orderTitle={order.title} onClose={() => setReporting(false)} />}
 
+      {priceDialog && (
+        <CompleteDialog
+          title={priceDialog === 'final' ? t('Yakuniy summa') : t('Ishni yakunlash')}
+          commissionPercent={dispatchConfig?.catalog_commission_percent}
+          onConfirm={saveFinalPrice}
+          onClose={() => setPriceDialog(null)}
+        />
+      )}
+
       {pendingAction && (
         <ConfirmDialog
           title={pendingAction.status === 'completed' ? t('Ish yakunlandimi?') : t('Buyurtmani bekor qilasizmi?')}
           description={pendingAction.status === 'completed'
-            ? t('Buyurtma yakunlangan deb belgilanadi va mijoz sharh qoldira oladi.')
+            ? t('Buyurtma yakunlangan deb belgilanadi. Usta yakuniy summani kiritadi, siz uni tasdiqlab, sharh qoldirasiz.')
             : t('Bu amalni qaytarib bo\'lmaydi.')}
           confirmLabel={pendingAction.label}
           tone={pendingAction.tone === 'success' ? 'success' : 'danger'}

@@ -8,6 +8,8 @@ const numberFromEnv = (name, fallback) => {
     return Number.isFinite(value) && value >= 0 ? value : fallback;
 };
 
+const PLATFORM_COMMISSION_PERCENT = numberFromEnv('PLATFORM_COMMISSION_PERCENT', 10);
+
 module.exports = {
     // Ustaga taklifni qabul qilish uchun beriladigan vaqt
     OFFER_TIMEOUT_SEC: numberFromEnv('DISPATCH_OFFER_TIMEOUT_SEC', 20),
@@ -21,8 +23,12 @@ module.exports = {
     LOCATION_STALE_MIN: 10,
     // Usta qabul qilgandan keyin mijoz shu daqiqa ichida bepul bekor qila oladi
     FREE_CANCEL_MIN: 3,
-    // Platforma komissiyasi (yakuniy narxdan, foizda)
-    COMMISSION_PERCENT: numberFromEnv('PLATFORM_COMMISSION_PERCENT', 10),
+    // Platforma komissiyasi tezkor chaqiruvdan (ish haqidan, foizda)
+    COMMISSION_PERCENT: PLATFORM_COMMISSION_PERCENT,
+    // Oddiy (katalog) buyurtma komissiyasi: mijoz ustani o'zi tanlagan. Berilmasa - PLATFORM_COMMISSION_PERCENT; 0 - olinmaydi
+    CATALOG_COMMISSION_PERCENT: numberFromEnv('CATALOG_COMMISSION_PERCENT', PLATFORM_COMMISSION_PERCENT),
+    // Mijoz oddiy buyurtmani yakunlasa, usta yakuniy summani shu soat ichida kiritadi (aks holda yangi buyurtma ololmaydi)
+    PRICE_ENTRY_HOURS: numberFromEnv('PRICE_ENTRY_HOURS', 24),
     // Komissiya qarzi shu summadan (so'm) oshsa, usta to'lamaguncha ishga chiqa olmaydi va taklif olmaydi. 0 - cheklov yo'q
     COMMISSION_DEBT_LIMIT: numberFromEnv('COMMISSION_DEBT_LIMIT', 200000),
     // Ustalarga ko'rsatiladigan to'lov rekvizitlari (karta raqami, egasi, izohga nima yozish)

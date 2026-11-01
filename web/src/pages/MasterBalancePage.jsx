@@ -150,7 +150,7 @@ export default function MasterBalancePage() {
       <section className="card p-5" aria-labelledby="history-title">
         <h2 id="history-title" className="font-bold text-slate-900">{t('Tarix')}</h2>
         {data.entries.length === 0 ? (
-          <p className="text-sm text-slate-400 mt-2">{t('Hali yozuv yo\'q. Tezkor chaqiruvni yakunlaganingizda komissiya shu yerda ko\'rinadi.')}</p>
+          <p className="text-sm text-slate-400 mt-2">{t('Hali yozuv yo\'q. Ishni yakuniy summa bilan yakunlaganingizda komissiya shu yerda ko\'rinadi.')}</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {data.entries.map((entry) => <EntryRow key={entry.id} entry={entry} />)}

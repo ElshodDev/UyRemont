@@ -20,6 +20,8 @@ describe('kirish va xavfsizlik', () => {
     before(async () => {
         app = await startApp();
         await app.db('UPDATE users SET totp_enabled = FALSE, totp_secret = NULL, totp_last_counter = NULL WHERE phone = $1', [ADMIN_PHONE]);
+        // Testlar bir kunda ko'p marta ishga tushirilsa, admin raqamining kunlik kod cheklovi to'lib qolmasin
+        await app.db('DELETE FROM otp_codes WHERE phone = $1', [ADMIN_PHONE]);
     });
     after(() => app.close());
 

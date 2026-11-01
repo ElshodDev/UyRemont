@@ -167,8 +167,8 @@ const loadOrder = async (orderId) => {
     return result.rows[0] || null;
 };
 
-// Tezkor chaqiruv yakunlanganda mijozdan to'langan summa so'raladi (bir tugma bilan tasdiqlash)
-const paymentQuestion = (order) => order.mode === 'instant' && Number(order.final_price) > 0 && !order.payment_confirmed_at;
+// Yakuniy summasi bor buyurtma yakunlanganda mijozdan to'langan summa so'raladi (bir tugma bilan tasdiqlash)
+const paymentQuestion = (order) => Number(order.final_price) > 0 && !order.payment_confirmed_at;
 
 const paymentButtons = (order, lang) => [
     [{ text: tr(lang, '✅ Ha, {sum} to\'ladim', { sum: money(order.final_price, lang) }), callback_data: `p:${order.id}:ok` }],
@@ -238,7 +238,16 @@ const orderMessages = (order, actor) => {
             }, (lang) => (paymentQuestion(order)
                 ? paymentButtons(order, lang)
                 : [urlButton(tr(lang, '⭐ Baholash'), `/orders/${order.id}`)]));
-            to('master', (lang) => tr(lang, '✅ Buyurtma yakunlandi: <b>{title}</b>', names(lang)));
+            // Oddiy buyurtmani mijoz yakunlasa: usta yakuniy summani muddatida kiritishi kerak
+            if (order.mode === 'catalog' && order.price_due_at && order.final_price === null) {
+                to('master', (lang) => tr(
+                    lang,
+                    '✅ Mijoz ishni yakunlandi deb belgiladi: <b>{title}</b>\nYakuniy summani (ish haqi va material) {hours} soat ichida kiriting — aks holda yangi buyurtma ololmaysiz.',
+                    { ...names(lang), hours: config.PRICE_ENTRY_HOURS }
+                ), (lang) => [urlButton(tr(lang, '💰 Summani kiritish'), `/orders/${order.id}#summa`)]);
+            } else {
+                to('master', (lang) => tr(lang, '✅ Buyurtma yakunlandi: <b>{title}</b>', names(lang)));
+            }
             break;
         case 'cancelled': {
             // Saytda tanlangan tayyor sabablar tarjima qilinadi, o'zi yozgan sabab o'zgarmaydi
@@ -284,6 +293,31 @@ const notifyOrderEvent = (order, extra = {}) => (async () => {
         await notifyUser(message.userId, message.text, message.replyMarkup);
     }
 })().catch(logError('buyurtma holati'));
+
+/**
+ * Usta mijoz yakunlagan buyurtmaning yakuniy summasini kiritdi: mijozdan to'lovni tasdiqlash so'raladi
+ * @param {object} order - orders qatori (final_price bilan)
+ */
+const notifyFinalPrice = (order) => (async () => {
+    if (!isTelegramConfigured() || !order?.client_id) return;
+    const full = await loadOrder(order.id);
+    if (!full || !paymentQuestion(full)) return;
+    await notifyUser(
+        full.client_id,
+        (lang) => [
+            tr(lang, '💰 Usta yakuniy summani kiritdi: <b>{title}</b>', { title: escapeHtml(orderTitle(full, lang)) }),
+            Number(full.materials_price) > 0
+                ? tr(lang, '💰 Summa: {sum} (ish haqi {labor} + material {materials})', {
+                    sum: money(full.final_price, lang),
+                    labor: money(full.labor_price, lang),
+                    materials: money(full.materials_price, lang),
+                })
+                : tr(lang, '💰 Summa: {sum}', { sum: money(full.final_price, lang) }),
+            tr(lang, 'Ustaga shuncha to\'ladingizmi? Tasdiqlang va ustani baholang.'),
+        ].join('\n'),
+        (lang) => keyboard(paymentButtons(full, lang))
+    );
+})().catch(logError('yakuniy summa'));
 
 /**
  * Mijoz aniq ustaga buyurtma berganda ustaga xabar
@@ -340,6 +374,7 @@ module.exports = {
     syncOfferMessage,
     notifyOrderEvent,
     notifyNewOrderForMaster,
+    notifyFinalPrice,
     notifyChatMessage,
     orderMessages,
     orderTitle,
