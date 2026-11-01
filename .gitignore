@@ -36,3 +36,6 @@ Thumbs.db
 # Yuklangan fayllar
 backend/uploads/
 backend/private_uploads/
+
+# Production zaxira nusxalari (serverda)
+deploy/backups/

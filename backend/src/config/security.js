@@ -46,6 +46,14 @@ module.exports = {
             warnings.push('PUBLIC_APP_URL o\'rnatilmagan: Telegram xabarlaridagi havolalar CLIENT_URL ga yo\'naltiriladi');
         }
 
+        if (isProduction) {
+            const insecure = (process.env.CLIENT_URL || '').split(',').map((url) => url.trim())
+                .filter((url) => url && !url.startsWith('https://'));
+            if (insecure.length > 0) {
+                warnings.push(`CLIENT_URL da HTTPS bo'lmagan manzil bor (${insecure.join(', ')}): productionda sayt faqat https:// orqali ochilishi kerak`);
+            }
+        }
+
         if (isProduction && !module.exports.ADMIN_REQUIRE_2FA) {
             warnings.push('ADMIN_REQUIRE_2FA o\'chiq: administratorlar uchun ikki bosqichli kirishni yoqish tavsiya etiladi');
         }

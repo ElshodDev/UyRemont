@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="Uy, avto va texnika ustalari: eng yaqin ustani bir tugma bilan chaqiring" />
+    <!-- Tavsif va havola ko'rinishi: vite.config.js to'ldiradi, /u/<usta> sahifalarida backend almashtiradi -->
+    <!-- og:start --><!-- og:end -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
@@ -14,19 +15,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Usta24" />
-    <script>
-      // Ko'rinishni sahifa chizilishidan oldin qo'llash (src/lib/theme.js bilan bir xil kalit)
-      (function () {
-        try {
-          var pref = localStorage.getItem('usta24_theme');
-          var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (dark) {
-            document.documentElement.classList.add('dark');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#131c2e');
-          }
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Ko'rinish (tungi rejim) sahifa chizilishidan oldin qo'llanadi. Alohida faylda: xavfsizlik siyosati (CSP) ichki skriptlarga ruxsat bermaydi -->
+    <script src="/theme-init.js"></script>
     <title>Usta24 — Usta topish endi oson!</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

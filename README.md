@@ -190,14 +190,17 @@ Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DA
 createdb uyremont_test
 
 cd backend
-TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 75+ test, ~15 soniya
+TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 85+ test, ~15 soniya
 cd ../web && npm test && npm run build
 ```
 
 Windows PowerShell'da: `$env:TEST_DATABASE_URL="postgresql://..."; npm test`.
 
-- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola, murojaatlar, ustani tasdiqlash va hujjatlar, statistika, xatolar jurnali.
-- **GitHub Actions** (`.github/workflows/ci.yml`): har bir push'da testlar PostgreSQL bilan avtomatik ishlaydi, `npm audit` (yuqori daraja) va sayt build'i tekshiriladi. Natija commit va PR yonida ✅/❌ bo'lib ko'rinadi.
+- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola, murojaatlar, ustani tasdiqlash va hujjatlar, statistika, xatolar jurnali, havola ko'rinishi (Open Graph).
+- **GitHub Actions** (`.github/workflows/ci.yml`): har bir push'da avtomatik:
+  - testlar PostgreSQL bilan ishlaydi;
+  - `npm audit` (yuqori daraja) va sayt build'i tekshiriladi;
+  - production Docker imijlari yig'iladi, `Caddyfile` va `docker-compose.yml` tekshiriladi. Natija commit va PR yonida ✅/❌ bo'lib ko'rinadi.
 
 ---
 
@@ -238,6 +241,7 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 | `UPLOAD_DIR` | Portfolio rasmlari papkasi (standart: `backend/uploads`) |
 | `ORDER_PHOTO_DIR` | Buyurtma rasmlari, ochiq emas (standart: `backend/private_uploads/orders`) |
 | `MASTER_DOC_DIR` | Ustalarning hujjatlari, ochiq emas (standart: `backend/private_uploads/documents`) |
+| `WEB_INDEX_HTML` | `/u/<usta>` sahifasi uchun saytning build qilingan `index.html` i (standart: `web/dist/index.html`) |
 | `SUPPORT_PHONE`, `SUPPORT_TELEGRAM` | `/support` sahifasidagi kontaktlar (masalan `+998 71 200 00 00` va `usta24_yordam`) |
 | `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh bo'lsa Telegram o'chiq) |
 | `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
@@ -250,9 +254,36 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 
 ---
 
-## 🚀 Production
+## 🚀 Production (serverga joylash)
+
+Bitta buyruq bilan Ubuntu serverda: Docker, avtomatik HTTPS (Caddy + Let's Encrypt), PostgreSQL va kunlik zaxira nusxalar.
+
 ```bash
-cd web && npm run build        # dist/ ni statik hosting ga joylang (barcha yo'llar index.html ga yo'naltirilsin)
-cd backend && NODE_ENV=production npm start
+git clone https://github.com/ElshodDev/UyRemont.git usta24 && cd usta24/deploy
+sudo ./usta24.sh install     # domen, admin raqami, SMS/Telegram so'raladi; kalitlar avtomatik
 ```
-Production da `NODE_ENV=production` o'rnating: OTP kod javobda qaytarilmaydi va server xatolari tafsiloti yashiriladi.
+
+Batafsil qo'llanma: **[deploy/README.md](deploy/README.md)**. Unda server talablari, DNS, boshqaruv (`status`, `logs`, `update`), zaxira va tiklash (`backup`, `restore`) yozilgan.
+
+| Fayl | Vazifasi |
+|---|---|
+| `Dockerfile` | Uchta bosqich: sayt build'i, `backend` imiji (shriftlar bilan, root bo'lmagan foydalanuvchi), `web` imiji (Caddy + sayt fayllari) |
+| `deploy/docker-compose.yml` | `db`, `backend`, `web`, `backup` xizmatlari, healthcheck, log hajmi cheklovi |
+| `deploy/Caddyfile` | HTTPS, `http → https`, CSP/HSTS va boshqa sarlavhalar, `/api` `/socket.io` `/uploads` `/u/*` → backend, keshlash |
+| `deploy/backup.sh` | Kunlik `pg_dump` + rasmlar arxivi, tekshiruv, 14 kun / 8 hafta saqlash, tiklash |
+| `deploy/usta24.sh` | `install`, `update`, `restart`, `status`, `logs`, `backup`, `backups`, `restore`, `stop` |
+
+Docker'siz ishga tushirish ham mumkin (`cd web && npm run build`, `cd backend && NODE_ENV=production npm start`). Bunda oldiga HTTPS beruvchi proksi qo'yiladi va `deploy/Caddyfile` dagi sozlamalar takrorlanadi.
+
+Production rejimida (`NODE_ENV=production`):
+- kirish kodi javobda qaytarilmaydi;
+- server xatolari tafsiloti yashiriladi;
+- xavfli sozlamalar bilan server ishga tushmaydi.
+
+## 🔗 Havola ko'rinishi (Telegram, WhatsApp)
+
+Usta `/u/<nom>` havolasini ulashganda chatda rasmli kartochka chiqadi: ismi, sohalari, reytingi, bajargan ishlari, tumani va «Tasdiqlangan usta» belgisi.
+
+- **Sahifa sarlavhalari:** Telegram va WhatsApp JavaScript ishlatmaydi. Shuning uchun `/u/*` so'rovini backend oladi va saytning `index.html` iga `og:*` meta teglarini yozib beradi. Shablon `WEB_INDEX_HTML` dan olinadi, Docker'da avtomatik ulanadi.
+- **Kartochka rasmi:** `GET /api/masters/u/:slug/og.png` (1200×630). Serverda SVG'dan chiziladi va xotirada keshlanadi. Ma'lumot o'zgarsa, rasm manzili ham o'zgaradi.
+- **Saytning umumiy kartochkasi:** `web/public/og.png`. Uning to'liq manzilini build paytida `PUBLIC_APP_URL` beradi (`web/vite.config.js`).
