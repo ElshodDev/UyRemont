@@ -6,6 +6,7 @@ import { getSocket } from '../lib/socket';
 import { getCurrentPosition } from '../lib/geo';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { t } from '../i18n';
 
 const DispatchContext = createContext(null);
 
@@ -76,7 +77,7 @@ export function DispatchProvider({ children }) {
           // Telegram orqali (yoki boshqa qurilmada) javob berilgan bo'lsa oyna jimgina yopiladi
           if (payload.reason === 'accepted' && payload.order_id) navigate(`/orders/${payload.order_id}`);
           else if (payload.reason !== 'declined' && payload.reason !== 'accepted') {
-            toast.error(payload.reason === 'cancelled' ? 'Mijoz buyurtmani bekor qildi' : 'Taklif vaqti tugadi');
+            toast.error(payload.reason === 'cancelled' ? t('Mijoz buyurtmani bekor qildi') : t('Taklif vaqti tugadi'));
           }
           return null;
         }
@@ -111,7 +112,7 @@ export function DispatchProvider({ children }) {
     setGps((g) => ({ ...g, status: 'locating' }));
     const watchId = navigator.geolocation.watchPosition(
       (pos) => setGps({ status: 'ok', position: { lat: pos.coords.latitude, lng: pos.coords.longitude }, error: '' }),
-      (err) => setGps((g) => ({ ...g, status: 'error', error: err.code === 1 ? 'Joylashuvga ruxsat berilmagan' : 'GPS signal yo\'q' })),
+      (err) => setGps((g) => ({ ...g, status: 'error', error: err.code === 1 ? t('Joylashuvga ruxsat berilmagan') : t('GPS signal yo\'q') })),
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
@@ -177,7 +178,7 @@ export function DispatchProvider({ children }) {
     try {
       const { data } = await api(`/dispatch/offers/${offer.offer_id}/accept`, { method: 'POST' });
       setOffer(null);
-      toast.success('Buyurtma qabul qilindi. Mijoz manziliga yo\'l oling');
+      toast.success(t('Buyurtma qabul qilindi. Mijoz manziliga yo\'l oling'));
       await refresh();
       navigate(`/orders/${data.id}`);
     } catch (error) {

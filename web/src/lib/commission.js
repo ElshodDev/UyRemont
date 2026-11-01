@@ -1,4 +1,6 @@
 // Komissiya hisobi: yorliqlar va summa formati (usta va admin sahifalari uchun umumiy)
+// Yorliqlar xaritasi o'zbekcha qoladi, ko'rsatishda t() bilan tarjima qilinadi
+import { t } from '../i18n/index.js';
 
 export const PAYMENT_METHODS = [
   ['card', 'Karta'],
@@ -22,7 +24,7 @@ export const ENTRY_LABELS = {
  */
 export function formatSum(value, { sign = false } = {}) {
   const num = Math.round(Number(value) || 0);
-  const text = `${Math.abs(num).toLocaleString('ru-RU')} so'm`;
+  const text = t('{sum} so\'m', { sum: Math.abs(num).toLocaleString('ru-RU') });
   if (!sign || num === 0) return num < 0 ? `−${text}` : text;
   return `${num > 0 ? '+' : '−'}${text}`;
 }
@@ -33,8 +35,8 @@ export function formatSum(value, { sign = false } = {}) {
  * @param {number} limit 0 bo'lsa cheklov yo'q
  */
 export function debtStatus(due, limit) {
-  if (due <= 0) return { tone: 'ok', text: due < 0 ? `Oldindan to'langan: ${formatSum(-due)}` : 'Qarzingiz yo\'q' };
-  if (limit > 0 && due > limit) return { tone: 'blocked', text: 'Limitdan oshgan — to\'lamaguningizcha yangi takliflar kelmaydi' };
-  if (limit > 0 && due >= limit * 0.8) return { tone: 'warn', text: 'Limitga yaqin — vaqtida to\'lang' };
-  return { tone: 'normal', text: limit > 0 ? `Limit ${formatSum(limit)}: oshsa, yangi takliflar to'xtaydi` : 'To\'lovni vaqtida qiling' };
+  if (due <= 0) return { tone: 'ok', text: due < 0 ? t('Oldindan to\'langan: {sum}', { sum: formatSum(-due) }) : t('Qarzingiz yo\'q') };
+  if (limit > 0 && due > limit) return { tone: 'blocked', text: t('Limitdan oshgan — to\'lamaguningizcha yangi takliflar kelmaydi') };
+  if (limit > 0 && due >= limit * 0.8) return { tone: 'warn', text: t('Limitga yaqin — vaqtida to\'lang') };
+  return { tone: 'normal', text: limit > 0 ? t('Limit {sum}: oshsa, yangi takliflar to\'xtaydi', { sum: formatSum(limit) }) : t('To\'lovni vaqtida qiling') };
 }

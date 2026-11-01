@@ -1,19 +1,21 @@
 // Tezkor chaqiruv qoidalari matni (/rules va /ustalar sahifalari uchun umumiy).
 // Raqamlar serverdagi sozlamadan keladi: GET /api/dispatch/config
+// Matnlar chaqirilgan paytda joriy tilda yasaladi (modul yuklanganda emas)
+import { t } from '../i18n/index.js';
 
 /**
  * @param {object} config /api/dispatch/config javobi
  * @returns {string[]}
  */
 export const buildClientRules = (config) => [
-  'Bir vaqtning o\'zida faqat bitta faol tezkor chaqiruv berish mumkin.',
-  `Usta qidirilayotgan paytda bekor qilish bepul. Usta qabul qilgandan keyin ${config.free_cancel_min} daqiqa ichida ham bepul bekor qilasiz; undan keyin "kech bekor qilish" qayd etiladi.`,
-  'Ish boshlangandan keyin chaqiruvni bekor qilib bo\'lmaydi — usta bilan kelishing.',
-  `Usta ${config.search_timeout_min} daqiqa ichida topilmasa, chaqiruv yopiladi va qayta chaqirish taklif qilinadi.`,
-  'Chiqish narxi oldindan ko\'rsatiladi; ish narxi usta muammoni ko\'rgach kelishiladi.',
-  'Telefon raqamlar faqat usta chaqiruvni qabul qilgandan keyin ko\'rinadi.',
-  'Sevimli ustangiz qidiruv radiusida bo\'sh bo\'lsa, taklif birinchi unga yuboriladi (ustani sevimlilarga yurakcha orqali qo\'shasiz).',
-  'Ish tugagach ustani halol baholang — bu boshqa mijozlarga yordam beradi.'
+  t('Bir vaqtning o\'zida faqat bitta faol tezkor chaqiruv berish mumkin.'),
+  t('Usta qidirilayotgan paytda bekor qilish bepul. Usta qabul qilgandan keyin {min} daqiqa ichida ham bepul bekor qilasiz; undan keyin "kech bekor qilish" qayd etiladi.', { min: config.free_cancel_min }),
+  t('Ish boshlangandan keyin chaqiruvni bekor qilib bo\'lmaydi — usta bilan kelishing.'),
+  t('Usta {min} daqiqa ichida topilmasa, chaqiruv yopiladi va qayta chaqirish taklif qilinadi.', { min: config.search_timeout_min }),
+  t('Chiqish narxi oldindan ko\'rsatiladi; ish narxi usta muammoni ko\'rgach kelishiladi.'),
+  t('Telefon raqamlar faqat usta chaqiruvni qabul qilgandan keyin ko\'rinadi.'),
+  t('Sevimli ustangiz qidiruv radiusida bo\'sh bo\'lsa, taklif birinchi unga yuboriladi (ustani sevimlilarga yurakcha orqali qo\'shasiz).'),
+  t('Ish tugagach ustani halol baholang — bu boshqa mijozlarga yordam beradi.')
 ];
 
 /**
@@ -21,17 +23,19 @@ export const buildClientRules = (config) => [
  * @returns {string[]}
  */
 export const buildMasterRules = (config) => [
-  `Tezkor chaqiruvlar faqat ish rejimini yoqqan${config.require_verified ? ', administrator tasdiqlagan' : ''} ustalarga yuboriladi.`,
-  `Reyting ${config.min_rating} dan past bo'lsa (kamida ${config.min_reviews_for_rating} ta sharhdan keyin) ishga chiqib bo'lmaydi.`,
-  `Taklifga javob berish uchun ${config.offer_timeout_sec} soniya beriladi. Ketma-ket ${config.max_missed_offers} ta taklifga javob bermasangiz, ish rejimingiz avtomatik o'chiriladi.`,
-  'Rad etish ham javob hisoblanadi, lekin qabul qilish foizingizga ta\'sir qiladi.',
-  'Ish rejimida joylashuvingiz har 15 soniyada yangilanadi. GPS ishlamasa, xaritada joyingizni belgilang.',
-  `Joylashuvi ${config.location_stale_min} daqiqadan ko'p yangilanmagan ustaga takliflar yuborilmaydi.`,
-  'Faol ish bor paytda yangi tezkor takliflar kelmaydi.',
-  'Qabul qilingan chaqiruvdan voz kechsangiz, sabab ko\'rsatiladi va statistikada qayd etiladi; chaqiruv boshqa ustaga beriladi.',
-  'Bosqichlarni o\'z vaqtida belgilang: "Yetib keldim" → "Ishni boshlash" → "Yakunlash" (ish haqi va material alohida).',
-  `Platforma komissiyasi — ish haqining ${config.commission_percent}% (siz sotib olgan material summasidan olinmaydi). U har bir yakunlangan tezkor chaqiruvdan keyin «Komissiya hisobi» ga yoziladi.`,
+  config.require_verified
+    ? t('Tezkor chaqiruvlar faqat ish rejimini yoqqan, administrator tasdiqlagan ustalarga yuboriladi.')
+    : t('Tezkor chaqiruvlar faqat ish rejimini yoqqan ustalarga yuboriladi.'),
+  t('Reyting {rating} dan past bo\'lsa (kamida {reviews} ta sharhdan keyin) ishga chiqib bo\'lmaydi.', { rating: config.min_rating, reviews: config.min_reviews_for_rating }),
+  t('Taklifga javob berish uchun {sec} soniya beriladi. Ketma-ket {max} ta taklifga javob bermasangiz, ish rejimingiz avtomatik o\'chiriladi.', { sec: config.offer_timeout_sec, max: config.max_missed_offers }),
+  t('Rad etish ham javob hisoblanadi, lekin qabul qilish foizingizga ta\'sir qiladi.'),
+  t('Ish rejimida joylashuvingiz har 15 soniyada yangilanadi. GPS ishlamasa, xaritada joyingizni belgilang.'),
+  t('Joylashuvi {min} daqiqadan ko\'p yangilanmagan ustaga takliflar yuborilmaydi.', { min: config.location_stale_min }),
+  t('Faol ish bor paytda yangi tezkor takliflar kelmaydi.'),
+  t('Qabul qilingan chaqiruvdan voz kechsangiz, sabab ko\'rsatiladi va statistikada qayd etiladi; chaqiruv boshqa ustaga beriladi.'),
+  t('Bosqichlarni o\'z vaqtida belgilang: "Yetib keldim" → "Ishni boshlash" → "Yakunlash" (ish haqi va material alohida).'),
+  t('Platforma komissiyasi — ish haqining {percent}% (siz sotib olgan material summasidan olinmaydi). U har bir yakunlangan tezkor chaqiruvdan keyin «Komissiya hisobi» ga yoziladi.', { percent: config.commission_percent }),
   ...(config.commission_debt_limit > 0
-    ? [`Komissiya qarzi ${Number(config.commission_debt_limit).toLocaleString('ru-RU')} so'mdan oshsa, to'lamaguningizcha ishga chiqib bo'lmaydi va takliflar kelmaydi.`]
+    ? [t('Komissiya qarzi {limit} so\'mdan oshsa, to\'lamaguningizcha ishga chiqib bo\'lmaydi va takliflar kelmaydi.', { limit: Number(config.commission_debt_limit).toLocaleString('ru-RU') })]
     : [])
 ];
