@@ -39,7 +39,7 @@ export default function Header({ onOpenCalculator }) {
   const menuLink = 'flex items-center gap-2.5 px-3 min-h-11 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50';
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+    <header className="print:hidden sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-3 min-w-0" aria-label="Usta24 — bosh sahifa">
           <div className="w-11 h-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md shadow-blue-500/20 flex-shrink-0" aria-hidden="true">

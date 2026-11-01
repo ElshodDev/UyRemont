@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Phone, CheckCircle, XCircle, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import ProtectedImage from '../components/ProtectedImage';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
@@ -79,12 +79,18 @@ export function VerificationsTab({ onChanged }) {
 
   return (
     <div className="space-y-4">
-      <FilterChips
-        options={[['pending', 'Tekshiruvda'], ['rejected', 'Rad etilgan'], ['none', 'Yubormagan']]}
-        value={status}
-        onChange={setStatus}
-        counts={result?.counts}
-      />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <FilterChips
+          options={[['pending', 'Tekshiruvda'], ['rejected', 'Rad etilgan'], ['none', 'Yubormagan']]}
+          value={status}
+          onChange={setStatus}
+          counts={result?.counts}
+        />
+        <div className="flex gap-2">
+          <Link to="/ustalar" className="btn btn-sm btn-ghost">Ustalar uchun qo'llanma</Link>
+          <Link to="/ustalar/varaqa" className="btn btn-sm btn-soft"><Printer className="w-4 h-4" /> Usta jalb qilish varaqasi</Link>
+        </div>
+      </div>
       {!result && <PageLoader />}
       {result && result.data.length === 0 && (
         <p className="card p-8 text-center text-sm text-slate-400">

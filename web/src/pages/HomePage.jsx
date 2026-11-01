@@ -363,12 +363,17 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => requireAuth((current) => navigate(current.role === 'master' ? '/master/profile' : '/master/setup'))}
-            className="btn bg-snow text-ink font-bold hover:bg-primary-50 whitespace-nowrap px-5"
-          >
-            Usta bo'lib qo'shilish
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Link to="/ustalar" className="btn bg-white/10 text-white hover:bg-white/20 ring-1 ring-white/25 whitespace-nowrap px-5">
+              Batafsil
+            </Link>
+            <button
+              onClick={() => requireAuth((current) => navigate(current.role === 'master' ? '/master/profile' : '/master/setup'))}
+              className="btn bg-snow text-ink font-bold hover:bg-primary-50 whitespace-nowrap px-5"
+            >
+              Usta bo'lib qo'shilish
+            </button>
+          </div>
         </div>
       </main>
 

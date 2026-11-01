@@ -1,7 +1,7 @@
 # =============================================
 # Usta24 - veb-server (Caddy)
 # - DOMAIN uchun HTTPS sertifikati (Let's Encrypt) avtomatik olinadi va yangilanadi, http -> https
-# - /api, /socket.io, /uploads va /u/<usta> backendga uzatiladi, qolgani - sayt fayllari
+# - /api, /socket.io, /uploads, /u/<usta> va /ustalar backendga uzatiladi, qolgani - sayt fayllari
 # DOMAIN (va ixtiyoriy WWW_DOMAIN) deploy/.env dan olinadi
 # =============================================
 
@@ -31,7 +31,8 @@
 		max_size 12MB
 	}
 
-	@backend path /api/* /socket.io/* /uploads/* /u/*
+	# /ustalar - ustalar uchun qo'llanma (havola ko'rinishi backendda yoziladi; /ustalar/varaqa - oddiy sahifa)
+	@backend path /api/* /socket.io/* /uploads/* /u/* /ustalar
 	handle @backend {
 		reverse_proxy backend:5000
 	}

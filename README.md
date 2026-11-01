@@ -87,7 +87,8 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/prices` | Taxminiy narxlar ro'yxati (ommaviy) |
 | `GET/POST/PUT/DELETE /api/addresses` | Saqlangan manzillar (10 tagacha) |
 | `GET /api/favorites`, `GET /api/favorites/ids`, `POST/DELETE /api/favorites/:masterId` | Sevimli ustalar |
-| `GET /api/masters/u/:slug`, `GET /api/masters/u/:slug/qr` | Ustaning ommaviy sahifasi va QR kodi |
+| `GET /api/masters/u/:slug`, `GET /api/masters/u/:slug/qr` | Ustaning ommaviy sahifasi va QR kodi (`?format=svg` — chop etish uchun) |
+| `GET /api/qr/ustalar` | Ustalar uchun qo'llanmaga olib boruvchi QR kod (`?format=svg`) |
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 | `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yuborish, o'z murojaatlari |
@@ -124,6 +125,14 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 - **Sevimli ustalar:** kartochkadagi yurakcha, `/favorites` sahifasi, bosh sahifada sevimlilar qatori; tezkor chaqiruvda sevimli usta qidiruv radiusida bo'lsa taklif birinchi unga boradi.
 - **"Yana chaqirish":** yakunlangan/bekor qilingan buyurtmadan xizmat turi va manzil bilan qayta chaqirish yoki o'sha ustaga qayta buyurtma.
 - **Ustaning ommaviy havolasi** (`/u/<nom>`): usta uni Telegram'da ulashadi, QR kodni chop etadi; havola nomini o'zgartirish mumkin.
+- **Ustalar uchun qo'llanma** (`/ustalar`):
+  - nega Usta24, qanday boshlash (5 qadam);
+  - tezkor chaqiruv qoidalari (raqamlar serverdagi sozlamadan), maslahatlar, savol-javob, yordam kontaktlari;
+  - Telegram guruhlarda ulashilganda o'z kartochkasi bilan ko'rinadi.
+- **Chop etiladigan varaqalar** (A4, printerda aniq o'lchamda, tungi rejimda ham oq):
+  - `/ustalar/varaqa` — usta jalb qilish varaqasi: QR kod qo'llanmaga olib boradi, pastida 7 ta yirtib olinadigan qirqim. Admin → «Ustalar» bo'limida havola bor.
+  - `/master/varaqa` — ustaning shaxsiy varaqasi yoki 10 ta vizitka (85×55 mm). QR kod ustaning `/u/<nom>` sahifasiga olib boradi.
+  - Sayt vaqtinchalik manzilda bo'lsa (localhost, tunnel), chop etishdan oldin ogohlantiriladi.
 - **Murojaatlar markazi** (`/support`): kontaktlar, «Murojaatlarim» ro'yxati; buyurtma sahifasida «Muammo haqida xabar berish».
 - **Ustani tasdiqlash:** usta profil sahifasida pasport rasmini yuklab tekshiruvga yuboradi, natija sahifani yangilamasdan keladi.
 
@@ -269,7 +278,7 @@ Batafsil qo'llanma: **[deploy/README.md](deploy/README.md)**. Unda server talabl
 |---|---|
 | `Dockerfile` | Uchta bosqich: sayt build'i, `backend` imiji (shriftlar bilan, root bo'lmagan foydalanuvchi), `web` imiji (Caddy + sayt fayllari) |
 | `deploy/docker-compose.yml` | `db`, `backend`, `web`, `backup` xizmatlari, healthcheck, log hajmi cheklovi |
-| `deploy/Caddyfile` | HTTPS, `http → https`, CSP/HSTS va boshqa sarlavhalar, `/api` `/socket.io` `/uploads` `/u/*` → backend, keshlash |
+| `deploy/Caddyfile` | HTTPS, `http → https`, CSP/HSTS va boshqa sarlavhalar, `/api` `/socket.io` `/uploads` `/u/*` `/ustalar` → backend, keshlash |
 | `deploy/backup.sh` | Kunlik `pg_dump` + rasmlar arxivi, tekshiruv, 14 kun / 8 hafta saqlash, tiklash |
 | `deploy/usta24.sh` | `install`, `update`, `restart`, `status`, `logs`, `backup`, `backups`, `restore`, `stop` |
 
@@ -286,4 +295,5 @@ Usta `/u/<nom>` havolasini ulashganda chatda rasmli kartochka chiqadi: ismi, soh
 
 - **Sahifa sarlavhalari:** Telegram va WhatsApp JavaScript ishlatmaydi. Shuning uchun `/u/*` so'rovini backend oladi va saytning `index.html` iga `og:*` meta teglarini yozib beradi. Shablon `WEB_INDEX_HTML` dan olinadi, Docker'da avtomatik ulanadi.
 - **Kartochka rasmi:** `GET /api/masters/u/:slug/og.png` (1200×630). Serverda SVG'dan chiziladi va xotirada keshlanadi. Ma'lumot o'zgarsa, rasm manzili ham o'zgaradi.
+- **Ustalar uchun qo'llanma** (`/ustalar`): kartochka `web/public/og-ustalar.png`, sahifa sarlavhalari backendda yoziladi.
 - **Saytning umumiy kartochkasi:** `web/public/og.png`. Uning to'liq manzilini build paytida `PUBLIC_APP_URL` beradi (`web/vite.config.js`).

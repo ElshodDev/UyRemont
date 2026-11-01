@@ -14,7 +14,7 @@ const {
     optionalNumber,
     parsePagination,
 } = require('../utils/validators');
-const QRCode = require('qrcode');
+const { sendQr } = require('../utils/qr');
 const { HttpError } = require('../middleware/errorHandler');
 const { isValidSlug } = require('../utils/slug');
 const { ensurePublicSlug, publicUrl } = require('../services/publicLink.service');
@@ -302,16 +302,13 @@ const getMasterBySlug = async (req, res, next) => {
 
 /**
  * Ommaviy havola uchun QR kod (chop etish, mashinaga yopishtirish uchun)
- * GET /api/masters/u/:slug/qr
+ * GET /api/masters/u/:slug/qr  (?format=svg - chop etish uchun)
  */
 const getMasterQr = async (req, res, next) => {
     try {
         const id = await findMasterIdBySlug(req.params.slug);
         if (!id) throw new HttpError(404, 'Usta topilmadi');
-        const png = await QRCode.toBuffer(publicUrl(req.params.slug), { width: 600, margin: 2, errorCorrectionLevel: 'M' });
-        res.set('Cache-Control', 'public, max-age=86400');
-        res.set('Content-Disposition', `inline; filename="usta24-${req.params.slug}.png"`);
-        res.type('image/png').send(png);
+        await sendQr(res, publicUrl(req.params.slug), { format: req.query.format, filename: `usta24-${req.params.slug}` });
     } catch (error) {
         next(error);
     }

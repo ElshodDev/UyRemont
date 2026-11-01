@@ -187,3 +187,43 @@ html {
 .dark .leaflet-control-attribution a {
   color: #93c5fd;
 }
+
+/* Chop etiladigan varaqalar (A4): src/components/PrintSheet.jsx */
+.print-frame {
+  width: 100%;
+  overflow: hidden;
+}
+.print-sheet {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  overflow: hidden;
+  transform-origin: top left;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 0.18);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  .pb-bottom-nav {
+    padding-bottom: 0 !important;
+  }
+  .print-frame {
+    height: auto !important;
+    overflow: visible;
+  }
+  .print-sheet {
+    transform: none !important;
+    box-shadow: none;
+  }
+}

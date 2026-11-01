@@ -5,6 +5,7 @@ import { PageLoader } from '../components/Spinner';
 import { openOnboarding } from '../components/Onboarding';
 import { ErrorState } from '../components/EmptyState';
 import { api } from '../lib/api';
+import { buildClientRules, buildMasterRules } from '../lib/rules';
 
 const FLOW = [
   { icon: Zap, title: 'Chaqiruv', text: 'Mijoz xizmat turini va manzilni tanlaydi, chiqish narxini oldindan ko\'radi.' },
@@ -29,28 +30,8 @@ export default function RulesPage() {
   if (!config) return <PageLoader />;
 
   const [r1, r2, r3] = config.search_radii_km;
-  const clientRules = [
-    'Bir vaqtning o\'zida faqat bitta faol tezkor chaqiruv berish mumkin.',
-    `Usta qidirilayotgan paytda bekor qilish bepul. Usta qabul qilgandan keyin ${config.free_cancel_min} daqiqa ichida ham bepul bekor qilasiz; undan keyin "kech bekor qilish" qayd etiladi.`,
-    'Ish boshlangandan keyin chaqiruvni bekor qilib bo\'lmaydi — usta bilan kelishing.',
-    `Usta ${config.search_timeout_min} daqiqa ichida topilmasa, chaqiruv yopiladi va qayta chaqirish taklif qilinadi.`,
-    'Chiqish narxi oldindan ko\'rsatiladi; ish narxi usta muammoni ko\'rgach kelishiladi.',
-    'Telefon raqamlar faqat usta chaqiruvni qabul qilgandan keyin ko\'rinadi.',
-    'Sevimli ustangiz qidiruv radiusida bo\'sh bo\'lsa, taklif birinchi unga yuboriladi (ustani sevimlilarga yurakcha orqali qo\'shasiz).',
-    'Ish tugagach ustani halol baholang — bu boshqa mijozlarga yordam beradi.'
-  ];
-  const masterRules = [
-    `Tezkor chaqiruvlar faqat ish rejimini yoqqan${config.require_verified ? ', administrator tasdiqlagan' : ''} ustalarga yuboriladi.`,
-    `Reyting ${config.min_rating} dan past bo'lsa (kamida ${config.min_reviews_for_rating} ta sharhdan keyin) ishga chiqib bo'lmaydi.`,
-    `Taklifga javob berish uchun ${config.offer_timeout_sec} soniya beriladi. Ketma-ket ${config.max_missed_offers} ta taklifga javob bermasangiz, ish rejimingiz avtomatik o'chiriladi.`,
-    'Rad etish ham javob hisoblanadi, lekin qabul qilish foizingizga ta\'sir qiladi.',
-    'Ish rejimida joylashuvingiz har 15 soniyada yangilanadi. GPS ishlamasa, xaritada joyingizni belgilang.',
-    `Joylashuvi ${config.location_stale_min} daqiqadan ko'p yangilanmagan ustaga takliflar yuborilmaydi.`,
-    'Faol ish bor paytda yangi tezkor takliflar kelmaydi.',
-    'Qabul qilingan chaqiruvdan voz kechsangiz, sabab ko\'rsatiladi va statistikada qayd etiladi; chaqiruv boshqa ustaga beriladi.',
-    'Bosqichlarni o\'z vaqtida belgilang: "Yetib keldim" → "Ishni boshlash" → "Yakunlash" (yakuniy summa bilan).',
-    `Platforma komissiyasi — yakuniy summaning ${config.commission_percent}%.`
-  ];
+  const clientRules = buildClientRules(config);
+  const masterRules = buildMasterRules(config);
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full flex-1 space-y-6">

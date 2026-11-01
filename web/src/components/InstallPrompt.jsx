@@ -52,7 +52,7 @@ export default function InstallPrompt() {
   };
 
   return (
-    <div className="md:hidden fixed inset-x-3 z-40 bottom-[calc(5rem+env(safe-area-inset-bottom))] bg-ink text-white rounded-2xl shadow-xl ring-1 ring-white/10 p-3.5 flex items-center gap-3 animate-toast-in">
+    <div className="md:hidden print:hidden fixed inset-x-3 z-40 bottom-[calc(5rem+env(safe-area-inset-bottom))] bg-ink text-white rounded-2xl shadow-xl ring-1 ring-white/10 p-3.5 flex items-center gap-3 animate-toast-in">
       <img src="/icons/icon-192.png" alt="" className="w-10 h-10 rounded-xl flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold">Usta24 ilovasini o'rnating</p>
