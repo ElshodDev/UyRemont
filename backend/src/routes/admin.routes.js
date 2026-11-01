@@ -13,6 +13,8 @@ const {
 } = require('../controllers/verification.controller');
 const {
     listCommission, getMasterCommission, recordPayment, recordAdjustment,
+    listPaymentReviews,
+    resolvePaymentReview,
 } = require('../controllers/commission.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -44,6 +46,8 @@ router.get('/documents/:id', getDocument);
 // MVP o'lchovlari va xatolar jurnali
 // Komissiya hisobi: ustalar qarzi, to'lovlarni qabul qilish
 router.get('/commission', listCommission);
+router.get('/commission/payment-reviews', listPaymentReviews);
+router.post('/commission/payment-reviews/:orderId', resolvePaymentReview);
 router.get('/commission/:masterId', getMasterCommission);
 router.post('/commission/:masterId/payments', recordPayment);
 router.post('/commission/:masterId/adjustments', recordAdjustment);

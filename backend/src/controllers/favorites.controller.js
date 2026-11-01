@@ -5,6 +5,7 @@
 const { query } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { assertUuid } = require('../utils/validators');
+const { maskContacts } = require('../utils/contacts');
 
 const MAX_FAVORITES = 50;
 
@@ -36,7 +37,7 @@ const listFavorites = async (req, res, next) => {
              ORDER BY f.created_at DESC`,
             [req.user.id]
         );
-        res.status(200).json({ success: true, data: result.rows });
+        res.status(200).json({ success: true, data: result.rows.map((row) => ({ ...row, bio: maskContacts(row.bio) })) });
     } catch (error) {
         next(error);
     }

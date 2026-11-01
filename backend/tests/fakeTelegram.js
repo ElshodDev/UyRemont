@@ -39,6 +39,10 @@ const startFakeTelegram = () => new Promise((resolve) => {
             edits.push(p);
             return { message_id: p.message_id, chat: { id: p.chat_id }, text: p.text };
         },
+        editMessageReplyMarkup: (p) => {
+            edits.push(p);
+            return { message_id: p.message_id, chat: { id: p.chat_id } };
+        },
         answerCallbackQuery: (p) => {
             answers.push(p);
             return true;

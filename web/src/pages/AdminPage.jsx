@@ -44,7 +44,9 @@ const AUDIT_ACTIONS = {
   'master.approve': 'Ustani tasdiqladi',
   'master.reject': 'Ustani rad etdi',
   'commission.payment': 'Ustadan komissiya to\'lovini qabul qildi',
-  'commission.adjust': 'Komissiya hisobini tuzatdi'
+  'commission.adjust': 'Komissiya hisobini tuzatdi',
+  'commission.review_charge': 'To\'lov farqidan komissiya yozdi',
+  'commission.review_dismiss': 'To\'lov farqini yopdi'
 };
 
 function AuditTab() {

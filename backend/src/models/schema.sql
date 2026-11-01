@@ -716,3 +716,18 @@ FROM (VALUES
     ('Virusdan tozalash', 'Удаление вирусов')
 ) AS v(uz, ru)
 WHERE p.name = v.uz AND p.name_ru IS NULL;
+
+-- =============================================
+-- 18. Mijoz to'langan summani tasdiqlaydi (tezkor chaqiruv yakunlangach).
+-- Mijoz ustaning yozganidan sezilarli ko'p to'laganini bildirsa, buyurtma admin tekshiruviga tushadi
+-- (payment_review = 'pending'), admin farqdan komissiya yozadi ('charged') yoki yopadi ('dismissed')
+-- =============================================
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_paid_amount DECIMAL(12, 2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_confirmed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_review VARCHAR(10);
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_payment_review_check;
+ALTER TABLE orders ADD CONSTRAINT orders_payment_review_check
+    CHECK (payment_review IS NULL OR payment_review IN ('pending', 'charged', 'dismissed'));
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_reviewed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_payment_review ON orders(payment_confirmed_at DESC) WHERE payment_review IS NOT NULL;

@@ -18,6 +18,7 @@ const { sendQr } = require('../utils/qr');
 const { HttpError } = require('../middleware/errorHandler');
 const { isValidSlug } = require('../utils/slug');
 const { ensurePublicSlug, publicUrl } = require('../services/publicLink.service');
+const { containsContact, maskContacts, CONTACT_IN_TEXT_MESSAGE } = require('../utils/contacts');
 
 const VERTICALS = ['home', 'auto', 'appliance', 'gadget'];
 const MAX_PORTFOLIO_ITEMS = 20;
@@ -182,7 +183,7 @@ const getAllMasters = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: {
-                masters: mastersResult.rows,
+                masters: mastersResult.rows.map((row) => ({ ...row, bio: maskContacts(row.bio) })),
                 pagination: {
                     total,
                     page,
@@ -230,7 +231,7 @@ const getVerticalStats = async (req, res, next) => {
 const loadMasterDetails = async (id) => {
     const masterResult = await query(
         `SELECT
-            u.id, u.name, u.avatar_url, u.phone, u.created_at,
+            u.id, u.name, u.avatar_url, u.created_at,
             mp.id as master_profile_id, mp.bio, mp.experience_years,
             mp.hourly_rate, mp.district, mp.city, mp.is_verified,
             mp.rating, mp.reviews_count, mp.is_available, mp.public_slug
@@ -279,11 +280,14 @@ const loadMasterDetails = async (id) => {
         ),
     ]);
 
+    // Telefon raqam ommaviy profilda yo'q: u buyurtma qabul qilingach buyurtma sahifasida ko'rinadi.
+    // Bio va portfolio izohlariga yozilgan raqamlar ham yashiriladi
     return {
         ...master,
+        bio: maskContacts(master.bio),
         completed_orders: completedResult.rows[0].total,
         specializations: specializationsResult.rows,
-        portfolio: portfolioResult.rows,
+        portfolio: portfolioResult.rows.map((item) => ({ ...item, description: maskContacts(item.description) })),
         recent_reviews: reviewsResult.rows,
     };
 };
@@ -391,6 +395,7 @@ const updateProfile = async (req, res, next) => {
         const userId = req.user.id;
         const name = optionalString(req.body.name, { max: 100, field: 'Ism' });
         const bio = optionalString(req.body.bio, { max: 1000, field: 'Ma\'lumot' });
+        if (containsContact(bio)) throw new HttpError(400, CONTACT_IN_TEXT_MESSAGE);
         const district = optionalString(req.body.district, { max: 100, field: 'Tuman' });
         const city = optionalString(req.body.city, { max: 100, field: 'Shahar' });
         const experienceYears = optionalNumber(req.body.experience_years, {
@@ -505,6 +510,7 @@ const uploadPortfolio = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const description = optionalString(req.body.description, { max: 300, field: 'Tavsif' });
+        if (containsContact(description)) throw new HttpError(400, CONTACT_IN_TEXT_MESSAGE);
 
         if (!req.file && !(typeof req.body.image_url === 'string' && /^https:\/\/\S+$/i.test(req.body.image_url.trim()))) {
             return res.status(400).json({

@@ -464,5 +464,16 @@ export default {
   'Hozir bo\'sh': 'Свободен сейчас',
   'Sharhi bor': 'С отзывами',
   'Yangi usta': 'Новый мастер',
-  'Narx kelishiladi': 'Цена договорная'
+  'Narx kelishiladi': 'Цена договорная',
+  // Raqamlar buyurtmadan keyin ochiladi, to'lovni tasdiqlash
+  'Telefon raqami buyurtmadan keyin ochiladi': 'Телефон откроется после заказа',
+  'Usta buyurtmangizni qabul qilgach, raqamlar ikki tomonga ham ko\'rinadi. Ungacha buyurtma sahifasidagi chat orqali yozishingiz mumkin.':
+    'Когда мастер примет ваш заказ, номера станут видны обеим сторонам. До этого можно писать в чате на странице заказа.',
+  'To\'lovni tasdiqlang': 'Подтвердите оплату',
+  'Usta yakuniy summani {sum} deb yozdi. Ustaga shuncha to\'ladingizmi?': 'Мастер указал итоговую сумму {sum}. Вы заплатили мастеру именно столько?',
+  'Ha, {sum} to\'ladim': 'Да, я заплатил {sum}',
+  'Yo\'q, boshqa summa': 'Нет, другую сумму',
+  'Ustaga qancha to\'ladingiz? (so\'m)': 'Сколько вы заплатили мастеру? (сум)',
+  'Javobingiz ustaga ko\'rsatilmaydi. U narxlarning halol bo\'lishiga yordam beradi.': 'Мастер не увидит ваш ответ. Он помогает сохранять цены честными.',
+  'Siz to\'lovni tasdiqladingiz: {sum}': 'Вы подтвердили оплату: {sum}'
 };

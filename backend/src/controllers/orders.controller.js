@@ -7,6 +7,8 @@ const { query, withTransaction } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { emitOrderUpdate } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
+const { confirmPayment, paymentView } = require('../services/payment.service');
+const { containsContact, CONTACT_IN_TEXT_MESSAGE } = require('../utils/contacts');
 const { accrueCommission, afterAccrual, isOverLimit } = require('../services/commission.service');
 const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
 const { notifyNewOrderForMaster } = require('../services/telegram/notify');
@@ -106,6 +108,8 @@ const createOrder = async (req, res, next) => {
         const title = requiredString(req.body.title, { min: 3, max: 200, field: 'Sarlavha' });
         const address = requiredString(req.body.address, { min: 3, max: 500, field: 'Manzil' });
         const description = optionalString(req.body.description, { max: 2000, field: 'Tavsif' });
+        // Raqam usta qabul qilgach o'zi ko'rinadi; matnga yozilsa qabul qilinmasdan aloqa qilinib ketadi
+        if ([title, address, description].some(containsContact)) throw new HttpError(400, CONTACT_IN_TEXT_MESSAGE);
         const district = optionalString(req.body.district, { max: 100, field: 'Tuman' });
         const budget = optionalNumber(req.body.budget, { min: 0, max: 10000000000, field: 'Byudjet' });
         const specializationId = optionalNumber(req.body.specialization_id, {
@@ -226,7 +230,7 @@ const getOrders = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: ordersResult.rows,
+            data: ordersResult.rows.map((order) => paymentView(order, req.user)),
             pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
         });
     } catch (error) {
@@ -327,7 +331,7 @@ const getOrderById = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: {
-                ...order,
+                ...paymentView(order, req.user),
                 ...(await loadPhones(order, req.user)),
                 ...masterLocation,
                 photos: await listPhotoIds(id),
@@ -509,7 +513,33 @@ const updateInstantStatus = async (req, res, order, status) => {
     });
 };
 
+/**
+ * Mijoz to'lovni tasdiqlaydi (tezkor chaqiruv yakunlangach)
+ * POST /api/orders/:id/payment
+ * Body: {} - usta yozgan summa to'g'ri; { amount } - boshqa summa to'langan
+ */
+const confirmOrderPayment = async (req, res, next) => {
+    try {
+        const id = assertUuid(req.params.id, 'Buyurtma topilmadi');
+        const hasAmount = req.body?.amount !== undefined && req.body?.amount !== null && req.body?.amount !== '';
+        const amount = hasAmount
+            ? optionalNumber(req.body.amount, { min: 0, max: 1000000000, field: 'To\'langan summa' })
+            : null;
+        const updated = await confirmPayment(id, req.user.id, { amount });
+        res.status(200).json({
+            success: true,
+            message: updated.payment_review === 'pending'
+                ? 'Rahmat! Ma\'lumot administratorga yuborildi'
+                : 'Rahmat! To\'lov tasdiqlandi',
+            data: paymentView(updated, req.user),
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
+    confirmOrderPayment,
     createOrder,
     getOrders,
     getOpenOrders,

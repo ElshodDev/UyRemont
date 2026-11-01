@@ -203,9 +203,11 @@ const getQueues = async (req, res, next) => {
                      AND mp.verification_requested_at IS NOT NULL
                      AND (mp.verification_rejected_at IS NULL OR mp.verification_rejected_at < mp.verification_requested_at)) as verifications,
                 (SELECT COUNT(*)::int FROM error_logs WHERE resolved = FALSE) as errors,
+                -- Komissiya: limitdan oshgan ustalar + tekshirilmagan to'lov farqlari
                 (SELECT COUNT(*)::int FROM master_profiles mp JOIN users u ON u.id = mp.user_id
                    WHERE u.role = 'master' AND u.deleted_at IS NULL
-                     AND $1::numeric > 0 AND mp.commission_due > $1::numeric) as commission`,
+                     AND $1::numeric > 0 AND mp.commission_due > $1::numeric)
+                + (SELECT COUNT(*)::int FROM orders WHERE payment_review = 'pending') as commission`,
             [config.COMMISSION_DEBT_LIMIT]
         );
         res.status(200).json({ success: true, data: result.rows[0] });

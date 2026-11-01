@@ -6,6 +6,7 @@ const {
     getOpenOrders,
     getOrderById,
     updateOrderStatus,
+    confirmOrderPayment,
 } = require('../controllers/orders.controller');
 const { uploadDraftPhoto, deleteDraftPhoto, getOrderPhoto } = require('../controllers/photos.controller');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -35,5 +36,8 @@ router.get('/:id/photos/:photoId', getOrderPhoto);
 
 // Buyurtma holatini yangilash
 router.put('/:id/status', updateOrderStatus);
+
+// Mijoz ustaga to'langan summani tasdiqlaydi
+router.post('/:id/payment', confirmOrderPayment);
 
 module.exports = router;

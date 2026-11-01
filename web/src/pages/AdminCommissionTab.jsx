@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Wallet, Search, Phone, AlertTriangle, ChevronDown, ChevronUp, SlidersHorizontal, CircleDollarSign } from 'lucide-react';
 import Modal from '../components/Modal';
 import Spinner, { PageLoader } from '../components/Spinner';
@@ -154,6 +155,116 @@ function SummaryTile({ label, value, hint, warn }) {
 }
 
 /**
+ * To'lov farqlari: mijoz ustaning yozganidan ko'p to'laganini bildirgan tezkor chaqiruvlar.
+ * Admin ikki tomon bilan gaplashib, farqdan komissiya yozadi yoki farqni yopadi
+ */
+function PaymentReviews({ onChanged }) {
+  const toast = useToast();
+  const [status, setStatus] = useState('pending');
+  const { result, error, load } = useAdminList(`/admin/commission/payment-reviews?status=${status}`);
+  const [amounts, setAmounts] = useState({});
+  const [busy, setBusy] = useState(null);
+
+  const resolve = async (review, action) => {
+    setBusy(`${review.id}:${action}`);
+    try {
+      const raw = amounts[review.id] ?? String(review.suggested_charge);
+      const { message } = await api(`/admin/commission/payment-reviews/${review.id}`, {
+        method: 'POST',
+        body: { action, ...(action === 'charge' && { amount: Number(String(raw).replace(/\s/g, '')) }) }
+      });
+      toast.success(message);
+      load();
+      onChanged?.();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const rows = result?.data || [];
+  if (status === 'pending' && result && rows.length === 0) {
+    return (
+      <div className="flex items-center justify-between gap-3 flex-wrap text-sm text-slate-500 card px-4 py-3">
+        <span>To'lov farqlari: tekshirish kerak bo'lgani yo'q</span>
+        <button type="button" className="link text-xs" onClick={() => setStatus('charged')}>Ko'rib chiqilganlar</button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="card p-4 sm:p-5 space-y-3 border-amber-200" aria-labelledby="payment-reviews-title">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 id="payment-reviews-title" className="font-bold text-slate-900 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600" aria-hidden="true" /> To'lov farqlari
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">Mijoz ustaning yozganidan ko'p to'laganini bildirgan. Ikki tomon bilan gaplashib, qaror qiling.</p>
+        </div>
+        <FilterChips
+          options={[['pending', 'Tekshirish kerak'], ['charged', 'Komissiya yozilgan'], ['dismissed', 'Yopilgan']]}
+          value={status}
+          onChange={setStatus}
+        />
+      </div>
+
+      {error && <ErrorState message={error.message} onRetry={load} />}
+      {!result && !error && <Spinner className="w-5 h-5" />}
+      {result && rows.length === 0 && <p className="text-sm text-slate-400">Ro'yxat bo'sh</p>}
+
+      {rows.map((r) => (
+        <article key={r.id} className="rounded-xl border border-slate-200 p-3 sm:p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <Link to={`/orders/${r.id}`} className="font-bold text-slate-900 hover:text-blue-600">{r.title}</Link>
+              <p className="text-[11px] text-slate-400">Yakunlandi {formatDate(r.completed_at)} · mijoz javobi {formatDate(r.payment_confirmed_at)}</p>
+            </div>
+            <dl className="grid grid-cols-3 gap-3 text-right text-xs">
+              <div><dt className="text-slate-500">Usta yozdi</dt><dd className="font-bold tabular-nums">{formatSum(r.final_price)}</dd></div>
+              <div><dt className="text-slate-500">Mijoz aytdi</dt><dd className="font-bold tabular-nums">{formatSum(r.client_paid_amount)}</dd></div>
+              <div><dt className="text-slate-500">Farq</dt><dd className="font-black text-red-600 tabular-nums">+{formatSum(r.difference)}</dd></div>
+            </dl>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            <a href={`tel:${r.master_phone}`} className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600">
+              <Phone className="w-3.5 h-3.5" aria-hidden="true" /> Usta: {r.master_name || '—'} · {formatPhone(r.master_phone)}
+            </a>
+            <a href={`tel:${r.client_phone}`} className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600">
+              <Phone className="w-3.5 h-3.5" aria-hidden="true" /> Mijoz: {r.client_name || '—'} · {formatPhone(r.client_phone)}
+            </a>
+          </div>
+          {r.payment_review === 'pending' ? (
+            <div className="flex flex-wrap items-end gap-2">
+              <div>
+                <label className="label" htmlFor={`charge-${r.id}`}>Komissiya ({r.commission_percent}% farqdan)</label>
+                <input
+                  id={`charge-${r.id}`}
+                  inputMode="numeric"
+                  className="input w-36 tabular-nums"
+                  value={amounts[r.id] ?? String(r.suggested_charge)}
+                  onChange={(e) => setAmounts((all) => ({ ...all, [r.id]: e.target.value.replace(/[^\d\s]/g, '') }))}
+                />
+              </div>
+              <button type="button" className="btn btn-primary" disabled={Boolean(busy)} onClick={() => resolve(r, 'charge')}>
+                {busy === `${r.id}:charge` ? <Spinner className="w-4 h-4 text-white" /> : 'Komissiya yozish'}
+              </button>
+              <button type="button" className="btn btn-secondary" disabled={Boolean(busy)} onClick={() => resolve(r, 'dismiss')}>
+                {busy === `${r.id}:dismiss` ? <Spinner className="w-4 h-4" /> : 'Yopish'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">
+              {r.payment_review === 'charged' ? 'Komissiya yozilgan' : 'Yopilgan'} · {r.reviewed_by_name || 'admin'} · {formatDate(r.payment_reviewed_at)}
+            </p>
+          )}
+        </article>
+      ))}
+    </section>
+  );
+}
+
+/**
  * Admin: komissiya hisobi - ustalar qarzi, to'lovlarni qabul qilish, tuzatishlar
  */
 export default function AdminCommissionTab({ onChanged }) {
@@ -181,6 +292,8 @@ export default function AdminCommissionTab({ onChanged }) {
 
   return (
     <div className="space-y-4">
+      <PaymentReviews onChanged={() => { load(); onChanged?.(); }} />
+
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <SummaryTile label="Jami qarz" value={formatSum(summary.total_due)} hint={`${summary.debtors} ta usta`} />

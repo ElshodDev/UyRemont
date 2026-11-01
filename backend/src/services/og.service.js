@@ -10,6 +10,7 @@ const path = require('path');
 const sharp = require('sharp');
 const { query } = require('../config/database');
 const { appUrl } = require('../config/app');
+const { maskContacts } = require('../utils/contacts');
 
 const SITE_NAME = 'Usta24';
 const DEFAULT_DESCRIPTION = 'Uy, avto va texnika ustalari: eng yaqin ustani bir tugma bilan chaqiring';
@@ -78,7 +79,7 @@ const describeMaster = (master) => {
         locationText(master) || null,
         master.is_verified ? 'Tasdiqlangan usta' : null,
     ].filter(Boolean).join(' · ');
-    const bio = clip(master.bio, 120);
+    const bio = clip(maskContacts(master.bio), 120);
     const description = clip(`${facts ? `${facts}. ` : ''}${bio ? `${bio} ` : ''}${SITE_NAME} orqali bir tugma bilan chaqiring.`, 200);
     return { title: clip(title, 90), description };
 };

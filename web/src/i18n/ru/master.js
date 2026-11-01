@@ -338,4 +338,9 @@ export default {
   'Usta chaqirish': 'Вызвать мастера',
   'Ish yakuni': 'Завершение',
   'O\'zaro baholash': 'Взаимная оценка',
+  // Raqamlar buyurtmadan keyin ochiladi, to'lovni tasdiqlash
+  'Mijozdan ham to\'langan summani tasdiqlash so\'raladi.': 'Клиента тоже попросят подтвердить оплаченную сумму.',
+  'Mijoz to\'lovni tasdiqladi': 'Клиент подтвердил оплату',
+  'Telefon raqam yoki Telegram yozmang: mijoz raqamingizni buyurtmani qabul qilganingizdan keyin ko\'radi.':
+    'Не указывайте телефон или Telegram: клиент увидит ваш номер после того, как вы примете заказ.'
 };

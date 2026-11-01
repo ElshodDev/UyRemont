@@ -346,7 +346,11 @@ export default function MasterSetupPage() {
             placeholder={t('Ish tajribangiz, kafolatlaringiz haqida...')}
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
+            aria-describedby="bio-hint"
           />
+          <p id="bio-hint" className="hint mt-1">
+            {t('Telefon raqam yoki Telegram yozmang: mijoz raqamingizni buyurtmani qabul qilganingizdan keyin ko\'radi.')}
+          </p>
         </div>
 
         <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">

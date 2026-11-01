@@ -8,6 +8,7 @@ const { query } = require('../../config/database');
 const { normalizePhone } = require('../../utils/validators');
 const { issueOtp } = require('../otp.service');
 const offersService = require('../offers.service');
+const { confirmPayment } = require('../payment.service');
 const links = require('./links');
 const { syncOfferMessage } = require('./notify');
 const { resolveLanguage } = require('../language.service');
@@ -249,7 +250,41 @@ const answerCallback = (id, text, showAlert = false) => callTelegram('answerCall
     ...(text && { text, show_alert: showAlert }),
 }).catch(() => {});
 
+const callbackUser = async (callback) => {
+    const link = await links.getLinkByTelegramId(callback.from.id);
+    const user = link?.user_id
+        ? (await query('SELECT id, role, is_active, deleted_at, language FROM users WHERE id = $1', [link.user_id])).rows[0]
+        : null;
+    const lang = user ? normalizeLanguage(user.language) : languageFromTelegram(callback.from.language_code);
+    return { user: user && user.is_active && !user.deleted_at ? user : null, lang };
+};
+
+/**
+ * "✅ Ha, ... to'ladim": mijoz ustaga to'langan summani tasdiqlaydi. Tugmalar o'rnida faqat "Baholash" qoladi
+ */
+const handlePaymentCallback = async (callback, orderId) => {
+    const { user, lang } = await callbackUser(callback);
+    if (!user) return answerCallback(callback.id, tr(lang, 'Hisob topilmadi. Saytda kiring.'), true);
+    try {
+        await confirmPayment(orderId, user.id);
+        answerCallback(callback.id, tr(lang, '✅ Rahmat! To\'lov tasdiqlandi'));
+    } catch (error) {
+        answerCallback(callback.id, error.expose ? translate(lang, error.message) : tr(lang, 'Xatolik yuz berdi'), true);
+        if (error.statusCode !== 409) return null;
+    }
+    const message = callback.message;
+    if (!message?.chat?.id) return null;
+    return callTelegram('editMessageReplyMarkup', {
+        chat_id: message.chat.id,
+        message_id: message.message_id,
+        reply_markup: keyboard([[urlButton(tr(lang, '⭐ Baholash'), `/orders/${orderId}`)]]) || { inline_keyboard: [] },
+    }).catch(() => {});
+};
+
 const handleCallback = async (callback) => {
+    const payment = /^p:([0-9a-f-]{36}):ok$/.exec(callback.data || '');
+    if (payment) return handlePaymentCallback(callback, payment[1]);
+
     const match = /^o:([0-9a-f-]{36}):(a|d)$/.exec(callback.data || '');
     if (!match) return answerCallback(callback.id);
     const [, offerId, action] = match;

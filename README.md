@@ -81,6 +81,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/orders/open` | Ustaning mutaxassisligiga mos ochiq buyurtmalar |
 | `GET /api/orders/:id` | Tafsilot va chat tarixi (faqat ishtirokchilarga) |
 | `PUT /api/orders/:id/status` | Holat o'zgarishi (quyidagi qoidalar bo'yicha). Tezkor chaqiruvni yakunlash: `labor_price` + `materials_price` |
+| `POST /api/orders/:id/payment` | Mijoz tezkor chaqiruv uchun to'langan summani tasdiqlaydi: `{}` - usta yozgani to'g'ri, `{ amount }` - boshqa summa |
 | `POST /api/reviews` | Yakunlangan buyurtmaga 1–5 yulduzli sharh |
 | `GET /api/admin/stats` | Platforma statistikasi (faqat admin) |
 | `GET /api/admin/users`, `PATCH /api/admin/users/:id` | Foydalanuvchilarni qidirish, bloklash, rol berish, ustani tasdiqlash |
@@ -92,6 +93,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/masters/me/commission` | Ustaning komissiya hisobi: qarz, limit, rekvizitlar, tarix |
 | `GET /api/admin/commission?filter=&q=`, `GET /api/admin/commission/:masterId` | Ustalar qarzi va bitta ustaning hisobi |
 | `POST /api/admin/commission/:masterId/payments`, `.../adjustments` | To'lovni qabul qilish, hisobni tuzatish (jurnalga yoziladi) |
+| `GET /api/admin/commission/payment-reviews?status=`, `POST .../payment-reviews/:orderId` | To'lov farqlari: farqdan komissiya yozish (`charge`) yoki yopish (`dismiss`) |
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 | `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yuborish, o'z murojaatlari |
@@ -219,6 +221,26 @@ Mijoz ish haqini ustaga to'g'ridan-to'g'ri to'laydi, usta esa platformaga komiss
   - ustaning to'liq tarixi.
   - Har bir amal jurnalga yoziladi, limitdan oshgan ustalar soni tab yonida qizil belgida ko'rinadi.
 - **Hisobning tuzilishi:** `master_ledger` jadvalida har bir yozuv qarzga ta'sirini saqlaydi: komissiya `+`, to'lov `−`, tuzatish `±`. `master_profiles.commission_due` shu yig'indining tezkor nusxasi va har doim bitta tranzaksiyada yangilanadi.
+
+### 🔒 Komissiyani chetlab o'tishga qarshi
+
+**Telefon raqamlar buyurtma qabul qilinmaguncha ko'rinmaydi.**
+- Usta profilida (katalog, profil oynasi, `/u/:slug`, sevimlilar) raqam yo'q: API uni qaytarmaydi. Raqamlar usta buyurtmani qabul qilgach buyurtma sahifasida ikki tomonga ham ko'rinadi.
+- Matnga yozilgan raqam va Telegram manzili (`90 123 45 67`, `+998...`, `@username`, `t.me/...`):
+  - usta bio va portfolio izohida, buyurtma sarlavhasi, tavsifi va manzilida qabul qilinmaydi (400, tushunarli xabar bilan);
+  - avval saqlanganlari ommaviy javoblarda `•••` bilan yashiriladi;
+  - qabul qilinmagan buyurtma chatida xabardagi raqam `•••` bilan almashtiriladi va yuboruvchiga sababi aytiladi.
+- Aniqlash: 9–13 raqamli ketma-ketlik telefon hisoblanadi. Yillar (`2015-2023`) va minglik guruhli summalar (`1 200 000`, `150 000 000`) telefon hisoblanmaydi (`src/utils/contacts.js`).
+
+**Mijoz to'langan summani tasdiqlaydi** (tezkor chaqiruv yakunlangach).
+- Buyurtma sahifasida «To'lovni tasdiqlang» kartasi chiqadi: «Ha, 250 000 so'm to'ladim» yoki «Yo'q, boshqa summa».
+- Telegram'dagi yakunlanish xabarida ham «✅ Ha, ... to'ladim» tugmasi bor. «Boshqa summa» tugmasi summa maydonini ochib beradi.
+- Mijozning javobi ustaga ko'rsatilmaydi. Summa mos kelsa, ustaga faqat «Mijoz to'lovni tasdiqladi» belgisi chiqadi.
+- Usta yakunlash oynasida «Mijozdan ham to'langan summani tasdiqlash so'raladi» degan ogohlantirishni ko'radi.
+- **Farq:** mijoz aytgan summa ustaning yozganidan ko'p bo'lsa (yaxlitlash hisobga olinmaydi: farq 5 000 so'mdan va 5 foizdan katta bo'lishi kerak), buyurtma **Admin → Komissiya → «To'lov farqlari»** ga tushadi.
+  - Ro'yxatda ikki tomonning telefoni va taklif qilingan komissiya ko'rinadi (komissiya yozilgan paytdagi foiz bilan farqdan hisoblanadi).
+  - Admin ikki tomon bilan gaplashib, farqdan komissiya yozadi (ustaning hisobiga tuzatish, buyurtmaga bog'langan) yoki farqni yopadi.
+  - Har bir qaror jurnalga yoziladi, tekshirilmagan farqlar soni «Komissiya» tab belgisiga qo'shiladi.
 
 ---
 
