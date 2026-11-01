@@ -99,6 +99,8 @@ const errorHandler = (err, req, res, next) => {
     res.status(statusCode).json({
         success: false,
         message,
+        // Qayta urinish vaqti (masalan, kodni qayta yuborish oralig'i)
+        ...(err.expose && err.retryAfter && { retryAfter: err.retryAfter }),
     });
 };
 

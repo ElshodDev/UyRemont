@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera } from 'lucide-react';
+import { ArrowLeft, MapPin, Wallet, Calendar, Clock, Phone, User, Check, Camera, Zap, RotateCcw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
 import ReviewForm from '../components/ReviewForm';
 import InstantOrderPanel from '../components/InstantOrderPanel';
 import OrderPhotos from '../components/OrderPhotos';
+import FavoriteButton from '../components/FavoriteButton';
+import { useOrderModal } from '../components/useOrderModal';
+import { useSpecializations } from '../lib/useSpecializations';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { ErrorState } from '../components/EmptyState';
@@ -53,6 +56,9 @@ export default function OrderDetailPage() {
   const [error, setError] = useState('');
   const [pendingAction, setPendingAction] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [repeating, setRepeating] = useState(false);
+  const { specializations } = useSpecializations();
+  const orderModal = useOrderModal({ specializations });
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +91,31 @@ export default function OrderDetailPage() {
     }
   };
 
+  // Oddiy buyurtmani takrorlash: o'sha ustaga (bo'lsa) yoki ochiq buyurtma, maydonlar oldindan to'ldiriladi
+  const repeatCatalogOrder = async () => {
+    const initial = {
+      title: order.title,
+      description: order.description,
+      address: order.address,
+      district: order.district,
+      specialization_id: order.specialization_id
+    };
+    if (!order.master_id) {
+      orderModal.open(null, initial);
+      return;
+    }
+    setRepeating(true);
+    try {
+      const { data } = await api(`/masters/${order.master_id}`);
+      orderModal.open(data, initial);
+    } catch {
+      toast.error('Usta hozir mavjud emas. Ochiq buyurtma qoldirishingiz mumkin');
+      orderModal.open(null, initial);
+    } finally {
+      setRepeating(false);
+    }
+  };
+
   if (error && !order) {
     return (
       <main className="max-w-3xl mx-auto px-4 py-10 w-full flex-1">
@@ -100,6 +131,7 @@ export default function OrderDetailPage() {
   const stepIndex = STEPS.findIndex((s) => s.id === order.status);
   const isInstant = order.mode === 'instant';
   const showChat = isParticipant && (!isInstant || Boolean(order.master_id));
+  const canRepeat = order.client_id === user.id && user.role === 'client' && ['completed', 'cancelled', 'expired'].includes(order.status);
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-1">
@@ -199,6 +231,27 @@ export default function OrderDetailPage() {
           </div>
           )}
 
+          {canRepeat && (
+            <div className="card-pad space-y-2">
+              <h3 className="font-bold text-slate-900 text-sm">Yana kerak bo'lsa</h3>
+              {isInstant ? (
+                <Link to={`/call?repeat=${order.id}`} className="btn btn-accent w-full">
+                  <Zap className="w-4 h-4" /> Yana chaqirish
+                </Link>
+              ) : (
+                <button type="button" onClick={repeatCatalogOrder} disabled={repeating} className="btn btn-primary w-full">
+                  {repeating ? <Spinner className="w-4 h-4 text-white" /> : <><RotateCcw className="w-4 h-4" /> {order.master_id ? 'Shu ustaga yana buyurtma berish' : 'Yana buyurtma berish'}</>}
+                </button>
+              )}
+              {order.master_id && (
+                <>
+                  <FavoriteButton master={{ id: order.master_id, name: order.master_name }} variant="full" className="w-full" />
+                  <p className="hint">Sevimli ustangiz yaqin atrofda bo'sh bo'lsa, tezkor chaqiruv birinchi unga yuboriladi.</p>
+                </>
+              )}
+            </div>
+          )}
+
           {canReview && <ReviewForm orderId={order.id} onCreated={load} />}
 
           {order.review_rating && (
@@ -225,6 +278,8 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      {orderModal.element}
 
       {pendingAction && (
         <ConfirmDialog

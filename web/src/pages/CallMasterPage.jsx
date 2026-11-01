@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, LocateFixed, MapPin, Users, Clock, Wallet, Info, Tag } from 'lucide-react';
 import MapView from '../components/MapView';
 import PhotoPicker from '../components/PhotoPicker';
+import SavedAddressChips from '../components/SavedAddressChips';
+import { ADDRESS_LABELS, useSavedAddresses } from '../lib/useSavedAddresses';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { api } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -30,6 +32,14 @@ export default function CallMasterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [photoIds, setPhotoIds] = useState([]);
   const [photosBusy, setPhotosBusy] = useState(false);
+  const saved = useSavedAddresses();
+  const [savedId, setSavedId] = useState(null);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [saveLabel, setSaveLabel] = useState(ADDRESS_LABELS[0]);
+  const [customLabel, setCustomLabel] = useState('');
+  // Foydalanuvchi joyni o'zi tanlagan bo'lsa (saqlangan manzil, xarita, "Yana chaqirish") GPS uni almashtirmaydi
+  const userPickedRef = useRef(false);
+  const repeatId = searchParams.get('repeat');
 
   // Faol chaqiruv bo'lsa to'g'ridan-to'g'ri uning sahifasiga
   useEffect(() => {
@@ -64,22 +74,66 @@ export default function CallMasterPage() {
     if (district) setForm((f) => ({ ...f, district }));
   };
 
-  const locate = async () => {
+  // Xaritani bosish yoki markerni surish
+  const pickOnMap = (point) => {
+    userPickedRef.current = true;
+    setSavedId(null);
+    pickLocation(point);
+  };
+
+  const locate = async ({ auto = false } = {}) => {
     setLocating(true);
     setLocationError('');
     try {
       const pos = await getCurrentPosition();
+      if (auto && userPickedRef.current) return;
+      setSavedId(null);
       pickLocation({ lat: pos.lat, lng: pos.lng });
     } catch (error) {
-      setLocationError(error.message);
+      if (!(auto && userPickedRef.current)) setLocationError(error.message);
     } finally {
       setLocating(false);
     }
   };
 
   useEffect(() => {
-    if (!checkingActive) locate();
+    if (!checkingActive && !repeatId) locate({ auto: true });
   }, [checkingActive]);
+
+  // Saqlangan manzil: joy, tuman va manzil bir bosishda
+  const pickSaved = (address) => {
+    userPickedRef.current = true;
+    setSavedId(address.id);
+    setSaveAddress(false);
+    setForm((f) => ({ ...f, address: address.address, district: address.district || f.district }));
+    if (address.lat !== null && address.lng !== null) {
+      setLocation({ lat: Number(address.lat), lng: Number(address.lng) });
+      setLocationError('');
+    } else {
+      setLocationError('Bu manzil uchun xaritada joy saqlanmagan — xaritada belgilang');
+    }
+  };
+
+  // "Yana chaqirish": oldingi buyurtmadan xizmat turi, joy va manzil
+  useEffect(() => {
+    if (!repeatId || checkingActive || specializations.length === 0) return;
+    api(`/orders/${repeatId}`)
+      .then(({ data }) => {
+        const spec = specializations.find((s) => s.id === data.specialization_id);
+        if (spec) {
+          setVertical(spec.vertical);
+          setSpecId(spec.id);
+        }
+        if (data.lat !== null && data.lng !== null) {
+          userPickedRef.current = true;
+          setLocation({ lat: Number(data.lat), lng: Number(data.lng) });
+        }
+        setForm({ address: data.address || '', district: data.district || '', description: data.description || '' });
+        const match = saved.addresses.find((a) => a.address === data.address);
+        if (match) setSavedId(match.id);
+      })
+      .catch(() => locate({ auto: true }));
+  }, [repeatId, checkingActive, specializations.length]);
 
   // Narx va yaqin atrofdagi ustalar
   useEffect(() => {
@@ -110,6 +164,16 @@ export default function CallMasterPage() {
         method: 'POST',
         body: { specialization_id: specId, lat: location.lat, lng: location.lng, ...form, photo_ids: photoIds }
       });
+      if (saveAddress && !savedId) {
+        // Manzilni saqlash ixtiyoriy: xato bo'lsa chaqiruv baribir yuborilgan
+        await saved.create({
+          label: (saveLabel === 'other' ? customLabel : saveLabel).trim() || 'Manzil',
+          address: form.address,
+          district: form.district,
+          lat: location.lat,
+          lng: location.lng
+        }).catch(() => {});
+      }
       navigate(`/orders/${data.id}`);
     } catch (error) {
       if (error.data?.data?.order_id) navigate(`/orders/${error.data.data.order_id}`);
@@ -174,7 +238,7 @@ export default function CallMasterPage() {
               <h2 className="font-bold text-slate-900 text-sm">2. Qayerga?</h2>
               <button
                 type="button"
-                onClick={locate}
+                onClick={() => locate()}
                 disabled={locating}
                 className="btn btn-sm btn-soft font-bold"
               >
@@ -182,10 +246,11 @@ export default function CallMasterPage() {
                 Mening joylashuvim
               </button>
             </div>
+            <SavedAddressChips addresses={saved.addresses} selectedId={savedId} onSelect={pickSaved} className="mb-3" />
             <MapView
               center={location || TASHKENT_CENTER}
               markers={location ? [{ id: 'client', ...location, type: 'client', draggable: true, label: 'Usta shu yerga keladi' }] : []}
-              onPick={pickLocation}
+              onPick={pickOnMap}
               className="h-64 sm:h-72"
             />
             <p className={`text-[11px] mt-2 ${locationError ? 'text-amber-700' : 'text-slate-400'}`}>
@@ -196,7 +261,10 @@ export default function CallMasterPage() {
                 className={inputClass}
                 aria-label="Tuman"
                 value={form.district}
-                onChange={(e) => setForm({ ...form, district: e.target.value })}
+                onChange={(e) => {
+                  setSavedId(null);
+                  setForm({ ...form, district: e.target.value });
+                }}
               >
                 <option value="">Tuman</option>
                 {districtsList.slice(1).map((d) => <option key={d} value={d}>{d}</option>)}
@@ -209,9 +277,46 @@ export default function CallMasterPage() {
                 aria-label="Manzil"
                 placeholder="Ko'cha, uy, xonadon, mo'ljal"
                 value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                onChange={(e) => {
+                  setSavedId(null);
+                  setForm({ ...form, address: e.target.value });
+                }}
               />
             </div>
+            {!savedId && saved.loaded && saved.addresses.length < 10 && form.address.trim().length >= 3 && location && (
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer min-h-9">
+                  <input type="checkbox" className="w-4 h-4 accent-blue-600" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} />
+                  Bu manzilni saqlash — keyingi safar bir bosishda tanlanadi
+                </label>
+                {saveAddress && (
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Manzil nomi">
+                    {[...ADDRESS_LABELS, 'other'].map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        role="radio"
+                        aria-checked={saveLabel === label}
+                        onClick={() => setSaveLabel(label)}
+                        className={`chip border ${saveLabel === label ? 'chip-active border-blue-600' : 'bg-white border-slate-200'}`}
+                      >
+                        {label === 'other' ? 'Boshqa' : label}
+                      </button>
+                    ))}
+                    {saveLabel === 'other' && (
+                      <input
+                        className={`${inputClass} flex-1 min-w-[10rem]`}
+                        maxLength={40}
+                        placeholder="Masalan: Dacha"
+                        aria-label="Manzil nomi"
+                        value={customLabel}
+                        onChange={(e) => setCustomLabel(e.target.value)}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="card-pad">

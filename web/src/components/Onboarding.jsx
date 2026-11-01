@@ -6,8 +6,9 @@ import { useAuth } from '../context/AuthContext';
 
 const STORAGE_KEY = 'usta24_onboarded';
 const OPEN_EVENT = 'usta24:onboarding';
-// Huquqiy sahifalarga to'g'ridan-to'g'ri havola bilan kelganlarga xalaqit bermaslik uchun
+// Huquqiy sahifalar va ustaning ommaviy havolasi (/u/...) orqali kelganlarga xalaqit bermaslik uchun
 const SKIP_PATHS = ['/terms', '/privacy'];
+const shouldSkip = (pathname) => SKIP_PATHS.includes(pathname) || pathname.startsWith('/u/');
 
 const SLIDES = [
   {
@@ -49,7 +50,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const callMaster = useCallMaster();
-  const [open, setOpen] = useState(() => !wasSeen() && !SKIP_PATHS.includes(window.location.pathname));
+  const [open, setOpen] = useState(() => !wasSeen() && !shouldSkip(window.location.pathname));
   const [index, setIndex] = useState(0);
   const touchX = useRef(null);
   const dialogRef = useRef(null);
@@ -91,7 +92,7 @@ export default function Onboarding() {
     };
   }, [open]);
 
-  if (!open || SKIP_PATHS.includes(location.pathname)) return null;
+  if (!open || shouldSkip(location.pathname)) return null;
 
   const slide = SLIDES[index];
   const Icon = slide.icon;

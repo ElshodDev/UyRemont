@@ -73,7 +73,11 @@ export function DispatchProvider({ children }) {
     const onClosed = (payload) => {
       setOffer((current) => {
         if (current && current.offer_id === payload.offer_id) {
-          toast.error(payload.reason === 'cancelled' ? 'Mijoz buyurtmani bekor qildi' : 'Taklif vaqti tugadi');
+          // Telegram orqali (yoki boshqa qurilmada) javob berilgan bo'lsa oyna jimgina yopiladi
+          if (payload.reason === 'accepted' && payload.order_id) navigate(`/orders/${payload.order_id}`);
+          else if (payload.reason !== 'declined' && payload.reason !== 'accepted') {
+            toast.error(payload.reason === 'cancelled' ? 'Mijoz buyurtmani bekor qildi' : 'Taklif vaqti tugadi');
+          }
           return null;
         }
         return current;
@@ -96,7 +100,7 @@ export function DispatchProvider({ children }) {
       socket.off('dispatch_offline', onOffline);
       socket.off('order_updated', onOrderUpdated);
     };
-  }, [isMaster, refresh, toast]);
+  }, [isMaster, refresh, toast, navigate]);
 
   // GPS kuzatuvi ish rejimida yoki faol ish paytida
   useEffect(() => {

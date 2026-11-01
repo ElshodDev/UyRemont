@@ -1,6 +1,6 @@
 {
   "name": "uyremont-backend",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "description": "UyRemont backend API",
   "main": "server.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "db:setup": "node scripts/db-setup.js",
     "db:seed": "node scripts/db-setup.js --seed",
-    "reset-2fa": "node scripts/reset-2fa.js"
+    "reset-2fa": "node scripts/reset-2fa.js",
+    "pretest": "node tests/setup-db.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

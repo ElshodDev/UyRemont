@@ -480,3 +480,70 @@ FROM (VALUES
 ) AS v(slug, name, price_min, price_max, unit, sort_order)
 JOIN specializations s ON s.slug = v.slug
 WHERE NOT EXISTS (SELECT 1 FROM price_items);
+
+-- =============================================
+-- 13. TELEGRAM BOT
+-- =============================================
+
+-- Telegram hisobi va tasdiqlangan telefon raqami (bot "Raqamni yuborish" tugmasi orqali, faqat o'z raqami).
+-- user_id yangi foydalanuvchi kodni tasdiqlagach biriktiriladi.
+CREATE TABLE IF NOT EXISTS telegram_links (
+    telegram_user_id BIGINT PRIMARY KEY,
+    chat_id BIGINT NOT NULL,
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    username VARCHAR(64),
+    first_name VARCHAR(128),
+    last_name VARCHAR(128),
+    notifications BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Saytdan botga o'tish havolalari (t.me/<bot>?start=...). Havoladagi kalitning faqat SHA-256 xeshi saqlanadi.
+CREATE TABLE IF NOT EXISTS telegram_auth_requests (
+    token_hash CHAR(64) PRIMARY KEY,
+    purpose VARCHAR(10) NOT NULL CHECK (purpose IN ('login', 'link')),
+    phone VARCHAR(20),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    telegram_user_id BIGINT,
+    status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'linked', 'mismatch')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_telegram_requests_user ON telegram_auth_requests(telegram_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_telegram_requests_phone ON telegram_auth_requests(phone, created_at DESC);
+
+-- Ustaga Telegram orqali yuborilgan taklif xabari (taklif yopilganda xabar tahrirlanadi)
+ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT;
+ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_message_id BIGINT;
+
+-- =============================================
+-- 14. QULAYLIKLAR: saqlangan manzillar, sevimli ustalar, ustaning ommaviy havolasi
+-- =============================================
+
+-- "Uy", "Ish" kabi manzillar: usta chaqirishda bir bosishda tanlanadi
+CREATE TABLE IF NOT EXISTS saved_addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(40) NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    district VARCHAR(100),
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_saved_addresses_user ON saved_addresses(user_id, created_at);
+
+-- Mijozning sevimli ustalari (tezkor chaqiruvda yaqin atrofda bo'lsa birinchi taklif ularga)
+CREATE TABLE IF NOT EXISTS favorite_masters (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    master_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_id, master_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_favorite_masters_master ON favorite_masters(master_user_id);
+
+-- Ustaning ommaviy havolasi: usta24.uz/u/<public_slug>
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS public_slug VARCHAR(40);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_master_profiles_public_slug ON master_profiles(public_slug);

@@ -36,6 +36,7 @@ export default function RulesPage() {
     `Usta ${config.search_timeout_min} daqiqa ichida topilmasa, chaqiruv yopiladi va qayta chaqirish taklif qilinadi.`,
     'Chiqish narxi oldindan ko\'rsatiladi; ish narxi usta muammoni ko\'rgach kelishiladi.',
     'Telefon raqamlar faqat usta chaqiruvni qabul qilgandan keyin ko\'rinadi.',
+    'Sevimli ustangiz qidiruv radiusida bo\'sh bo\'lsa, taklif birinchi unga yuboriladi (ustani sevimlilarga yurakcha orqali qo\'shasiz).',
     'Ish tugagach ustani halol baholang — bu boshqa mijozlarga yordam beradi.'
   ];
   const masterRules = [

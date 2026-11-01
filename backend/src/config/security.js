@@ -21,7 +21,7 @@ module.exports = {
     /**
      * Xavfli sozlamalarni aniqlash. errors bo'lsa server ishga tushmaydi.
      */
-    validateSecurityConfig({ smsConfigured }) {
+    validateSecurityConfig({ smsConfigured, telegramConfigured = false }) {
         const errors = [];
         const warnings = [];
         const secret = process.env.JWT_SECRET || '';
@@ -36,8 +36,14 @@ module.exports = {
             errors.push('Production rejimida OTP_DEV_MODE=true bo\'lishi mumkin emas: kirish kodlari hammaga ko\'rinadi. backend/.env da OTP_DEV_MODE=false qiling va SMS (ESKIZ_*) ni sozlang');
         } else if (module.exports.OTP_DEV_MODE) {
             warnings.push('OTP_DEV_MODE yoqilgan: kirish kodlari ekranda ko\'rinadi. Bu faqat sinov uchun - real foydalanuvchilar bilan ishlatmang');
+        } else if (!smsConfigured && !telegramConfigured) {
+            warnings.push('SMS (ESKIZ_*) ham, Telegram bot (TELEGRAM_BOT_TOKEN) ham sozlanmagan va OTP_DEV_MODE o\'chiq - hech kim tizimga kira olmaydi');
         } else if (!smsConfigured) {
-            warnings.push('SMS (ESKIZ_*) sozlanmagan va OTP_DEV_MODE o\'chiq - hech kim tizimga kira olmaydi');
+            warnings.push('SMS (ESKIZ_*) sozlanmagan: kirish faqat Telegram orqali ishlaydi');
+        }
+
+        if (isProduction && telegramConfigured && !process.env.PUBLIC_APP_URL) {
+            warnings.push('PUBLIC_APP_URL o\'rnatilmagan: Telegram xabarlaridagi havolalar CLIENT_URL ga yo\'naltiriladi');
         }
 
         if (isProduction && !module.exports.ADMIN_REQUIRE_2FA) {

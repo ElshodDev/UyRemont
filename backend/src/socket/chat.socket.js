@@ -2,6 +2,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { query } = require('../config/database');
 const { isUuid } = require('../utils/validators');
 const { resolveUserFromToken } = require('../middleware/auth');
+const { notifyChatMessage } = require('../services/telegram/notify');
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -115,6 +116,8 @@ const initChatSocket = (io) => {
                 };
 
                 io.to(`order_${order_id}`).emit('new_message', message);
+                // Qabul qiluvchi saytda bo'lmasa Telegram orqali xabar
+                notifyChatMessage({ io, orderId: order_id, senderId: currentUser.id, senderName: currentUser.name, text: message.text });
             } catch (err) {
                 console.error('Xabar yuborishda xatolik:', err.message);
                 socket.emit('chat_error', { message: 'Xabarni yuborib bo\'lmadi' });

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Filter, Megaphone, Wrench, Zap, Tag, ArrowRight } from 'lucide-react';
 import MasterCard, { MasterCardSkeleton } from '../components/MasterCard';
 import MasterProfileModal from '../components/MasterProfileModal';
+import FavoritesStrip from '../components/FavoritesStrip';
 import OrderModal from '../components/OrderModal';
 import EmptyState, { ErrorState } from '../components/EmptyState';
 import Spinner from '../components/Spinner';
@@ -270,6 +271,7 @@ export default function HomePage() {
 
       {/* ASOSIY USTALAR RO'YXATI */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+        <FavoritesStrip onView={(m) => setProfileMasterId(m.id)} onOrder={startOrder} />
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900">

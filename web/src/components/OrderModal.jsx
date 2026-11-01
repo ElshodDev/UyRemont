@@ -4,6 +4,8 @@ import { Check, Send } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 import PhotoPicker from './PhotoPicker';
+import SavedAddressChips from './SavedAddressChips';
+import { useSavedAddresses } from '../lib/useSavedAddresses';
 import { specializationLabel } from './MasterCard';
 import { api } from '../lib/api';
 import { districtsList } from '../data/catalog';
@@ -14,19 +16,22 @@ import { formatPhone } from '../lib/format';
 const inputClass = 'input';
 
 /**
- * Buyurtma berish: master berilsa shu ustaga, aks holda tanlangan sohadagi barcha ustalarga ochiq
+ * Buyurtma berish: master berilsa shu ustaga, aks holda tanlangan sohadagi barcha ustalarga ochiq.
+ * initial - "Yana buyurtma berish" uchun oldingi buyurtma maydonlari
  */
-export default function OrderModal({ master, specializations = [], defaultSpecializationId, onClose }) {
+export default function OrderModal({ master, specializations = [], defaultSpecializationId, initial, onClose }) {
   const { user } = useAuth();
   const toast = useToast();
+  const { addresses } = useSavedAddresses();
+  const [savedId, setSavedId] = useState(null);
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    address: '',
-    district: master?.district || '',
+    title: initial?.title || '',
+    description: initial?.description || '',
+    address: initial?.address || '',
+    district: initial?.district || master?.district || '',
     budget: '',
     scheduled_at: '',
-    specialization_id: defaultSpecializationId || master?.specializations?.[0]?.id || ''
+    specialization_id: initial?.specialization_id || defaultSpecializationId || master?.specializations?.[0]?.id || ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -39,7 +44,15 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
     [master, specializations]
   );
 
-  const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const update = (field) => (e) => {
+    if (field === 'address' || field === 'district') setSavedId(null);
+    setForm({ ...form, [field]: e.target.value });
+  };
+
+  const pickAddress = (address) => {
+    setSavedId(address.id);
+    setForm((f) => ({ ...f, address: address.address, district: address.district || f.district }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -188,6 +201,8 @@ export default function OrderModal({ master, specializations = [], defaultSpecia
                 onChange={update('description')}
               />
             </div>
+
+            <SavedAddressChips addresses={addresses} selectedId={savedId} onSelect={pickAddress} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>

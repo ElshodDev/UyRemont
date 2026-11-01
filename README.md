@@ -85,6 +85,10 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/admin/stats` | Platforma statistikasi (faqat admin) |
 | `GET /api/admin/users`, `PATCH /api/admin/users/:id` | Foydalanuvchilarni qidirish, bloklash, rol berish, ustani tasdiqlash |
 | `GET /api/prices` | Taxminiy narxlar ro'yxati (ommaviy) |
+| `GET/POST/PUT/DELETE /api/addresses` | Saqlangan manzillar (10 tagacha) |
+| `GET /api/favorites`, `GET /api/favorites/ids`, `POST/DELETE /api/favorites/:masterId` | Sevimli ustalar |
+| `GET /api/masters/u/:slug`, `GET /api/masters/u/:slug/qr` | Ustaning ommaviy sahifasi va QR kodi |
+| `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 
 **Buyurtma holatlari:**
@@ -110,6 +114,10 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 - **Muammo rasmi:** mijoz chaqiruvga 3 tagacha rasm qo'shadi (telefonda kichraytiriladi), usta taklifda oldindan ko'radi.
 - **Tanishtiruv:** birinchi ochilishda 3 ta ekran (o'tkazib yuborish mumkin, «Qoidalar» va profildan qayta ochiladi).
 - **Tungi rejim:** telefon sozlamasi bo'yicha yoki profilda tanlanadi.
+- **Saqlangan manzillar** ("Uy", "Ish"): usta chaqirishda bir bosishda tanlanadi, chaqiruvda «Bu manzilni saqlash» bilan qo'shiladi, profilda tahrirlanadi.
+- **Sevimli ustalar:** kartochkadagi yurakcha, `/favorites` sahifasi, bosh sahifada sevimlilar qatori; tezkor chaqiruvda sevimli usta qidiruv radiusida bo'lsa taklif birinchi unga boradi.
+- **"Yana chaqirish":** yakunlangan/bekor qilingan buyurtmadan xizmat turi va manzil bilan qayta chaqirish yoki o'sha ustaga qayta buyurtma.
+- **Ustaning ommaviy havolasi** (`/u/<nom>`): usta uni Telegram'da ulashadi, QR kodni chop etadi; havola nomini o'zgartirish mumkin.
 
 **Dizayn tizimi:** ranglar `web/tailwind.config.js` da CSS o'zgaruvchilari orqali beriladi va qorong'i rejimda o'zi almashadi (`bg-white`, `text-slate-900` kabi klasslar ikkala rejimda ishlaydi, `dark:` yozish shart emas). Har doim oq/to'q qoladigan joylar uchun `snow` va `ink` ranglari. Umumiy klasslar `web/src/index.css` da: `btn` (+ `btn-primary`, `btn-accent`, `btn-secondary`, `btn-danger`, `btn-success`, `btn-dark`, `btn-soft`, `btn-ghost`, `btn-sm`, `btn-lg`), `icon-btn`, `card`, `card-pad`, `input`, `label`, `hint`, `chip`, `chip-active`, `link`. Tugmalar balandligi kamida 44px.
 
@@ -148,6 +156,48 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 ---
 
+## 🧪 Avtomatik testlar
+
+Testlar **alohida** PostgreSQL bazada ishlaydi (asosiy bazaga tegmaydi; `TEST_DATABASE_URL` `backend/.env` dagi `DATABASE_URL` bilan bir xil bo'lsa testlar to'xtaydi).
+
+```bash
+# bir marta: test bazasini yaratish (kompyuterdagi PostgreSQL)
+createdb uyremont_test
+
+cd backend
+TEST_DATABASE_URL=postgresql://postgres:PAROL@localhost:5432/uyremont_test npm test   # 60+ test, ~10 soniya
+cd ../web && npm test && npm run build
+```
+
+Windows PowerShell'da: `$env:TEST_DATABASE_URL="postgresql://..."; npm test`.
+
+- `backend/tests/` — kirish va xavfsizlik (OTP, 2FA, bloklash, hisobni o'chirish), buyurtma rasmlari va narxlar, tezkor chaqiruv (sevimli usta ustunligi bilan), Telegram bot (soxta Telegram API bilan), manzillar, sevimlilar, ommaviy havola.
+- **GitHub Actions** (`.github/workflows/ci.yml`): har bir push'da testlar PostgreSQL bilan avtomatik ishlaydi, `npm audit` (yuqori daraja) va sayt build'i tekshiriladi. Natija commit va PR yonida ✅/❌ bo'lib ko'rinadi.
+
+---
+
+## 🤖 Telegram bot
+
+SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijozga buyurtma bosqichlari haqida xabarlar.
+
+**Ulash (5 daqiqa):**
+1. Telegram'da [@BotFather](https://t.me/BotFather) → `/newbot` → bot nomi va `..._bot` bilan tugaydigan username → token beriladi.
+2. Loyiha papkasida: `npm run setup -- --skip-install --telegram=TOKEN` (yoki `backend/.env` ga `TELEGRAM_BOT_TOKEN=...`).
+3. Backendni qayta ishga tushiring — konsolda `🤖 Telegram bot @..._bot ishlayapti (polling)` chiqadi.
+
+**Qanday ishlaydi:**
+- **Kirish:** kirish oynasida «Telegram orqali kod olish» → botda «Start» → «📱 Raqamni yuborish». Bot faqat foydalanuvchining **o'z** raqamini qabul qiladi va u saytda kiritilgan raqamga mos kelishi shart. Kod odatdagidek `/api/auth/verify-otp` da tasdiqlanadi (SMS bilan bir xil limitlar: 60 soniya oralig'i, 5 urinish, kunlik limit). Keyingi safar kod darhol Telegram'ga keladi.
+- **Usta:** yangi taklif Telegram'ga «✅ Qabul qilish / ❌ Rad etish» tugmalari bilan keladi; taklif yopilganda xabar yangilanadi (muddati tugadi / qabul qilindi + «Yo'l ko'rsatish»).
+- **Mijoz:** usta topildi, yetib keldi, ish boshlandi, yakunlandi (summa bilan), bekor qilindi, usta topilmadi.
+- **Chat:** qabul qiluvchi saytda bo'lmasa xabar Telegram'ga keladi (bir buyurtma uchun 2 daqiqada bir marta).
+- Profil → **Telegram**: ulash, xabarlarni o'chirish/yoqish, uzish. Botda `/stop` — xabarlarni o'chirish, `/start` — yoqish.
+
+**Production:** bir nechta server nusxasi bo'lsa `TELEGRAM_WEBHOOK_URL=https://api.domen.uz/api/telegram/webhook` qo'ying (so'rovlar maxfiy sarlavha bilan tekshiriladi), xabarlardagi havolalar uchun `PUBLIC_APP_URL=https://domen.uz`. Telegram tugmalarida `localhost` manzillari ishlamaydi, shuning uchun development'da havola tugmalari ko'rsatilmaydi.
+
+**API:** `GET /api/auth/telegram/config`, `POST /api/auth/telegram/start`, `GET /api/auth/telegram/requests/:id`, `GET/PUT/DELETE /api/auth/telegram`, `POST /api/auth/telegram/link`, `POST /api/telegram/webhook`.
+
+---
+
 ## ⚙️ Muhit o'zgaruvchilari
 
 `backend/.env` (namuna: `backend/.env.example`):
@@ -159,9 +209,12 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 | `JWT_SECRET`, `JWT_EXPIRES_IN` | Token imzosi va muddati |
 | `CLIENT_URL` | Frontend manzili (CORS), vergul bilan bir nechta |
 | `ADMIN_PHONE`, `ADMIN_NAME` | `db:setup` paytida administrator qilinadigan raqam |
-| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod konsolga chiqadi) |
+| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod faqat `OTP_DEV_MODE=true` da ko'rinadi) |
 | `UPLOAD_DIR` | Portfolio rasmlari papkasi (standart: `backend/uploads`) |
 | `ORDER_PHOTO_DIR` | Buyurtma rasmlari, ochiq emas (standart: `backend/private_uploads/orders`) |
+| `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh bo'lsa Telegram o'chiq) |
+| `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
+| `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |
 | `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi (standart: 10) |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |
 | `DISPATCH_REQUIRE_VERIFIED` | `false` bo'lsa tasdiqlanmagan ustalar ham tezkor chaqiruv oladi |

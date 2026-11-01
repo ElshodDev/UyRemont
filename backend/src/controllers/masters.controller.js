@@ -14,6 +14,10 @@ const {
     optionalNumber,
     parsePagination,
 } = require('../utils/validators');
+const QRCode = require('qrcode');
+const { HttpError } = require('../middleware/errorHandler');
+const { isValidSlug } = require('../utils/slug');
+const { ensurePublicSlug, publicUrl } = require('../services/publicLink.service');
 
 const VERTICALS = ['home', 'auto', 'appliance', 'gadget'];
 const MAX_PORTFOLIO_ITEMS = 20;
@@ -194,82 +198,161 @@ const getVerticalStats = async (req, res, next) => {
 };
 
 /**
+ * Usta profili, mutaxassisliklar, portfolio, so'nggi sharhlar (ommaviy ma'lumotlar)
+ * @returns {Promise<object|null>}
+ */
+const loadMasterDetails = async (id) => {
+    const masterResult = await query(
+        `SELECT
+            u.id, u.name, u.avatar_url, u.phone, u.created_at,
+            mp.id as master_profile_id, mp.bio, mp.experience_years,
+            mp.hourly_rate, mp.district, mp.city, mp.is_verified,
+            mp.rating, mp.reviews_count, mp.is_available, mp.public_slug
+         FROM users u
+         INNER JOIN master_profiles mp ON mp.user_id = u.id
+         WHERE u.id = $1 AND u.is_active = TRUE AND u.role = 'master'`,
+        [id]
+    );
+    const master = masterResult.rows[0];
+    if (!master) return null;
+
+    const [specializationsResult, portfolioResult, reviewsResult, completedResult] = await Promise.all([
+        // Mutaxassisliklar
+        query(
+            `SELECT s.id, s.slug, s.name_uz, s.name_ru, s.icon, s.vertical
+             FROM specializations s
+             INNER JOIN master_specializations ms ON ms.specialization_id = s.id
+             WHERE ms.master_id = $1 AND s.is_active = TRUE
+             ORDER BY s.id`,
+            [master.master_profile_id]
+        ),
+        // Portfolio
+        query(
+            `SELECT id, image_url, description, created_at
+             FROM portfolio_items
+             WHERE master_id = $1
+             ORDER BY created_at DESC`,
+            [master.master_profile_id]
+        ),
+        // So'nggi sharhlar (5 ta)
+        query(
+            `SELECT
+                r.id, r.rating, r.comment, r.created_at,
+                u.name as client_name, u.avatar_url as client_avatar
+             FROM reviews r
+             INNER JOIN users u ON u.id = r.client_id
+             WHERE r.master_id = $1
+             ORDER BY r.created_at DESC
+             LIMIT 5`,
+            [id]
+        ),
+        // Bajarilgan buyurtmalar soni
+        query(
+            'SELECT COUNT(*)::int as total FROM orders WHERE master_id = $1 AND status = \'completed\'',
+            [id]
+        ),
+    ]);
+
+    return {
+        ...master,
+        completed_orders: completedResult.rows[0].total,
+        specializations: specializationsResult.rows,
+        portfolio: portfolioResult.rows,
+        recent_reviews: reviewsResult.rows,
+    };
+};
+
+/**
  * Usta profilini ID bo'yicha olish
  * GET /api/masters/:id
  */
 const getMasterById = async (req, res, next) => {
     try {
         const id = assertUuid(req.params.id, 'Usta topilmadi');
-
-        // Asosiy profil ma'lumotlari
-        const masterResult = await query(
-            `SELECT
-                u.id, u.name, u.avatar_url, u.phone, u.created_at,
-                mp.id as master_profile_id, mp.bio, mp.experience_years,
-                mp.hourly_rate, mp.district, mp.city, mp.is_verified,
-                mp.rating, mp.reviews_count, mp.is_available
-             FROM users u
-             INNER JOIN master_profiles mp ON mp.user_id = u.id
-             WHERE u.id = $1 AND u.is_active = TRUE AND u.role = 'master'`,
-            [id]
-        );
-
-        if (masterResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usta topilmadi',
-            });
+        const master = await loadMasterDetails(id);
+        if (!master) {
+            return res.status(404).json({ success: false, message: 'Usta topilmadi' });
         }
+        res.status(200).json({ success: true, data: master });
+    } catch (error) {
+        next(error);
+    }
+};
 
-        const master = masterResult.rows[0];
+const findMasterIdBySlug = async (slug) => {
+    if (!isValidSlug(String(slug || ''))) return null;
+    const result = await query('SELECT user_id FROM master_profiles WHERE public_slug = $1', [slug]);
+    return result.rows[0]?.user_id || null;
+};
 
-        const [specializationsResult, portfolioResult, reviewsResult, completedResult] = await Promise.all([
-            // Mutaxassisliklar
-            query(
-                `SELECT s.id, s.slug, s.name_uz, s.name_ru, s.icon, s.vertical
-                 FROM specializations s
-                 INNER JOIN master_specializations ms ON ms.specialization_id = s.id
-                 WHERE ms.master_id = $1 AND s.is_active = TRUE
-                 ORDER BY s.id`,
-                [master.master_profile_id]
-            ),
-            // Portfolio
-            query(
-                `SELECT id, image_url, description, created_at
-                 FROM portfolio_items
-                 WHERE master_id = $1
-                 ORDER BY created_at DESC`,
-                [master.master_profile_id]
-            ),
-            // So'nggi sharhlar (5 ta)
-            query(
-                `SELECT
-                    r.id, r.rating, r.comment, r.created_at,
-                    u.name as client_name, u.avatar_url as client_avatar
-                 FROM reviews r
-                 INNER JOIN users u ON u.id = r.client_id
-                 WHERE r.master_id = $1
-                 ORDER BY r.created_at DESC
-                 LIMIT 5`,
-                [id]
-            ),
-            // Bajarilgan buyurtmalar soni
-            query(
-                'SELECT COUNT(*)::int as total FROM orders WHERE master_id = $1 AND status = \'completed\'',
-                [id]
-            ),
-        ]);
+/**
+ * Ommaviy havola bo'yicha usta profili
+ * GET /api/masters/u/:slug
+ */
+const getMasterBySlug = async (req, res, next) => {
+    try {
+        const id = await findMasterIdBySlug(req.params.slug);
+        const master = id && await loadMasterDetails(id);
+        if (!master) throw new HttpError(404, 'Usta topilmadi');
+        res.status(200).json({ success: true, data: master });
+    } catch (error) {
+        next(error);
+    }
+};
 
-        res.status(200).json({
-            success: true,
-            data: {
-                ...master,
-                completed_orders: completedResult.rows[0].total,
-                specializations: specializationsResult.rows,
-                portfolio: portfolioResult.rows,
-                recent_reviews: reviewsResult.rows,
-            },
-        });
+/**
+ * Ommaviy havola uchun QR kod (chop etish, mashinaga yopishtirish uchun)
+ * GET /api/masters/u/:slug/qr
+ */
+const getMasterQr = async (req, res, next) => {
+    try {
+        const id = await findMasterIdBySlug(req.params.slug);
+        if (!id) throw new HttpError(404, 'Usta topilmadi');
+        const png = await QRCode.toBuffer(publicUrl(req.params.slug), { width: 600, margin: 2, errorCorrectionLevel: 'M' });
+        res.set('Cache-Control', 'public, max-age=86400');
+        res.set('Content-Disposition', `inline; filename="usta24-${req.params.slug}.png"`);
+        res.type('image/png').send(png);
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Ustaning o'z havolasi (bo'lmasa yaratiladi)
+ * GET /api/masters/me/link
+ */
+const getMyPublicLink = async (req, res, next) => {
+    try {
+        const slug = await ensurePublicSlug(req.user.id);
+        if (!slug) throw new HttpError(404, 'Usta profili topilmadi');
+        res.status(200).json({ success: true, data: { slug, url: publicUrl(slug) } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Havola nomini o'zgartirish
+ * PUT /api/masters/me/link
+ * Body: { slug }
+ */
+const updateMyPublicLink = async (req, res, next) => {
+    try {
+        const slug = String(req.body.slug || '').trim().toLowerCase();
+        if (!isValidSlug(slug)) {
+            throw new HttpError(400, 'Havola 3-40 belgidan iborat bo\'lishi kerak: lotin harflari, raqamlar va chiziqcha (-)');
+        }
+        try {
+            const result = await query(
+                'UPDATE master_profiles SET public_slug = $2 WHERE user_id = $1 RETURNING public_slug',
+                [req.user.id, slug]
+            );
+            if (!result.rows[0]) throw new HttpError(404, 'Usta profili topilmadi');
+        } catch (error) {
+            if (error.code === '23505') throw new HttpError(409, 'Bu havola band. Boshqasini tanlang');
+            throw error;
+        }
+        res.status(200).json({ success: true, message: 'Havola saqlandi', data: { slug, url: publicUrl(slug) } });
     } catch (error) {
         next(error);
     }
@@ -507,6 +590,10 @@ module.exports = {
     getAllMasters,
     getVerticalStats,
     getMasterById,
+    getMasterBySlug,
+    getMasterQr,
+    getMyPublicLink,
+    updateMyPublicLink,
     updateProfile,
     getMyPortfolio,
     uploadPortfolio,

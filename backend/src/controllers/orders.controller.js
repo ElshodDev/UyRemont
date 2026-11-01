@@ -8,6 +8,7 @@ const { HttpError } = require('../middleware/errorHandler');
 const { emitOrderUpdate } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
 const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
+const { notifyNewOrderForMaster } = require('../services/telegram/notify');
 const {
     assertUuid,
     optionalString,
@@ -152,6 +153,8 @@ const createOrder = async (req, res, next) => {
             const photos = await attachPhotos(client, { orderId: result.rows[0].id, userId: clientId, photoIds });
             return { ...result.rows[0], photos };
         });
+
+        notifyNewOrderForMaster(order);
 
         res.status(201).json({
             success: true,
@@ -418,7 +421,7 @@ const updateOrderStatus = async (req, res, next) => {
         }
 
         const updated = result.rows[0];
-        emitOrderUpdate(updated);
+        emitOrderUpdate(updated, { actor });
         if (actor === 'admin') {
             await logAdminAction(req, {
                 action: 'order.status',

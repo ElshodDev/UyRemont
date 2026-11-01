@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, ImagePlus, Trash2, ShieldCheck, Star } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import PublicLinkCard from '../components/PublicLinkCard';
 import Spinner from '../components/Spinner';
 import { api, assetUrl } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -242,6 +243,8 @@ export default function MasterSetupPage() {
           </div>
         )}
       </div>
+
+      {isMaster && <PublicLinkCard />}
 
       <form onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs">
         <div>

@@ -8,6 +8,8 @@ const ordersRoutes = require('./orders.routes');
 const reviewsRoutes = require('./reviews.routes');
 const adminRoutes = require('./admin.routes');
 const dispatchRoutes = require('./dispatch.routes');
+const addressesRoutes = require('./addresses.routes');
+const favoritesRoutes = require('./favorites.routes');
 const { getPrices } = require('../controllers/prices.controller');
 
 router.use('/auth', authRoutes);
@@ -16,6 +18,8 @@ router.use('/orders', ordersRoutes);
 router.use('/reviews', reviewsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/dispatch', dispatchRoutes);
+router.use('/addresses', addressesRoutes);
+router.use('/favorites', favoritesRoutes);
 // Taxminiy narxlar (ommaviy)
 router.get('/prices', getPrices);
 

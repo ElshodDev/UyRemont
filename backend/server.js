@@ -14,6 +14,8 @@ const { UPLOAD_DIR } = require('./src/middleware/upload');
 const { checkDatabase, describeTarget } = require('./src/config/database');
 const { validateSecurityConfig } = require('./src/config/security');
 const { isSmsConfigured } = require('./src/services/sms.service');
+const { startTelegramBot, telegramWebhook } = require('./src/services/telegram/bot');
+const { isTelegramConfigured } = require('./src/services/telegram/client');
 
 const app = express();
 const server = http.createServer(app);
@@ -53,6 +55,9 @@ app.use(express.urlencoded({ extended: true }));
 // Yuklangan rasmlar (portfolio)
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 
+// Telegram webhook (production). Telegram serverlaridan keladi, umumiy so'rovlar cheklovidan oldin
+app.post('/api/telegram/webhook', telegramWebhook);
+
 // Asosiy API yo'nalishi
 app.use('/api', apiLimiter, routes);
 
@@ -77,7 +82,7 @@ const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
     // Xavfli sozlamalar bilan server ishga tushmaydi
-    const security = validateSecurityConfig({ smsConfigured: isSmsConfigured() });
+    const security = validateSecurityConfig({ smsConfigured: isSmsConfigured(), telegramConfigured: isTelegramConfigured() });
     security.warnings.forEach((warning) => console.warn(`⚠️ Xavfsizlik: ${warning}`));
     if (security.errors.length > 0) {
         security.errors.forEach((error) => console.error(`❌ Xavfsizlik: ${error}`));
@@ -109,6 +114,7 @@ if (require.main === module) {
         }
 
         startDispatcher(io);
+        startTelegramBot();
     });
 }
 
