@@ -22,7 +22,7 @@ const ENTRY_ICONS = { commission: ArrowUpRight, payment: ArrowDownLeft, adjustme
 function EntryRow({ entry }) {
   const Icon = ENTRY_ICONS[entry.kind];
   const detail = entry.kind === 'commission'
-    ? `${entry.order_title || 'Buyurtma'} · ${formatSum(entry.base_amount)} × ${entry.percent}%`
+    ? `${entry.order_title || 'Buyurtma'} · ish haqi ${formatSum(entry.base_amount)} × ${entry.percent}%${entry.materials_price > 0 ? ` · material ${formatSum(entry.materials_price)} (komissiyasiz)` : ''}`
     : entry.kind === 'payment'
       ? [PAYMENT_METHOD_LABELS[entry.method], entry.note].filter(Boolean).join(' · ')
       : entry.note;

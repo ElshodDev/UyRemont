@@ -131,7 +131,7 @@ function History({ masterId }) {
               <td className="py-1.5 pr-3">{ENTRY_LABELS[e.kind]}</td>
               <td className="py-1.5 pr-3">
                 {e.kind === 'commission'
-                  ? `${e.order_title || 'Buyurtma'} · ${formatSum(e.base_amount)} × ${e.percent}%`
+                  ? `${e.order_title || 'Buyurtma'} · ish haqi ${formatSum(e.base_amount)} × ${e.percent}%${e.materials_price > 0 ? ` · material ${formatSum(e.materials_price)}` : ''}`
                   : [PAYMENT_METHOD_LABELS[e.method], e.note].filter(Boolean).join(' · ')}
               </td>
               <td className={`py-1.5 text-right tabular-nums font-semibold whitespace-nowrap ${e.amount > 0 ? '' : 'text-emerald-700'}`}>{formatSum(e.amount, { sign: true })}</td>

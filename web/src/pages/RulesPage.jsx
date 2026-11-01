@@ -12,7 +12,7 @@ const FLOW = [
   { icon: Radar, title: 'Qidiruv', text: 'Tizim eng yaqin bo\'sh (ish rejimidagi) ustaga taklif yuboradi. Rad etilsa yoki javob bo\'lmasa — keyingi ustaga.' },
   { icon: Car, title: 'Usta yo\'lda', text: 'Mijoz ustani xaritada jonli kuzatadi va taxminiy yetib kelish vaqtini ko\'radi.' },
   { icon: Home, title: 'Yetib keldi', text: 'Usta muammoni ko\'rib, ish narxini mijoz bilan kelishadi va ishni boshlaydi.' },
-  { icon: CheckCircle, title: 'Yakun', text: 'Usta yakuniy summani kiritadi, to\'lov ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.' },
+  { icon: CheckCircle, title: 'Yakun', text: 'Usta ish haqi va material summasini alohida kiritadi, to\'lov ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.' },
   { icon: Star, title: 'Baholash', text: 'Mijoz ustani, usta mijozni baholaydi. Reytinglar keyingi buyurtmalarga ta\'sir qiladi.' }
 ];
 

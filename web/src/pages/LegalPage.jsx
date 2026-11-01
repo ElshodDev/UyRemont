@@ -31,7 +31,7 @@ const TERMS = {
     ]],
     ['5. Narx, to\'lov va komissiya', [
       'Chiqish narxi chaqiruvdan oldin ko\'rsatiladi; ish narxi usta bilan joyida kelishiladi.',
-      'Tezkor chaqiruvlar bo\'yicha Platforma ustadan yakuniy summaning [10]% miqdorida komissiya oladi.'
+      'Tezkor chaqiruvlar bo\'yicha Platforma ustadan ish haqining (chiqish narxi bilan, materiallarsiz) [10]% miqdorida komissiya oladi. Usta yakuniy summani ish haqi va material bo\'yicha alohida ko\'rsatadi.'
     ]],
     ['6. Taqiqlangan harakatlar', [
       'Soxta buyurtma va sharhlar, boshqa foydalanuvchilarni haqorat qilish yoki aldash, Platformani buzishga urinish.',

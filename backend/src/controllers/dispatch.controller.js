@@ -329,7 +329,7 @@ const getMasterState = async (req, res, next) => {
         const [statsResult, activeResult, offerResult, commissionResult] = await Promise.all([
             query(
                 `SELECT COUNT(*)::int as jobs,
-                        COALESCE(SUM(COALESCE(final_price, budget, 0)), 0) as earnings
+                        COALESCE(SUM(COALESCE(labor_price, final_price, budget, 0)), 0) as earnings
                  FROM orders
                  WHERE master_id = $1 AND status = 'completed'
                    AND COALESCE(completed_at, updated_at)::date = CURRENT_DATE`,

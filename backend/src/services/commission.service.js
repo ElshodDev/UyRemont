@@ -45,7 +45,8 @@ const addLedgerEntry = async (client, entry) => {
  * @returns {Promise<{ amount: number, due: number }|null>}
  */
 const accrueCommission = async (client, order) => {
-    const base = Number(order.final_price) || 0;
+    // Komissiya ish haqidan (materiallarsiz); ish haqi yozilmagan eski buyurtmalarda - yakuniy summadan
+    const base = Number(order.labor_price ?? order.final_price) || 0;
     if (order.mode !== 'instant' || !order.master_id || base <= 0 || config.COMMISSION_PERCENT <= 0) return null;
     const amount = Math.round((base * config.COMMISSION_PERCENT) / 100);
     if (amount <= 0) return null;
@@ -116,7 +117,7 @@ const loadMasterLedger = async (masterId, { limit = 100 } = {}) => {
         ),
         query(
             `SELECT l.id, l.kind, l.amount, l.order_id, l.percent, l.base_amount, l.method, l.note, l.created_at,
-                    o.title as order_title
+                    o.title as order_title, o.materials_price
              FROM master_ledger l LEFT JOIN orders o ON o.id = l.order_id
              WHERE l.master_id = $1
              ORDER BY l.created_at DESC
@@ -144,6 +145,7 @@ const loadMasterLedger = async (masterId, { limit = 100 } = {}) => {
             amount: Number(row.amount),
             base_amount: row.base_amount === null ? null : Number(row.base_amount),
             percent: row.percent === null ? null : Number(row.percent),
+            materials_price: row.materials_price === null || row.materials_price === undefined ? null : Number(row.materials_price),
         })),
     };
 };
