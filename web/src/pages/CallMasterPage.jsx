@@ -4,7 +4,7 @@ import { Zap, LocateFixed, MapPin, Users, Clock, Wallet, Info, Tag } from 'lucid
 import MapView from '../components/MapView';
 import PhotoPicker from '../components/PhotoPicker';
 import SavedAddressChips from '../components/SavedAddressChips';
-import { ADDRESS_LABELS, addressLabel, useSavedAddresses } from '../lib/useSavedAddresses';
+import { ADDRESS_LABELS, DEFAULT_ADDRESS_LABEL, addressLabel, useSavedAddresses } from '../lib/useSavedAddresses';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { api } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -168,7 +168,8 @@ export default function CallMasterPage() {
       if (saveAddress && !savedId) {
         // Manzilni saqlash ixtiyoriy: xato bo'lsa chaqiruv baribir yuborilgan
         await saved.create({
-          label: (saveLabel === 'other' ? customLabel : saveLabel).trim() || 'Manzil',
+          // Tayyor nomlar o'zbekcha saqlanadi (ko'rsatishda addressLabel tarjima qiladi)
+          label: (saveLabel === 'other' ? customLabel : saveLabel).trim() || DEFAULT_ADDRESS_LABEL,
           address: form.address,
           district: form.district,
           lat: location.lat,

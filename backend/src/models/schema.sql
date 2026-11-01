@@ -627,3 +627,11 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS labor_price DECIMAL(12, 2);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS materials_price DECIMAL(12, 2) NOT NULL DEFAULT 0;
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_materials_price_check;
 ALTER TABLE orders ADD CONSTRAINT orders_materials_price_check CHECK (materials_price >= 0);
+
+-- =============================================
+-- 17. Til: foydalanuvchi tanlagan til (uz | ru)
+-- Telegram bildirishnomalari va socket xabarlari shu tilda yuboriladi; API javoblari Accept-Language bo'yicha
+-- =============================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR(2) NOT NULL DEFAULT 'uz';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_language_check;
+ALTER TABLE users ADD CONSTRAINT users_language_check CHECK (language IN ('uz', 'ru'));
