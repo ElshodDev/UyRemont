@@ -167,6 +167,17 @@ const loadOrder = async (orderId) => {
     return result.rows[0] || null;
 };
 
+// Tezkor chaqiruv yakunlanganda mijozdan to'langan summa so'raladi (bir tugma bilan tasdiqlash)
+const paymentQuestion = (order) => order.mode === 'instant' && Number(order.final_price) > 0 && !order.payment_confirmed_at;
+
+const paymentButtons = (order, lang) => [
+    [{ text: tr(lang, '✅ Ha, {sum} to\'ladim', { sum: money(order.final_price, lang) }), callback_data: `p:${order.id}:ok` }],
+    [
+        urlButton(tr(lang, '✏️ Boshqa summa'), `/orders/${order.id}#tolov`),
+        urlButton(tr(lang, '⭐ Baholash'), `/orders/${order.id}`),
+    ],
+];
+
 /**
  * Holat o'zgarganda kimga qanday xabar boradi. actor - amalni bajargan tomon (unga xabar yuborilmaydi).
  * text va replyMarkup - (lang) => qiymat: har bir qabul qiluvchi o'z tilida oladi.
@@ -176,7 +187,12 @@ const orderMessages = (order, actor) => {
     const open = (lang) => urlButton(tr(lang, '📋 Buyurtmani ochish'), `/orders/${order.id}`);
     const to = (role, text, buttons = (lang) => [open(lang)]) => {
         const userId = role === 'client' ? order.client_id : order.master_id;
-        if (userId && actor !== role) messages.push({ userId, text, replyMarkup: (lang) => keyboard([buttons(lang)]) });
+        // buttons(lang): bitta qator tugmalar yoki qatorlar ro'yxati
+        const rows = (lang) => {
+            const value = buttons(lang);
+            return Array.isArray(value[0]) ? value : [value];
+        };
+        if (userId && actor !== role) messages.push({ userId, text, replyMarkup: (lang) => keyboard(rows(lang)) });
     };
     const names = (lang) => ({
         title: escapeHtml(orderTitle(order, lang)),
@@ -215,9 +231,13 @@ const orderMessages = (order, actor) => {
                         })
                         : tr(lang, '💰 Summa: {sum}', { sum: money(order.final_price, lang) }));
                 }
-                lines.push(tr(lang, 'Ustani baholang — bu boshqa mijozlarga yordam beradi.'));
+                lines.push(paymentQuestion(order)
+                    ? tr(lang, 'Ustaga shuncha to\'ladingizmi? Tasdiqlang va ustani baholang.')
+                    : tr(lang, 'Ustani baholang — bu boshqa mijozlarga yordam beradi.'));
                 return lines.join('\n');
-            }, (lang) => [urlButton(tr(lang, '⭐ Baholash'), `/orders/${order.id}`)]);
+            }, (lang) => (paymentQuestion(order)
+                ? paymentButtons(order, lang)
+                : [urlButton(tr(lang, '⭐ Baholash'), `/orders/${order.id}`)]));
             to('master', (lang) => tr(lang, '✅ Buyurtma yakunlandi: <b>{title}</b>', names(lang)));
             break;
         case 'cancelled': {

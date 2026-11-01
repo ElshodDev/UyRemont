@@ -5,6 +5,7 @@ const { resolveUserFromToken } = require('../middleware/auth');
 const { notifyChatMessage } = require('../services/telegram/notify');
 const { translate, languageFromHeader } = require('../i18n');
 const { joinLanguageRoom, socketLanguage } = require('./language');
+const { maskContacts } = require('../utils/contacts');
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -15,14 +16,15 @@ const getChatAccess = async (orderId, user) => {
     if (!isUuid(orderId)) return { allowed: false, message: 'Buyurtma topilmadi' };
 
     const orderRes = await query(
-        'SELECT client_id, master_id FROM orders WHERE id = $1',
+        'SELECT client_id, master_id, accepted_at FROM orders WHERE id = $1',
         [orderId]
     );
     if (orderRes.rows.length === 0) return { allowed: false, message: 'Buyurtma topilmadi' };
 
     const order = orderRes.rows[0];
     const allowed = order.client_id === user.id || order.master_id === user.id || user.role === 'admin';
-    return { allowed, message: allowed ? null : 'Ushbu chatga kirishga ruxsat yo\'q' };
+    // Usta qabul qilmaguncha raqamlar ko'rinmaydi: chatda yozilgan raqam ham yashiriladi
+    return { allowed, accepted: Boolean(order.accepted_at), message: allowed ? null : 'Ushbu chatga kirishga ruxsat yo\'q' };
 };
 
 const initChatSocket = (io) => {
@@ -113,12 +115,17 @@ const initChatSocket = (io) => {
                     return chatError(access.message);
                 }
 
+                const original = text.trim();
+                const safeText = access.accepted ? original : maskContacts(original);
                 const insertRes = await query(
                     `INSERT INTO messages (id, order_id, sender_id, text)
                      VALUES ($1, $2, $3, $4)
                      RETURNING *`,
-                    [uuidv4(), order_id, currentUser.id, text.trim()]
+                    [uuidv4(), order_id, currentUser.id, safeText]
                 );
+                if (safeText !== original) {
+                    chatError('Raqam yashirildi: telefon raqamlar usta buyurtmani qabul qilgach ikki tomonga ham ko\'rinadi');
+                }
 
                 const message = {
                     ...insertRes.rows[0],

@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import StarRating from '../components/StarRating';
 import OrderChat from '../components/OrderChat';
 import ReviewForm from '../components/ReviewForm';
+import PaymentConfirmCard from '../components/PaymentConfirmCard';
 import InstantOrderPanel from '../components/InstantOrderPanel';
 import OrderPhotos from '../components/OrderPhotos';
 import FavoriteButton from '../components/FavoriteButton';
@@ -234,6 +235,10 @@ export default function OrderDetailPage() {
               <p className="text-[11px] text-slate-400">{t('Telefon raqamlar usta buyurtmani qabul qilgandan keyin ko\'rinadi.')}</p>
             )}
           </div>
+          )}
+
+          {isInstant && order.status === 'completed' && Number(order.final_price) > 0 && (
+            <PaymentConfirmCard order={order} user={user} onDone={load} />
           )}
 
           {canRepeat && (

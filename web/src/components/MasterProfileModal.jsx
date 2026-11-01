@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Star, Phone, ShieldCheck, MapPin, Briefcase, CheckCircle, Share2 } from 'lucide-react';
+import { Star, Lock, ShieldCheck, MapPin, Briefcase, CheckCircle, Share2 } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 import StarRating from './StarRating';
@@ -7,7 +7,7 @@ import Avatar from './Avatar';
 import FavoriteButton from './FavoriteButton';
 import { specializationLabel } from './MasterCard';
 import { api, assetUrl } from '../lib/api';
-import { formatDate, formatPhone, formatPrice, formatRating } from '../lib/format';
+import { formatDate, formatPrice, formatRating } from '../lib/format';
 import { shareLink } from '../lib/share';
 import { useToast } from '../context/ToastContext';
 import { t } from '../i18n';
@@ -117,15 +117,15 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
           )}
         </div>
 
-        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-between gap-3">
-          <div>
-            <span className="text-xs text-blue-700 font-semibold block">{t('To\'g\'ridan-to\'g\'ri raqam:')}</span>
-            <span className="text-base font-extrabold text-blue-900">{formatPhone(master.phone)}</span>
+        {/* Raqam ommaviy emas: buyurtma qabul qilingach buyurtma sahifasida ko'rinadi (kelishuv va kafolat sayt orqali) */}
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
+          <Lock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="font-bold text-blue-900">{t('Telefon raqami buyurtmadan keyin ochiladi')}</p>
+            <p className="text-blue-800/80 text-xs mt-0.5">
+              {t('Usta buyurtmangizni qabul qilgach, raqamlar ikki tomonga ham ko\'rinadi. Ungacha buyurtma sahifasidagi chat orqali yozishingiz mumkin.')}
+            </p>
           </div>
-          <a href={`tel:${master.phone}`} className="btn btn-sm btn-primary min-h-11">
-            <Phone className="w-3.5 h-3.5" />
-            {t('Qo\'ng\'iroq')}
-          </a>
         </div>
       </div>
 

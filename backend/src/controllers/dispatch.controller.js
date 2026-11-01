@@ -26,6 +26,7 @@ const { logAdminAction } = require('../services/audit.service');
 const { parsePhotoIds, attachPhotos } = require('./photos.controller');
 const offersService = require('../services/offers.service');
 const { syncOfferMessage, notifyOrderEvent } = require('../services/telegram/notify');
+const { containsContact, CONTACT_IN_TEXT_MESSAGE } = require('../utils/contacts');
 const { formatSum, isOverLimit } = require('../services/commission.service');
 const { tr } = require('../i18n');
 
@@ -145,6 +146,7 @@ const createInstantOrder = async (req, res, next) => {
         const district = optionalString(req.body.district, { max: 100, field: 'Tuman' });
         const description = optionalString(req.body.description, { max: 2000, field: 'Tavsif' });
         const customTitle = optionalString(req.body.title, { max: 200, field: 'Sarlavha' });
+        if ([address, description, customTitle].some(containsContact)) throw new HttpError(400, CONTACT_IN_TEXT_MESSAGE);
         const photoIds = parsePhotoIds(req.body.photo_ids);
 
         const spec = await query(

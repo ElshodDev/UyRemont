@@ -151,6 +151,7 @@ function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
             <dd className="font-semibold text-slate-700 tabular-nums">{formatSum(commission)}</dd>
           </div>
         </dl>
+        <p className="hint">{t('Mijozdan ham to\'langan summani tasdiqlash so\'raladi.')}</p>
         <button type="submit" disabled={loading || labor === ''} className="btn btn-success w-full min-h-12 font-bold">
           {loading ? <Spinner className="w-4 h-4 text-white" /> : t('Yakunlash')}
         </button>

@@ -53,7 +53,7 @@ const listCommission = async (req, res, next) => {
             conditions.push(`(u.name ILIKE $${params.length} OR u.phone LIKE $${params.length})`);
         }
 
-        const [masters, summary, period] = await Promise.all([
+        const [masters, summary, period, reviews] = await Promise.all([
             query(
                 `SELECT u.id, u.name, u.phone, u.is_active, mp.commission_due, mp.is_online, mp.is_verified,
                         s.commission_total, s.paid_total, s.last_payment_at
@@ -84,6 +84,7 @@ const listCommission = async (req, res, next) => {
                         COALESCE(-SUM(amount) FILTER (WHERE kind = 'payment'), 0) as collected
                  FROM master_ledger WHERE created_at > NOW() - INTERVAL '30 days'`
             ),
+            query('SELECT COUNT(*)::int as total FROM orders WHERE payment_review = \'pending\''),
         ]);
 
         const s = summary.rows[0];
@@ -104,6 +105,7 @@ const listCommission = async (req, res, next) => {
                 collected_30d: Number(period.rows[0].collected),
                 limit,
                 percent: config.COMMISSION_PERCENT,
+                payment_reviews: reviews.rows[0].total,
             },
             counts: { debtors: s.debtors, over_limit: s.over_limit, all: s.all_masters },
         });
@@ -208,4 +210,124 @@ const recordAdjustment = async (req, res, next) => {
     }
 };
 
-module.exports = { getMyCommission, listCommission, getMasterCommission, recordPayment, recordAdjustment };
+// ---------- To'lov farqlari: mijoz ustaning yozganidan ko'p to'laganini bildirgan buyurtmalar ----------
+
+const REVIEW_STATUSES = ['pending', 'charged', 'dismissed'];
+
+const REVIEW_SELECT = `
+    SELECT o.id, o.title, o.completed_at, o.payment_confirmed_at, o.payment_review, o.payment_reviewed_at,
+           o.final_price, o.labor_price, o.materials_price, o.client_paid_amount,
+           o.master_id, m.name as master_name, m.phone as master_phone,
+           o.client_id, c.name as client_name, c.phone as client_phone,
+           l.percent as commission_percent, l.amount as commission_amount,
+           r.name as reviewed_by_name
+    FROM orders o
+    LEFT JOIN users m ON m.id = o.master_id
+    LEFT JOIN users c ON c.id = o.client_id
+    LEFT JOIN users r ON r.id = o.payment_reviewed_by
+    LEFT JOIN master_ledger l ON l.order_id = o.id AND l.kind = 'commission'
+`;
+
+/**
+ * Farqdan olinadigan komissiya: komissiya yozilgan paytdagi foiz (yozuv bo'lmasa - joriy foiz)
+ */
+const reviewView = (row) => {
+    const difference = Math.max(0, Number(row.client_paid_amount) - Number(row.final_price));
+    const percent = row.commission_percent !== null ? Number(row.commission_percent) : config.COMMISSION_PERCENT;
+    return {
+        ...row,
+        difference,
+        commission_percent: percent,
+        suggested_charge: Math.round((difference * percent) / 100),
+    };
+};
+
+/**
+ * Admin: to'lov farqlari ro'yxati
+ * GET /api/admin/commission/payment-reviews?status=pending|charged|dismissed
+ */
+const listPaymentReviews = async (req, res, next) => {
+    try {
+        const status = REVIEW_STATUSES.includes(req.query.status) ? req.query.status : 'pending';
+        const result = await query(
+            `${REVIEW_SELECT} WHERE o.payment_review = $1 ORDER BY o.payment_confirmed_at DESC LIMIT 100`,
+            [status]
+        );
+        res.status(200).json({ success: true, data: result.rows.map(reviewView) });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Admin: farqni hal qilish - komissiya yozish (charge) yoki yopish (dismiss)
+ * POST /api/admin/commission/payment-reviews/:orderId
+ * Body: { action: 'charge'|'dismiss', amount?, note? }
+ */
+const resolvePaymentReview = async (req, res, next) => {
+    try {
+        const orderId = assertUuid(req.params.orderId, 'Buyurtma topilmadi');
+        const action = String(req.body.action || '');
+        if (!['charge', 'dismiss'].includes(action)) throw new HttpError(400, 'Amalni tanlang');
+        const note = optionalString(req.body.note, { max: 300, field: 'Izoh' });
+
+        const outcome = await withTransaction(async (client) => {
+            const found = await client.query(`${REVIEW_SELECT} WHERE o.id = $1 FOR UPDATE OF o`, [orderId]);
+            if (!found.rows[0]) throw new HttpError(404, 'Buyurtma topilmadi');
+            const review = reviewView(found.rows[0]);
+            if (review.payment_review !== 'pending') throw new HttpError(409, 'Bu farq allaqachon ko\'rib chiqilgan');
+
+            let ledger = null;
+            if (action === 'charge') {
+                const amount = optionalNumber(req.body.amount ?? review.suggested_charge, { min: 1, max: MAX_AMOUNT, field: 'Summa' });
+                if (amount === null) throw new HttpError(400, 'Komissiya summasini kiriting');
+                ledger = await addLedgerEntry(client, {
+                    masterId: review.master_id,
+                    kind: 'adjustment',
+                    amount: Math.round(amount),
+                    orderId,
+                    note: note || `Mijoz ${formatSum(review.client_paid_amount)} to'laganini bildirdi, yakuniy summa ${formatSum(review.final_price)} yozilgan`,
+                    createdBy: req.user.id,
+                });
+            }
+            await client.query(
+                `UPDATE orders SET payment_review = $2, payment_reviewed_at = NOW(), payment_reviewed_by = $3
+                 WHERE id = $1`,
+                [orderId, action === 'charge' ? 'charged' : 'dismissed', req.user.id]
+            );
+            return { review, ledger };
+        });
+
+        await logAdminAction(req, {
+            action: action === 'charge' ? 'commission.review_charge' : 'commission.review_dismiss',
+            targetUserId: outcome.review.master_id,
+            targetOrderId: orderId,
+            details: {
+                final_price: Number(outcome.review.final_price),
+                client_paid: Number(outcome.review.client_paid_amount),
+                charged: outcome.ledger ? Number(outcome.ledger.entry.amount) : 0,
+                note,
+            },
+        });
+        if (outcome.ledger) {
+            const { entry, due } = outcome.ledger;
+            notifyCommission(outcome.review.master_id, {
+                due,
+                message: `Mijoz yakuniy summadan ko'p to'laganini bildirdi: komissiya +${formatSum(entry.amount)} yozildi. ${dueText(due)}.`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: action === 'charge' ? 'Komissiya yozildi' : 'Farq yopildi',
+            data: { order_id: orderId, payment_review: action === 'charge' ? 'charged' : 'dismissed' },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = {
+    getMyCommission, listCommission, getMasterCommission, recordPayment, recordAdjustment,
+    listPaymentReviews, resolvePaymentReview,
+};

@@ -318,6 +318,31 @@ module.exports = {
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
     'Komissiya hisobi': 'Счёт комиссии',
 
+    // ---------- Aloqa ma'lumotlari va to'lovni tasdiqlash ----------
+    'Telefon raqam yoki Telegram manzilini yozmang: raqamlar buyurtma qabul qilingach ikki tomonga ham ko\'rinadi':
+        'Не указывайте номер телефона или Telegram: контакты станут видны обеим сторонам после принятия заказа',
+    'Raqam yashirildi: telefon raqamlar usta buyurtmani qabul qilgach ikki tomonga ham ko\'rinadi':
+        'Номер скрыт: телефоны станут видны обеим сторонам, когда мастер примет заказ',
+    'To\'lovni faqat buyurtma bergan mijoz tasdiqlaydi': 'Подтвердить оплату может только клиент, оформивший заказ',
+    'To\'lov allaqachon tasdiqlangan': 'Оплата уже подтверждена',
+    'Bu buyurtma uchun to\'lovni tasdiqlash kerak emas': 'Для этого заказа подтверждение оплаты не требуется',
+    'To\'langan summani to\'g\'ri kiriting': 'Введите корректную сумму оплаты',
+    'To\'langan summa': 'Оплаченная сумма',
+    'Rahmat! To\'lov tasdiqlandi': 'Спасибо! Оплата подтверждена',
+    'Rahmat! Ma\'lumot administratorga yuborildi': 'Спасибо! Информация передана администратору',
+    'Mijoz yakuniy summadan ko\'p to\'laganini bildirdi: komissiya +{amount} yozildi. {due}.':
+        'Клиент сообщил, что заплатил больше итоговой суммы: начислена комиссия +{amount}. {due}.',
+    'Amalni tanlang': 'Выберите действие',
+    'Bu farq allaqachon ko\'rib chiqilgan': 'Это расхождение уже рассмотрено',
+    'Komissiya summasini kiriting': 'Укажите сумму комиссии',
+    'Komissiya yozildi': 'Комиссия начислена',
+    'Farq yopildi': 'Расхождение закрыто',
+    'Ustaga shuncha to\'ladingizmi? Tasdiqlang va ustani baholang.': 'Вы заплатили мастеру именно эту сумму? Подтвердите и оцените мастера.',
+    '✅ Ha, {sum} to\'ladim': '✅ Да, я заплатил {sum}',
+    '✏️ Boshqa summa': '✏️ Другая сумма',
+    'Hisob topilmadi. Saytda kiring.': 'Аккаунт не найден. Войдите на сайте.',
+    '✅ Rahmat! To\'lov tasdiqlandi': '✅ Спасибо! Оплата подтверждена',
+
     // ---------- Chat (socket) ----------
     'Ushbu chatga kirishga ruxsat yo\'q': 'Нет доступа к этому чату',
     'Chatga ulanishda xatolik': 'Ошибка подключения к чату',

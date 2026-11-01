@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { startApp, randomPhone, waitFor, resolveTestDatabaseUrl } = require('./helpers');
+const { startApp, randomPhone, waitFor, resolveTestDatabaseUrl, connectSocket } = require('./helpers');
 
 // Bazaga ulanadigan modul startApp dan oldin yuklansa ham faqat test bazasi ishlatilsin
 // (src/config/database.js ulanishni yuklanish paytida backend/.env dagi DATABASE_URL bilan ochadi)
@@ -18,32 +18,6 @@ const ru = require('../src/i18n/ru');
 const RU = { 'Accept-Language': 'ru' };
 const POINT = { lat: 41.3301, lng: 69.3301 };
 const hasKey = (key) => Object.prototype.hasOwnProperty.call(ru, key);
-
-/**
- * Socket.io mijozi (Node'ning o'z WebSocket'i orqali, engine.io v4 protokoli): hodisalarni yig'adi
- */
-const connectSocket = (baseUrl, auth) => new Promise((resolve, reject) => {
-    const ws = new WebSocket(`${baseUrl.replace(/^http/, 'ws')}/socket.io/?EIO=4&transport=websocket`);
-    const client = {
-        events: [],
-        emit: (event, payload) => ws.send(`42${JSON.stringify([event, payload])}`),
-        waitEvent: (event, predicate = () => true) => waitFor(
-            () => client.events.find(([name, payload]) => name === event && predicate(payload))?.[1]
-        ),
-        close: () => ws.close(),
-    };
-    ws.onmessage = ({ data }) => {
-        const packet = String(data);
-        if (packet.startsWith('0')) ws.send(`40${JSON.stringify(auth)}`);
-        else if (packet === '2') ws.send('3');
-        else if (packet.startsWith('40')) resolve(client);
-        else if (packet.startsWith('44')) {
-            ws.close();
-            reject(Object.assign(new Error('connect_error'), { data: JSON.parse(packet.slice(2)) }));
-        } else if (packet.startsWith('42')) client.events.push(JSON.parse(packet.slice(2)));
-    };
-    ws.onerror = () => reject(new Error('WebSocket xatosi'));
-});
 
 describe('i18n: tarjima mexanizmi', () => {
     it('aynan mos, andoza, maydon nomi, ro\'yxat va ichma-ich summa', () => {
