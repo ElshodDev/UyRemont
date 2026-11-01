@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, Printer, Wrench } from 'lucide-react';
 import Spinner from '../Spinner';
 import { isTemporaryHost } from '../../lib/print';
+import { t } from '../../i18n';
 
 // Varaq ichidagi ranglar doim bir xil (tungi rejimdan qat'i nazar, printerda ham)
 export const FLYER = {
@@ -70,7 +71,7 @@ export function FlyerToolbar({ title, description, children }) {
           <p className="text-sm text-slate-500 mt-1 max-w-2xl">{description}</p>
         </div>
         <button type="button" onClick={print} className="btn btn-primary" disabled={preparing}>
-          {preparing ? <Spinner className="w-4 h-4 text-white" /> : <Printer className="w-4 h-4" />} Chop etish
+          {preparing ? <Spinner className="w-4 h-4 text-white" /> : <Printer className="w-4 h-4" />} {t('Chop etish')}
         </button>
       </div>
       {children}
@@ -78,14 +79,12 @@ export function FlyerToolbar({ title, description, children }) {
         <p className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex gap-2" role="note">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            Sayt hozir vaqtinchalik manzilda ({window.location.host}). Bu QR kod boshqa telefonlarda ochilmaydi —
-            varaqani sayt o'z domenida (masalan, usta24.uz) ishga tushgandan keyin chop eting.
+            {t('Sayt hozir vaqtinchalik manzilda ({host}). Bu QR kod boshqa telefonlarda ochilmaydi — varaqani sayt o\'z domenida (masalan, usta24.uz) ishga tushgandan keyin chop eting.', { host: window.location.host })}
           </span>
         </p>
       )}
       <p className="hint">
-        Chop etish oynasida: qog'oz — A4, chekkalar (margins) — «Yo'q», «Fon rasmlari» (Background graphics) — yoqilgan.
-        PDF qilib saqlab, bosmaxonaga ham berishingiz mumkin.
+        {t('Chop etish oynasida: qog\'oz — A4, chekkalar (margins) — «Yo\'q», «Fon rasmlari» (Background graphics) — yoqilgan. PDF qilib saqlab, bosmaxonaga ham berishingiz mumkin.')}
       </p>
     </div>
   );

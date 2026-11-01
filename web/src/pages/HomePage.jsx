@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallMaster } from '../lib/useCallMaster';
 import { useToast } from '../context/ToastContext';
 import { mainVerticals, districtsList, ALL_DISTRICTS } from '../data/catalog';
+import { t, specName } from '../i18n';
 
 const PAGE_SIZE = 12;
 
@@ -131,8 +132,8 @@ export default function HomePage() {
     requireAuth((current) => {
       if (current.role !== 'client') {
         toast.error(current.role === 'master'
-          ? 'Buyurtma berish uchun profilingizda mijoz rejimiga o\'ting'
-          : 'Administrator hisobidan buyurtma berib bo\'lmaydi');
+          ? t('Buyurtma berish uchun profilingizda mijoz rejimiga o\'ting')
+          : t('Administrator hisobidan buyurtma berib bo\'lmaydi'));
         return;
       }
       setProfileMasterId(null);
@@ -170,11 +171,11 @@ export default function HomePage() {
                 }`}
               >
                 <span className="text-lg">{v.icon}</span>
-                <span>{v.name}</span>
+                <span>{t(v.name)}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
                 }`}>
-                  {verticalCounts[v.id] ?? '…'} usta
+                  {verticalCounts[v.id] === undefined ? t('… usta') : t('{n} usta', { n: verticalCounts[v.id] })}
                 </span>
               </button>
             );
@@ -187,15 +188,15 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
             <span>{currentVerticalObj.icon}</span>
-            <span>{currentVerticalObj.name} Bo'limi</span>
+            <span>{t('{name} Bo\'limi', { name: t(currentVerticalObj.name) })}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3">
-            {currentVerticalObj.heroTitle}
+            {t(currentVerticalObj.heroTitle)}
           </h1>
 
           <p className="text-white/80 text-sm sm:text-base mb-6 max-w-2xl mx-auto font-normal">
-            {currentVerticalObj.desc} — bevosita telefon raqamlari, narxlar va haqiqiy mijozlar sharhlari bilan.
+            {t('{desc} — bevosita telefon raqamlari, narxlar va haqiqiy mijozlar sharhlari bilan.', { desc: t(currentVerticalObj.desc) })}
           </p>
 
           <div className="bg-white p-2.5 rounded-2xl shadow-xl flex flex-col md:flex-row gap-2 text-slate-800 max-w-3xl mx-auto">
@@ -203,8 +204,8 @@ export default function HomePage() {
               <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
               <input
                 type="search"
-                aria-label="Usta yoki xizmat qidirish"
-                placeholder={`${currentVerticalObj.name} bo'yicha usta yoki xizmat qidirish...`}
+                aria-label={t('Usta yoki xizmat qidirish')}
+                placeholder={t('{name} bo\'yicha usta yoki xizmat qidirish...', { name: t(currentVerticalObj.name) })}
                 className="w-full bg-transparent border-none outline-none text-sm placeholder-slate-400 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -215,11 +216,11 @@ export default function HomePage() {
               <MapPin className="w-5 h-5 text-slate-400 mr-2 flex-shrink-0" />
               <select
                 className="w-full min-h-9 bg-transparent border-none outline-none text-sm font-medium text-slate-700 cursor-pointer"
-                aria-label="Tuman"
+                aria-label={t('Tuman')}
                 value={selectedDistrict}
                 onChange={(e) => setFilter({ district: e.target.value })}
               >
-                {districtsList.map((d) => <option key={d} value={d}>{d}</option>)}
+                {districtsList.map((d) => <option key={d} value={d}>{t(d)}</option>)}
               </select>
             </div>
           </div>
@@ -230,21 +231,21 @@ export default function HomePage() {
               className="btn btn-accent px-5 font-extrabold shadow-lg shadow-orange-900/30"
             >
               <Zap className="w-4 h-4" />
-              Usta chaqirish — eng yaqini keladi
+              {t('Usta chaqirish — eng yaqini keladi')}
             </button>
             <button
               onClick={() => startOrder(null)}
               className="btn bg-snow/10 hover:bg-snow/20 border border-snow/25 text-white text-xs sm:text-sm"
             >
               <Megaphone className="w-4 h-4" />
-              Usta tanlamasdan buyurtma qoldirish
+              {t('Usta tanlamasdan buyurtma qoldirish')}
             </button>
           </div>
           <Link
             to="/prices"
             className="mt-4 inline-flex items-center gap-1.5 min-h-11 text-sm font-semibold text-white/90 hover:text-white underline-offset-4 hover:underline"
           >
-            <Tag className="w-4 h-4" /> Qancha turadi? Taxminiy narxlarni ko'ring <ArrowRight className="w-4 h-4" />
+            <Tag className="w-4 h-4" /> {t('Qancha turadi? Taxminiy narxlarni ko\'ring')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
@@ -252,7 +253,7 @@ export default function HomePage() {
       {/* SOHAGA MOS KATEGORIYALAR */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 w-full">
         <div className="bg-white rounded-2xl p-3 shadow-md border border-slate-200 overflow-x-auto flex gap-2 no-scrollbar">
-          {[{ id: 'all', slug: 'all', name_uz: 'Barchasi', icon: '✨' }, ...currentSpecializations].map((s) => {
+          {[{ id: 'all', slug: 'all', name_uz: t('Barchasi'), icon: '✨' }, ...currentSpecializations].map((s) => {
             const isSelected = selectedSpec === s.slug;
             return (
               <button
@@ -262,7 +263,7 @@ export default function HomePage() {
                 className={`chip ${isSelected ? 'chip-active' : ''}`}
               >
                 <span>{s.icon}</span>
-                <span>{s.name_uz}</span>
+                <span>{specName(s)}</span>
               </button>
             );
           })}
@@ -275,28 +276,28 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900">
-              {currentVerticalObj.name} ustalari {pagination ? `(${pagination.total})` : ''}
+              {t('{name} ustalari', { name: t(currentVerticalObj.name) })} {pagination ? `(${pagination.total})` : ''}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Reyting, tajriba va mijozlar sharhlari asosida saralandi
+              {t('Reyting, tajriba va mijozlar sharhlari asosida saralandi')}
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs sm:text-sm">
             <span className="text-slate-500 font-medium flex items-center gap-1">
-              <Filter className="w-4 h-4" /> Saralash:
+              <Filter className="w-4 h-4" /> {t('Saralash:')}
             </span>
             <select
               className="input w-auto min-h-10 py-1.5 bg-white text-xs sm:text-sm font-medium"
-              aria-label="Saralash"
+              aria-label={t('Saralash')}
               value={sortBy}
               onChange={(e) => setFilter({ sort: e.target.value === 'rating' ? null : e.target.value })}
             >
-              <option value="rating">Reyting bo'yicha (eng yuqori)</option>
-              <option value="experience">Ko'p yillik tajriba</option>
-              <option value="reviews">Ko'p sharhlar</option>
-              <option value="price_asc">Arzonroq narx</option>
-              <option value="price_desc">Qimmatroq narx</option>
+              <option value="rating">{t('Reyting bo\'yicha (eng yuqori)')}</option>
+              <option value="experience">{t('Ko\'p yillik tajriba')}</option>
+              <option value="reviews">{t('Ko\'p sharhlar')}</option>
+              <option value="price_asc">{t('Arzonroq narx')}</option>
+              <option value="price_desc">{t('Qimmatroq narx')}</option>
             </select>
           </div>
         </div>
@@ -311,15 +312,15 @@ export default function HomePage() {
 
         {status === 'ready' && masters.length === 0 && (
           <EmptyState
-            title="Mos usta topilmadi"
-            description="Tanlangan filtrlar bo'yicha hozircha usta topilmadi. Filtrni o'zgartiring yoki ochiq buyurtma qoldiring."
+            title={t('Mos usta topilmadi')}
+            description={t('Tanlangan filtrlar bo\'yicha hozircha usta topilmadi. Filtrni o\'zgartiring yoki ochiq buyurtma qoldiring.')}
             action={(
               <div className="flex flex-wrap justify-center gap-2">
                 <button onClick={resetFilters} className="btn btn-primary">
-                  Barchasini ko'rsatish
+                  {t('Barchasini ko\'rsatish')}
                 </button>
                 <button onClick={() => startOrder(null)} className="btn btn-secondary">
-                  Ochiq buyurtma qoldirish
+                  {t('Ochiq buyurtma qoldirish')}
                 </button>
               </div>
             )}
@@ -345,7 +346,7 @@ export default function HomePage() {
                   disabled={loadingMore}
                   className="btn btn-secondary px-6"
                 >
-                  {loadingMore ? <Spinner className="w-4 h-4" /> : 'Ko\'proq ko\'rsatish'}
+                  {loadingMore ? <Spinner className="w-4 h-4" /> : t('Ko\'proq ko\'rsatish')}
                 </button>
               </div>
             )}
@@ -357,21 +358,21 @@ export default function HomePage() {
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-2xl bg-white/10"><Wrench className="w-6 h-6" /></div>
             <div>
-              <h3 className="text-lg font-bold">Siz ustamisiz?</h3>
+              <h3 className="text-lg font-bold">{t('Siz ustamisiz?')}</h3>
               <p className="text-sm text-white/70 max-w-lg">
-                Profil yarating, portfolio qo'shing va o'z tumaningizdagi mijozlardan buyurtmalar oling. Ro'yxatdan o'tish bepul.
+                {t('Profil yarating, portfolio qo\'shing va o\'z tumaningizdagi mijozlardan buyurtmalar oling. Ro\'yxatdan o\'tish bepul.')}
               </p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             <Link to="/ustalar" className="btn bg-white/10 text-white hover:bg-white/20 ring-1 ring-white/25 whitespace-nowrap px-5">
-              Batafsil
+              {t('Batafsil')}
             </Link>
             <button
               onClick={() => requireAuth((current) => navigate(current.role === 'master' ? '/master/profile' : '/master/setup'))}
               className="btn bg-snow text-ink font-bold hover:bg-primary-50 whitespace-nowrap px-5"
             >
-              Usta bo'lib qo'shilish
+              {t('Usta bo\'lib qo\'shilish')}
             </button>
           </div>
         </div>

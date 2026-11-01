@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { useLoginMethods } from '../lib/telegram';
 import { debtStatus, formatSum } from '../lib/commission';
+import { t } from '../i18n';
 
 function Stat({ icon: Icon, label, value, hint }) {
   return (
@@ -55,6 +56,7 @@ export default function MasterWorkPage() {
   };
 
   const req = state.requirements;
+  const activeStatus = state.active_job && ORDER_STATUSES[state.active_job.status]?.label;
   const mapCenter = currentLocation || DISTRICT_COORDS[user.district] || TASHKENT_CENTER;
 
   return (
@@ -62,12 +64,12 @@ export default function MasterWorkPage() {
       <div className={`rounded-3xl p-6 sm:p-8 text-white transition-colors ${isOnline ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : 'bg-gradient-to-r from-slate-700 to-slate-900'}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Ish rejimi</p>
-            <h1 className="text-3xl font-black mt-1">{isOnline ? 'Siz ishdasiz' : 'Siz dam olyapsiz'}</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">{t('Ish rejimi')}</p>
+            <h1 className="text-3xl font-black mt-1">{isOnline ? t('Siz ishdasiz') : t('Siz dam olyapsiz')}</h1>
             <p className="text-sm text-white/80 mt-1 max-w-md">
               {isOnline
-                ? 'Yaqin atrofdagi tezkor chaqiruvlar sizga signal bilan keladi. Taklifga javob berish vaqti cheklangan.'
-                : '«Ishga chiqish» tugmasini bosing — tizim sizga eng yaqin mijozlarning chaqiruvlarini yuboradi.'}
+                ? t('Yaqin atrofdagi tezkor chaqiruvlar sizga signal bilan keladi. Taklifga javob berish vaqti cheklangan.')
+                : t('«Ishga chiqish» tugmasini bosing — tizim sizga eng yaqin mijozlarning chaqiruvlarini yuboradi.')}
             </p>
           </div>
           <button
@@ -79,31 +81,31 @@ export default function MasterWorkPage() {
             aria-pressed={isOnline}
           >
             {toggling ? <Spinner className="w-6 h-6" /> : <Power className="w-8 h-8 mb-1" />}
-            {isOnline ? 'Ishni to\'xtatish' : 'Ishga chiqish'}
+            {isOnline ? t('Ishni to\'xtatish') : t('Ishga chiqish')}
           </button>
         </div>
         {state.missed_offers_streak > 0 && config && (
           <p className="mt-4 text-xs font-semibold bg-white/15 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg">
             <AlertTriangle className="w-3.5 h-3.5" />
-            Ketma-ket javobsiz takliflar: {state.missed_offers_streak} / {config.max_missed_offers}
+            {t('Ketma-ket javobsiz takliflar: {n} / {max}', { n: state.missed_offers_streak, max: config.max_missed_offers })}
           </p>
         )}
       </div>
 
       {!req.can_go_online && (
         <div className="bg-white rounded-2xl border border-red-200 p-5">
-          <h2 className="font-bold text-slate-900 mb-2">Ishga chiqish uchun:</h2>
+          <h2 className="font-bold text-slate-900 mb-2">{t('Ishga chiqish uchun:')}</h2>
           <ul className="space-y-1.5">
             <Requirement ok={req.verified}>
-              Profil administrator tomonidan tasdiqlangan — <Link to="/master/profile#tasdiqlash" className="underline">hujjat yuklash</Link>
+              {t('Profil administrator tomonidan tasdiqlangan')} — <Link to="/master/profile#tasdiqlash" className="underline">{t('hujjat yuklash')}</Link>
             </Requirement>
             <Requirement ok={req.has_specializations}>
-              Kamida bitta mutaxassislik tanlangan — <Link to="/master/profile" className="underline">profilni tahrirlash</Link>
+              {t('Kamida bitta mutaxassislik tanlangan')} — <Link to="/master/profile" className="underline">{t('profilni tahrirlash')}</Link>
             </Requirement>
-            <Requirement ok={req.rating_ok}>Reyting {config?.min_rating ?? 4} dan past emas</Requirement>
+            <Requirement ok={req.rating_ok}>{t('Reyting {min} dan past emas', { min: config?.min_rating ?? 4 })}</Requirement>
             {req.commission_ok === false && (
               <Requirement ok={false}>
-                Komissiya qarzi limitdan oshmagan — <Link to="/master/hisob" className="underline">to'lash</Link>
+                {t('Komissiya qarzi limitdan oshmagan')} — <Link to="/master/hisob" className="underline">{t('to\'lash')}</Link>
               </Requirement>
             )}
           </ul>
@@ -116,8 +118,8 @@ export default function MasterWorkPage() {
             <Send className="w-5 h-5" />
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block text-sm font-bold text-slate-900">Telegram'ni ulang</span>
-            <span className="block text-xs text-slate-600">Ilova yopiq bo'lsa ham buyurtma Telegram'ga keladi va o'sha yerda qabul qilasiz</span>
+            <span className="block text-sm font-bold text-slate-900">{t('Telegram\'ni ulang')}</span>
+            <span className="block text-xs text-slate-600">{t('Ilova yopiq bo\'lsa ham buyurtma Telegram\'ga keladi va o\'sha yerda qabul qilasiz')}</span>
           </span>
           <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
         </Link>
@@ -130,7 +132,7 @@ export default function MasterWorkPage() {
         >
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-blue-100">Faol ish · {ORDER_STATUSES[state.active_job.status]?.label}</p>
+              <p className="text-xs font-semibold text-blue-100">{t('Faol ish')}{activeStatus ? ` · ${t(activeStatus)}` : ''}</p>
               <p className="font-bold truncate">{state.active_job.title}</p>
               <p className="text-xs text-blue-100 truncate">{state.active_job.address}</p>
             </div>
@@ -140,17 +142,17 @@ export default function MasterWorkPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat icon={Briefcase} label="Bugun bajarilgan" value={state.today.jobs} />
-        <Stat icon={Wallet} label="Bugungi daromad" value={formatSum(state.today.earnings)} hint={`Sof: ${formatSum(state.today.net)}`} />
-        <Stat icon={Percent} label={`Bugungi komissiya (${config?.commission_percent ?? 10}%)`} value={formatSum(state.today.commission)} hint="faqat tezkor chaqiruvlar" />
-        <Stat icon={Star} label="Reyting" value={formatRating(state.rating)} hint={`${state.reviews_count} ta sharh`} />
+        <Stat icon={Briefcase} label={t('Bugun bajarilgan')} value={state.today.jobs} />
+        <Stat icon={Wallet} label={t('Bugungi daromad')} value={formatSum(state.today.earnings)} hint={t('Sof: {sum}', { sum: formatSum(state.today.net) })} />
+        <Stat icon={Percent} label={t('Bugungi komissiya ({percent}%)', { percent: config?.commission_percent ?? 10 })} value={formatSum(state.today.commission)} hint={t('faqat tezkor chaqiruvlar')} />
+        <Stat icon={Star} label={t('Reyting')} value={formatRating(state.rating)} hint={t('{n} ta sharh', { n: state.reviews_count })} />
         <Stat
           icon={CheckCircle}
-          label="Qabul qilish"
+          label={t('Qabul qilish foizi')}
           value={state.acceptance_rate === null ? '—' : `${state.acceptance_rate}%`}
-          hint={`${state.offers_total} ta taklifdan`}
+          hint={t('{n} ta taklifdan', { n: state.offers_total })}
         />
-        <Stat icon={XCircle} label="Voz kechilgan ishlar" value={state.cancelled_jobs} />
+        <Stat icon={XCircle} label={t('Voz kechilgan ishlar')} value={state.cancelled_jobs} />
       </div>
 
       {state.commission && (() => {
@@ -165,7 +167,7 @@ export default function MasterWorkPage() {
               <Wallet className="w-5 h-5" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-xs font-semibold text-slate-500">Komissiya qarzi</span>
+              <span className="block text-xs font-semibold text-slate-500">{t('Komissiya qarzi')}</span>
               <span className="block text-lg font-black text-slate-900 tabular-nums">{formatSum(Math.max(0, due))}</span>
               <span className={`block text-xs ${status.tone === 'blocked' ? 'text-red-700 font-semibold' : status.tone === 'warn' ? 'text-amber-800 font-semibold' : 'text-slate-500'}`}>{status.text}</span>
             </span>
@@ -177,30 +179,30 @@ export default function MasterWorkPage() {
       <section className="card p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <div>
-            <h2 className="font-bold text-slate-900 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Joylashuvim</h2>
+            <h2 className="font-bold text-slate-900 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> {t('Joylashuvim')}</h2>
             <p className="text-xs text-slate-500">
-              {gps.status === 'ok' && 'GPS orqali aniqlanmoqda'}
-              {gps.status === 'locating' && 'GPS qidirilmoqda...'}
-              {gps.status === 'error' && `${gps.error}. Xaritani bosib joyingizni belgilang.`}
-              {gps.status === 'idle' && (manualLocation ? 'Xaritada belgilangan joy' : 'Ishga chiqqanda joylashuv aniqlanadi. GPS ishlamasa, xaritada belgilang.')}
+              {gps.status === 'ok' && t('GPS orqali aniqlanmoqda')}
+              {gps.status === 'locating' && t('GPS qidirilmoqda...')}
+              {gps.status === 'error' && t('{error}. Xaritani bosib joyingizni belgilang.', { error: gps.error })}
+              {gps.status === 'idle' && (manualLocation ? t('Xaritada belgilangan joy') : t('Ishga chiqqanda joylashuv aniqlanadi. GPS ishlamasa, xaritada belgilang.'))}
             </p>
           </div>
           {manualLocation && (
             <button onClick={() => dispatch.setManualLocation(null)} className="text-xs font-semibold text-slate-500 hover:text-slate-800">
-              Belgini olib tashlash
+              {t('Belgini olib tashlash')}
             </button>
           )}
         </div>
         <MapView
           center={mapCenter}
-          markers={currentLocation ? [{ id: 'me', ...currentLocation, type: 'me', label: 'Siz shu yerdasiz' }] : []}
+          markers={currentLocation ? [{ id: 'me', ...currentLocation, type: 'me', label: t('Siz shu yerdasiz') }] : []}
           onPick={(point) => dispatch.setManualLocation(point)}
           className="h-64"
         />
       </section>
 
       <Link to="/rules" className="flex items-center justify-between card p-4 hover:bg-slate-50">
-        <span className="flex items-center gap-2 text-sm font-bold text-slate-800"><BookOpen className="w-4 h-4 text-blue-600" /> Ishlash qoidalari</span>
+        <span className="flex items-center gap-2 text-sm font-bold text-slate-800"><BookOpen className="w-4 h-4 text-blue-600" /> {t('Ishlash qoidalari')}</span>
         <ArrowRight className="w-4 h-4 text-slate-400" />
       </Link>
     </main>
