@@ -208,7 +208,7 @@ export default function OrderDetailPage() {
                     onClick={() => (action.confirm ? setPendingAction(action) : changeStatus(action))}
                     className={`btn font-bold ${TONES[action.tone]}`}
                   >
-                    {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : t(action.label)}
+                    {updating && !action.confirm ? <Spinner className="w-4 h-4" /> : action.label}
                   </button>
                 ))}
               </div>
@@ -299,7 +299,7 @@ export default function OrderDetailPage() {
           description={pendingAction.status === 'completed'
             ? t('Buyurtma yakunlangan deb belgilanadi va mijoz sharh qoldira oladi.')
             : t('Bu amalni qaytarib bo\'lmaydi.')}
-          confirmLabel={t(pendingAction.label)}
+          confirmLabel={pendingAction.label}
           tone={pendingAction.tone === 'success' ? 'success' : 'danger'}
           loading={updating}
           onConfirm={() => changeStatus(pendingAction)}
