@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   Calculator, PlusCircle, LogIn, ChevronDown, ClipboardList,
-  User, Wrench, LayoutDashboard, LogOut, Zap, Power, BookOpen, Tag, Sun, Moon
+  User, Wrench, LayoutDashboard, LogOut, Zap, Power, BookOpen, Tag, Sun, Moon, Heart
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDispatch } from '../context/DispatchContext';
@@ -133,6 +133,11 @@ export default function Header({ onOpenCalculator }) {
                   <NavLink to="/orders" className={menuLink}>
                     <ClipboardList className="w-4 h-4 text-slate-400" /> Buyurtmalarim
                   </NavLink>
+                  {user.role === 'client' && (
+                    <NavLink to="/favorites" className={menuLink}>
+                      <Heart className="w-4 h-4 text-slate-400" /> Sevimli ustalar
+                    </NavLink>
+                  )}
                   {user.role === 'master' && (
                     <NavLink to="/master/work" className={menuLink}>
                       <Power className="w-4 h-4 text-slate-400" /> Ish rejimi

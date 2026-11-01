@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Star, ShieldCheck, Briefcase } from 'lucide-react';
 import { formatPrice, formatRating } from '../lib/format';
 import Avatar from './Avatar';
+import FavoriteButton from './FavoriteButton';
 
 export const specializationLabel = (master) => (
   master.specializations?.map((s) => s.name_uz).join(', ') || 'Usta'
@@ -9,7 +10,8 @@ export const specializationLabel = (master) => (
 
 export default function MasterCard({ master, onView, onOrder }) {
   return (
-    <article className="card shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
+    <article className="card shadow-sm hover:shadow-md transition flex flex-col overflow-hidden relative">
+      <FavoriteButton master={master} className="absolute top-3 right-3" />
       <div className="p-5 flex-1">
         <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0">
@@ -21,7 +23,7 @@ export default function MasterCard({ master, onView, onOrder }) {
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-9">
             <h3 className="font-bold text-slate-900 truncate">{master.name || 'Usta'}</h3>
             <p className="text-xs font-semibold text-blue-600 mt-0.5 line-clamp-1">{specializationLabel(master)}</p>
 

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle } from 'lucide-react';
+import { User, Phone, Wrench, Repeat, ShieldCheck, Tag, BookOpen, ChevronRight, PlayCircle, Heart } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SecuritySettings from '../components/SecuritySettings';
 import TelegramSettings from '../components/TelegramSettings';
+import SavedAddressesCard from '../components/SavedAddressesCard';
 import { ThemeSegmented } from '../components/ThemeSwitch';
 import { openOnboarding } from '../components/Onboarding';
 import Spinner from '../components/Spinner';
@@ -140,6 +141,8 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {user.role === 'client' && <SavedAddressesCard />}
+
       <TelegramSettings />
 
       <section className="card p-5 sm:p-6 space-y-4" aria-labelledby="appearance-title">
@@ -152,6 +155,7 @@ export default function ProfilePage() {
 
       <section className="card overflow-hidden" aria-label="Yordam">
         {[
+          ...(user.role === 'client' ? [{ to: '/favorites', icon: Heart, label: 'Sevimli ustalar' }] : []),
           { to: '/prices', icon: Tag, label: 'Taxminiy narxlar' },
           { to: '/rules', icon: BookOpen, label: 'Ishlash qoidalari' }
         ].map(({ to, icon: Icon, label }) => (

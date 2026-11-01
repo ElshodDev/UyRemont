@@ -18,6 +18,8 @@ import CallMasterPage from './pages/CallMasterPage';
 import MasterWorkPage from './pages/MasterWorkPage';
 import RulesPage from './pages/RulesPage';
 import PricesPage from './pages/PricesPage';
+import PublicMasterPage from './pages/PublicMasterPage';
+import FavoritesPage from './pages/FavoritesPage';
 import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="/master/work" element={<RequireAuth roles={['master']}><MasterWorkPage /></RequireAuth>} />
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/prices" element={<PricesPage />} />
+        <Route path="/u/:slug" element={<PublicMasterPage />} />
+        <Route path="/favorites" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
