@@ -13,6 +13,9 @@ import { navigationUrl } from '../lib/geo';
 import { formatPrice } from '../lib/format';
 import { formatSum } from '../lib/commission';
 import { useToast } from '../context/ToastContext';
+import { orderPlace, orderSpecName } from './OrderListItem';
+import { useSpecializations } from '../lib/useSpecializations';
+import { t } from '../i18n';
 
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -31,6 +34,7 @@ const formatDuration = (ms) => {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
 };
 
+// Yorliqlar o'zbekcha (kalit), ko'rsatishda t(stage.label)
 const STAGES = [
   { id: 'searching', label: 'Qidiruv', icon: Radar },
   { id: 'accepted', label: 'Yo\'lda', icon: Car },
@@ -44,18 +48,18 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
   const [loading, setLoading] = useState(false);
   return (
     <Modal onClose={loading ? () => {} : onClose} size="sm">
-      <h3 className="text-lg font-bold text-slate-900 mb-1">Bekor qilish sababi</h3>
+      <h3 className="text-lg font-bold text-slate-900 mb-1">{t('Bekor qilish sababi')}</h3>
       {warning && <p className="text-xs p-2.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 mb-3">{warning}</p>}
       <div className="space-y-2 mb-4">
         {reasons.map((r) => (
           <label key={r} className={`flex items-center gap-2 min-h-11 px-3 rounded-xl border cursor-pointer text-sm ${reason === r ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
             <input type="radio" className="accent-blue-600" checked={reason === r} onChange={() => setReason(r)} />
-            {r}
+            {t(r)}
           </label>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={onClose} disabled={loading} className="btn btn-secondary">Ortga</button>
+        <button onClick={onClose} disabled={loading} className="btn btn-secondary">{t('Ortga')}</button>
         <button
           onClick={async () => {
             setLoading(true);
@@ -68,7 +72,7 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
           disabled={loading}
           className="btn btn-danger font-bold"
         >
-          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Bekor qilish'}
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : t('Bekor qilish')}
         </button>
       </div>
     </Modal>
@@ -77,7 +81,10 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
 
 // "ish haqi 200 000 so'm + material 500 000 so'm" (material bo'lmasa bo'sh)
 const priceBreakdown = (order) => (Number(order.materials_price) > 0
-  ? `ish haqi ${formatSum(order.labor_price ?? Number(order.final_price) - Number(order.materials_price))} + material ${formatSum(order.materials_price)}`
+  ? t('ish haqi {labor} + material {materials}', {
+    labor: formatSum(order.labor_price ?? Number(order.final_price) - Number(order.materials_price)),
+    materials: formatSum(order.materials_price)
+  })
   : '');
 
 const toSum = (value) => Number(String(value || '').replace(/\s/g, '')) || 0;
@@ -95,8 +102,8 @@ function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
 
   return (
     <Modal onClose={loading ? () => {} : onClose} size="sm" labelledBy="complete-title">
-      <h3 id="complete-title" className="text-lg font-bold text-slate-900 mb-1">Ishni yakunlash</h3>
-      <p className="text-xs text-slate-500 mb-4">Mijoz bilan kelishilgan summani kiriting. Material uchun alohida maydon bor: undan komissiya olinmaydi.</p>
+      <h3 id="complete-title" className="text-lg font-bold text-slate-900 mb-1">{t('Ishni yakunlash')}</h3>
+      <p className="text-xs text-slate-500 mb-4">{t('Mijoz bilan kelishilgan summani kiriting. Material uchun alohida maydon bor: undan komissiya olinmaydi.')}</p>
       <form
         className="space-y-3"
         onSubmit={async (e) => {
@@ -110,7 +117,7 @@ function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
         }}
       >
         <div>
-          <label className="label" htmlFor="labor-price">Ish haqi (chiqish narxi bilan)</label>
+          <label className="label" htmlFor="labor-price">{t('Ish haqi (chiqish narxi bilan)')}</label>
           <input
             id="labor-price"
             inputMode="numeric"
@@ -122,7 +129,7 @@ function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
           />
         </div>
         <div>
-          <label className="label" htmlFor="materials-price">Material (siz sotib olgan qismlar)</label>
+          <label className="label" htmlFor="materials-price">{t('Material (siz sotib olgan qismlar)')}</label>
           <input
             id="materials-price"
             inputMode="numeric"
@@ -132,20 +139,20 @@ function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
             onChange={(e) => setMaterials(e.target.value.replace(/[^\d\s]/g, ''))}
             aria-describedby="materials-hint"
           />
-          <p id="materials-hint" className="hint mt-1">Mijoz summani ish haqi va material bo'yicha alohida ko'radi.</p>
+          <p id="materials-hint" className="hint mt-1">{t('Mijoz summani ish haqi va material bo\'yicha alohida ko\'radi.')}</p>
         </div>
         <dl className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-sm space-y-1">
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-500">Mijoz to'laydi</dt>
+            <dt className="text-slate-500">{t('Mijoz to\'laydi')}</dt>
             <dd className="font-black text-slate-900 tabular-nums">{formatSum(laborSum + materialsSum)}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-slate-500">Komissiya ({commissionPercent || 0}% ish haqidan)</dt>
+            <dt className="text-slate-500">{t('Komissiya ({percent}% ish haqidan)', { percent: commissionPercent || 0 })}</dt>
             <dd className="font-semibold text-slate-700 tabular-nums">{formatSum(commission)}</dd>
           </div>
         </dl>
         <button type="submit" disabled={loading || labor === ''} className="btn btn-success w-full min-h-12 font-bold">
-          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Yakunlash'}
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : t('Yakunlash')}
         </button>
       </form>
     </Modal>
@@ -158,8 +165,8 @@ function RateClientForm({ orderId, onDone }) {
   const [loading, setLoading] = useState(false);
   return (
     <div className="card-pad">
-      <h3 className="font-bold text-slate-900 text-sm">Mijozni baholang</h3>
-      <p className="text-xs text-slate-500 mb-2">Mijoz reytingi boshqa ustalarga taklifni qabul qilishda yordam beradi.</p>
+      <h3 className="font-bold text-slate-900 text-sm">{t('Mijozni baholang')}</h3>
+      <p className="text-xs text-slate-500 mb-2">{t('Mijoz reytingi boshqa ustalarga taklifni qabul qilishda yordam beradi.')}</p>
       <div className="flex items-center gap-3">
         <StarRating value={rating} onChange={setRating} size="w-6 h-6" />
         <button
@@ -167,7 +174,7 @@ function RateClientForm({ orderId, onDone }) {
             setLoading(true);
             try {
               await api(`/dispatch/orders/${orderId}/rate-client`, { method: 'POST', body: { rating } });
-              toast.success('Rahmat!');
+              toast.success(t('Rahmat!'));
               onDone();
             } catch (error) {
               toast.error(error.message);
@@ -178,7 +185,7 @@ function RateClientForm({ orderId, onDone }) {
           disabled={loading}
           className="btn bg-amber-500 text-white font-bold hover:bg-amber-600"
         >
-          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Baholash'}
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : t('Baholash')}
         </button>
       </div>
     </div>
@@ -192,6 +199,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
   const toast = useToast();
   const navigate = useNavigate();
   const now = useNow();
+  const { specializations } = useSpecializations();
   const [config, setConfig] = useState(null);
   const [masterPos, setMasterPos] = useState(
     order.master_lat ? { lat: order.master_lat, lng: order.master_lng } : null
@@ -292,57 +300,62 @@ export default function InstantOrderPanel({ order, user, reload }) {
     ? new Date(order.accepted_at).getTime() + config.free_cancel_min * 60000
     : null;
   const lateCancelWarning = isClient && freeCancelUntil && now > freeCancelUntil
-    ? `Bepul bekor qilish vaqti (${config.free_cancel_min} daqiqa) o'tdi. Bekor qilish "kech bekor qilish" sifatida qayd etiladi.`
+    ? t('Bepul bekor qilish vaqti ({min} daqiqa) o\'tdi. Bekor qilish "kech bekor qilish" sifatida qayd etiladi.', { min: config.free_cancel_min })
     : null;
 
   const header = {
     searching: {
       tone: 'from-amber-500 to-orange-500',
-      title: 'Usta qidirilmoqda...',
-      text: `Yaqin atrofdagi bo'sh ustalarga navbat bilan taklif yuborilmoqda${radius ? ` · radius ${radius} km` : ''}`,
-      extra: `Qidiruv: ${formatDuration(now - new Date(order.search_started_at || order.created_at))}`
+      title: t('Usta qidirilmoqda...'),
+      text: [
+        t('Yaqin atrofdagi bo\'sh ustalarga navbat bilan taklif yuborilmoqda'),
+        radius ? t('radius {km} km', { km: radius }) : null
+      ].filter(Boolean).join(' · '),
+      extra: t('Qidiruv: {time}', { time: formatDuration(now - new Date(order.search_started_at || order.created_at)) })
     },
     accepted: {
       tone: 'from-blue-600 to-indigo-600',
-      title: isMaster ? 'Mijoz manziliga yo\'l oling' : `${order.master_name || 'Usta'} yo'lda`,
-      text: eta ? `~${eta.min} daqiqa · ${eta.km} km qoldi` : 'Usta manzilingizga yo\'lga chiqdi',
+      title: isMaster ? t('Mijoz manziliga yo\'l oling') : t('{name} yo\'lda', { name: order.master_name || t('Usta') }),
+      text: eta ? t('~{min} daqiqa · {km} km qoldi', { min: eta.min, km: eta.km }) : t('Usta manzilingizga yo\'lga chiqdi'),
       extra: freeCancelUntil && isClient && now < freeCancelUntil
-        ? `Bepul bekor qilish: ${formatDuration(freeCancelUntil - now)}`
+        ? t('Bepul bekor qilish: {time}', { time: formatDuration(freeCancelUntil - now) })
         : null
     },
     arrived: {
       tone: 'from-violet-600 to-purple-600',
-      title: isMaster ? 'Siz manzildasiz' : 'Usta yetib keldi!',
-      text: isMaster ? 'Mijoz bilan ish narxini kelishib, ishni boshlang' : 'Usta bilan ish hajmi va narxini kelishib oling',
-      extra: order.arrived_at ? `Kutish: ${formatDuration(now - new Date(order.arrived_at))}` : null
+      title: isMaster ? t('Siz manzildasiz') : t('Usta yetib keldi!'),
+      text: isMaster ? t('Mijoz bilan ish narxini kelishib, ishni boshlang') : t('Usta bilan ish hajmi va narxini kelishib oling'),
+      extra: order.arrived_at ? t('Kutish: {time}', { time: formatDuration(now - new Date(order.arrived_at)) }) : null
     },
     in_progress: {
       tone: 'from-indigo-600 to-blue-700',
-      title: 'Ish bajarilmoqda',
-      text: 'Ish tugagach usta yakuniy summani kiritadi',
-      extra: order.started_at ? `Davomiyligi: ${formatDuration(now - new Date(order.started_at))}` : null
+      title: t('Ish bajarilmoqda'),
+      text: t('Ish tugagach usta yakuniy summani kiritadi'),
+      extra: order.started_at ? t('Davomiyligi: {time}', { time: formatDuration(now - new Date(order.started_at)) }) : null
     },
     completed: {
       tone: 'from-emerald-600 to-teal-600',
-      title: 'Ish yakunlandi',
-      text: `Yakuniy summa: ${formatPrice(order.final_price)}${priceBreakdown(order) ? ` (${priceBreakdown(order)})` : ''} — to'lov ustaga naqd yoki karta orqali`,
+      title: t('Ish yakunlandi'),
+      text: t('Yakuniy summa: {sum} — to\'lov ustaga naqd yoki karta orqali', {
+        sum: `${formatPrice(order.final_price)}${priceBreakdown(order) ? ` (${priceBreakdown(order)})` : ''}`
+      }),
       extra: order.started_at && order.completed_at
-        ? `Ish davomiyligi: ${formatDuration(new Date(order.completed_at) - new Date(order.started_at))}`
+        ? t('Ish davomiyligi: {time}', { time: formatDuration(new Date(order.completed_at) - new Date(order.started_at)) })
         : null
     },
     cancelled: {
       tone: 'from-slate-600 to-slate-700',
-      title: 'Chaqiruv bekor qilindi',
+      title: t('Chaqiruv bekor qilindi'),
       text: [
-        order.cancelled_by === 'client' ? 'Mijoz bekor qildi' : order.cancelled_by === 'admin' ? 'Administrator bekor qildi' : 'Bekor qilindi',
-        order.cancel_reason
+        order.cancelled_by === 'client' ? t('Mijoz bekor qildi') : order.cancelled_by === 'admin' ? t('Administrator bekor qildi') : t('Bekor qilindi'),
+        order.cancel_reason && t(order.cancel_reason)
       ].filter(Boolean).join(': '),
-      extra: order.late_cancel ? 'Kech bekor qilish qayd etildi' : null
+      extra: order.late_cancel ? t('Kech bekor qilish qayd etildi') : null
     },
     expired: {
       tone: 'from-slate-600 to-slate-700',
-      title: 'Bo\'sh usta topilmadi',
-      text: 'Hozircha yaqin atrofda bo\'sh usta yo\'q. Birozdan keyin qayta urinib ko\'ring yoki oddiy buyurtma qoldiring.',
+      title: t('Bo\'sh usta topilmadi'),
+      text: t('Hozircha yaqin atrofda bo\'sh usta yo\'q. Birozdan keyin qayta urinib ko\'ring yoki oddiy buyurtma qoldiring.'),
       extra: null
     }
   }[order.status];
@@ -350,7 +363,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
   const markers = [
     { id: 'client', lat: order.lat, lng: order.lng, type: 'client', label: order.address },
     ...(masterPos && ['accepted', 'arrived'].includes(order.status)
-      ? [{ id: 'master', ...masterPos, type: 'master', label: order.master_name || 'Usta' }]
+      ? [{ id: 'master', ...masterPos, type: 'master', label: order.master_name || t('Usta') }]
       : [])
   ];
 
@@ -361,7 +374,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
           <span className="absolute -right-6 -top-6 w-32 h-32 rounded-full border-4 border-white/30 animate-ping" />
         )}
         <p className="text-xs font-semibold uppercase tracking-wider text-white/70 mb-1">
-          ⚡ Tezkor chaqiruv · {order.specialization_icon} {order.specialization_name}
+          ⚡ {t('Tezkor chaqiruv')} · {order.specialization_icon} {orderSpecName(order, specializations)}
         </p>
         <h1 className="text-2xl font-extrabold">{header.title}</h1>
         <p className="text-sm text-white/85 mt-1">{header.text}</p>
@@ -381,7 +394,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
                     }`}>
                       <Icon className="w-4 h-4" />
                     </span>
-                    <span className="text-[10px] mt-1 font-semibold text-white/90">{stage.label}</span>
+                    <span className="text-[10px] mt-1 font-semibold text-white/90">{t(stage.label)}</span>
                   </div>
                   {i < STAGES.length - 1 && <div className={`flex-1 h-0.5 -mt-4 ${i < stageIndex ? 'bg-white' : 'bg-white/25'}`} />}
                 </React.Fragment>
@@ -403,17 +416,17 @@ export default function InstantOrderPanel({ order, user, reload }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
-            <div><span className="text-[11px] text-slate-400 block">Manzil</span><span className="font-semibold text-slate-800">{[order.district, order.address].filter(Boolean).join(', ')}</span></div>
+            <div><span className="text-[11px] text-slate-400 block">{t('Manzil')}</span><span className="font-semibold text-slate-800">{orderPlace(order)}</span></div>
           </div>
           <div className="flex items-start gap-2">
             <Wallet className="w-4 h-4 text-slate-400 mt-0.5" />
-            <div><span className="text-[11px] text-slate-400 block">Chiqish narxi</span><span className="font-semibold text-slate-800">{formatPrice(order.call_fee)}</span></div>
+            <div><span className="text-[11px] text-slate-400 block">{t('Chiqish narxi')}</span><span className="font-semibold text-slate-800">{formatPrice(order.call_fee)}</span></div>
           </div>
           <div className="flex items-start gap-2">
             <Clock className="w-4 h-4 text-slate-400 mt-0.5" />
             <div>
-              <span className="text-[11px] text-slate-400 block">{order.final_price ? 'Yakuniy summa' : 'Ish narxi'}</span>
-              <span className="font-semibold text-slate-800">{order.final_price ? formatPrice(order.final_price) : 'Joyida kelishiladi'}</span>
+              <span className="text-[11px] text-slate-400 block">{order.final_price ? t('Yakuniy summa') : t('Ish narxi')}</span>
+              <span className="font-semibold text-slate-800">{order.final_price ? formatPrice(order.final_price) : t('Joyida kelishiladi')}</span>
               {order.final_price && priceBreakdown(order) && <span className="block text-[11px] text-slate-500">{priceBreakdown(order)}</span>}
             </div>
           </div>
@@ -421,7 +434,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
         {order.description && <p className="text-sm text-slate-600 mt-3 pt-3 border-t border-slate-100">{order.description}</p>}
         {isMaster && order.client_rating && (
           <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-            Mijoz reytingi: <Star className="w-3.5 h-3.5 text-amber-500 fill-current" /> {Number(order.client_rating).toFixed(1)}
+            {t('Mijoz reytingi:')} <Star className="w-3.5 h-3.5 text-amber-500 fill-current" /> {Number(order.client_rating).toFixed(1)}
           </p>
         )}
 
@@ -433,37 +446,37 @@ export default function InstantOrderPanel({ order, user, reload }) {
               rel="noreferrer"
               className="btn btn-dark font-bold"
             >
-              <Navigation className="w-4 h-4" /> Navigator
+              <Navigation className="w-4 h-4" /> {t('Navigator')}
             </a>
           )}
           {isMaster && order.status === 'accepted' && (
             <button disabled={busy} onClick={() => setStatus('arrived')} className="btn btn-primary font-bold">
-              Yetib keldim
+              {t('Yetib keldim')}
             </button>
           )}
           {isMaster && order.status === 'arrived' && (
             <button disabled={busy} onClick={() => setStatus('in_progress')} className="btn btn-primary font-bold">
-              Ishni boshlash
+              {t('Ishni boshlash')}
             </button>
           )}
           {isMaster && order.status === 'in_progress' && (
             <button disabled={busy} onClick={() => setDialog('complete')} className="btn btn-success font-bold">
-              Ishni yakunlash
+              {t('Ishni yakunlash')}
             </button>
           )}
           {((isClient && ['searching', 'accepted', 'arrived'].includes(order.status))
             || (isMaster && ['accepted', 'arrived'].includes(order.status))) && config && (
             <button onClick={() => setDialog('cancel')} className="btn btn-secondary border-red-200 text-red-600 hover:bg-red-50 font-bold">
-              <XCircle className="w-4 h-4" /> Bekor qilish
+              <XCircle className="w-4 h-4" /> {t('Bekor qilish')}
             </button>
           )}
           {isClient && order.status === 'expired' && (
             <>
               <button disabled={busy} onClick={retry} className="btn btn-accent">
-                Qayta chaqirish
+                {t('Qayta chaqirish')}
               </button>
               <Link to="/" className="btn btn-secondary">
-                Katalogdan usta tanlash
+                {t('Katalogdan usta tanlash')}
               </Link>
             </>
           )}
@@ -478,7 +491,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
         <CancelDialog
           reasons={isMaster ? config.master_cancel_reasons : config.client_cancel_reasons}
           warning={isMaster
-            ? 'Qabul qilingan buyurtmadan voz kechish statistikangizda qayd etiladi. Buyurtma boshqa ustaga beriladi.'
+            ? t('Qabul qilingan buyurtmadan voz kechish statistikangizda qayd etiladi. Buyurtma boshqa ustaga beriladi.')
             : lateCancelWarning}
           onConfirm={cancel}
           onClose={() => setDialog(null)}

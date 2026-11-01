@@ -13,6 +13,7 @@ const { emitToUser, triggerDispatch } = require('../services/dispatch.service');
 const { notifyUser } = require('../services/telegram/notify');
 const { escapeHtml, urlButton, keyboard } = require('../services/telegram/client');
 const { assertUuid, requiredString } = require('../utils/validators');
+const { tr } = require('../i18n');
 
 const DOCUMENT_KINDS = ['passport', 'selfie', 'certificate'];
 const MAX_DOCUMENTS = 6;
@@ -170,8 +171,8 @@ const submitVerification = async (req, res, next) => {
         admins.rows.forEach((admin) => {
             notifyUser(
                 admin.id,
-                `🧾 <b>Yangi usta tekshiruvga yubordi</b>: ${escapeHtml(profile.name)}`,
-                keyboard([[urlButton('Tekshirish', '/admin?section=verifications')]])
+                (lang) => tr(lang, '🧾 <b>Yangi usta tekshiruvga yubordi</b>: {name}', { name: escapeHtml(profile.name) }),
+                (lang) => keyboard([[urlButton(tr(lang, 'Tekshirish'), '/admin?section=verifications')]])
             ).catch(() => {});
         });
 
@@ -252,8 +253,12 @@ const approveMaster = async (req, res, next) => {
         emitToUser(userId, 'verification_updated', { status: 'verified' });
         notifyUser(
             userId,
-            `✅ <b>Profilingiz tasdiqlandi!</b>\n${escapeHtml(master.name || '')}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.`,
-            keyboard([[urlButton('Ishga chiqish', '/master/work')]])
+            (lang) => tr(
+                lang,
+                '✅ <b>Profilingiz tasdiqlandi!</b>\n{name}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.',
+                { name: escapeHtml(master.name || '') }
+            ),
+            (lang) => keyboard([[urlButton(tr(lang, 'Ishga chiqish'), '/master/work')]])
         ).catch(() => {});
         triggerDispatch();
         res.status(200).json({ success: true, message: 'Usta tasdiqlandi' });
@@ -280,8 +285,12 @@ const rejectMaster = async (req, res, next) => {
         emitToUser(userId, 'verification_updated', { status: 'rejected', note });
         notifyUser(
             userId,
-            `⚠️ <b>Profilingiz hali tasdiqlanmadi</b>\nSabab: ${escapeHtml(note)}\n\nKamchilikni tuzatib, qayta yuboring.`,
-            keyboard([[urlButton('Profilni ochish', '/master/profile')]])
+            (lang) => tr(
+                lang,
+                '⚠️ <b>Profilingiz hali tasdiqlanmadi</b>\nSabab: {note}\n\nKamchilikni tuzatib, qayta yuboring.',
+                { note: escapeHtml(note) }
+            ),
+            (lang) => keyboard([[urlButton(tr(lang, 'Profilni ochish'), '/master/profile')]])
         ).catch(() => {});
         res.status(200).json({ success: true, message: 'Ustaga sabab yuborildi' });
     } catch (error) {

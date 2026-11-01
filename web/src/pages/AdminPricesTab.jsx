@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 
 const toForm = (item) => ({
   name: item.name,
+  name_ru: item.name_ru || '',
   price_min: String(item.price_min),
   price_max: item.price_max === null ? '' : String(item.price_max),
   unit: item.unit,
@@ -18,10 +19,11 @@ const toForm = (item) => ({
 });
 const toBody = (form) => ({
   ...form,
+  name_ru: form.name_ru.trim() || null,
   price_min: Number(form.price_min),
   price_max: form.price_max === '' ? null : Number(form.price_max)
 });
-const EMPTY = { name: '', price_min: '', price_max: '', unit: 'ish', is_active: true };
+const EMPTY = { name: '', name_ru: '', price_min: '', price_max: '', unit: 'ish', is_active: true };
 
 function PriceRow({ item, units, onSaved, onDelete }) {
   const toast = useToast();
@@ -45,7 +47,10 @@ function PriceRow({ item, units, onSaved, onDelete }) {
 
   return (
     <li className={`p-3 grid grid-cols-2 sm:grid-cols-12 gap-2 items-center ${form.is_active ? '' : 'opacity-60'}`}>
-      <input className="input col-span-2 sm:col-span-4" aria-label="Ish nomi" value={form.name} onChange={set('name')} />
+      <div className="col-span-2 sm:col-span-4 space-y-1">
+        <input className="input" aria-label="Ish nomi" value={form.name} onChange={set('name')} />
+        <input className="input min-h-9 py-1.5 text-xs" aria-label="Ruscha nomi" placeholder="Ruscha nomi (ixtiyoriy)" lang="ru" value={form.name_ru} onChange={set('name_ru')} />
+      </div>
       <input className="input sm:col-span-2" type="number" min="0" step="1000" aria-label="Eng kam narx" value={form.price_min} onChange={set('price_min')} />
       <input className="input sm:col-span-2" type="number" min="0" step="1000" aria-label="Eng ko'p narx" placeholder="—" value={form.price_max} onChange={set('price_max')} />
       <select className="input sm:col-span-2" aria-label="O'lchov birligi" value={form.unit} onChange={set('unit')}>
@@ -199,12 +204,15 @@ export default function AdminPricesTab() {
           </div>
           <ul className="divide-y divide-slate-100">
             {group.items.map((item) => (
-              <PriceRow key={`${item.id}-${item.price_min}-${item.price_max}-${item.is_active}-${item.name}-${item.unit}`} item={item} units={units} onSaved={load} onDelete={setToDelete} />
+              <PriceRow key={`${item.id}-${item.price_min}-${item.price_max}-${item.is_active}-${item.name}-${item.name_ru}-${item.unit}`} item={item} units={units} onSaved={load} onDelete={setToDelete} />
             ))}
             {group.items.length === 0 && <li className="p-6 text-center text-sm text-slate-400">Bu sohada hali narx yo'q</li>}
           </ul>
           <form onSubmit={add} className="p-3 border-t border-slate-100 bg-slate-50/60 grid grid-cols-2 sm:grid-cols-12 gap-2 items-center">
-            <input className="input col-span-2 sm:col-span-4 bg-white" required minLength={2} placeholder="Yangi ish nomi" aria-label="Yangi ish nomi" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+            <div className="col-span-2 sm:col-span-4 space-y-1">
+              <input className="input bg-white" required minLength={2} placeholder="Yangi ish nomi" aria-label="Yangi ish nomi" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+              <input className="input bg-white min-h-9 py-1.5 text-xs" placeholder="Ruscha nomi (ixtiyoriy)" aria-label="Yangi ishning ruscha nomi" lang="ru" value={draft.name_ru} onChange={(e) => setDraft({ ...draft, name_ru: e.target.value })} />
+            </div>
             <input className="input sm:col-span-2 bg-white" required type="number" min="0" step="1000" placeholder="Eng kam" aria-label="Eng kam narx" value={draft.price_min} onChange={(e) => setDraft({ ...draft, price_min: e.target.value })} />
             <input className="input sm:col-span-2 bg-white" type="number" min="0" step="1000" placeholder="Eng ko'p" aria-label="Eng ko'p narx" value={draft.price_max} onChange={(e) => setDraft({ ...draft, price_max: e.target.value })} />
             <select className="input sm:col-span-2 bg-white" aria-label="O'lchov birligi" value={draft.unit} onChange={(e) => setDraft({ ...draft, unit: e.target.value })}>

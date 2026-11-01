@@ -3,6 +3,8 @@ const { query } = require('../config/database');
 const { isUuid } = require('../utils/validators');
 const { resolveUserFromToken } = require('../middleware/auth');
 const { notifyChatMessage } = require('../services/telegram/notify');
+const { translate, languageFromHeader } = require('../i18n');
+const { joinLanguageRoom, socketLanguage } = require('./language');
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -26,36 +28,45 @@ const getChatAccess = async (orderId, user) => {
 const initChatSocket = (io) => {
     // Socket autentifikatsiya middleware
     io.use(async (socket, next) => {
+        // Ulanish xatosi tili: auth.lang yoki Accept-Language (foydalanuvchi hali noma'lum)
+        const fail = (message) => next(new Error(translate(
+            languageFromHeader(socket.handshake.auth?.lang || socket.handshake.headers?.['accept-language']),
+            message
+        )));
         try {
             const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
             if (!token) {
-                return next(new Error('Avtorizatsiya tokeni kerak'));
+                return fail('Avtorizatsiya tokeni kerak');
             }
 
             // HTTP so'rovlardagi kabi: token versiyasi, bloklash va o'chirilgan hisob tekshiriladi
             const { user } = await resolveUserFromToken(token);
-            if (!user) return next(new Error('Autentifikatsiya xatosi'));
+            if (!user) return fail('Autentifikatsiya xatosi');
 
             socket.user = user;
             socket.data.userId = user.id;
             next();
         } catch (err) {
-            next(new Error('Autentifikatsiya xatosi'));
+            fail('Autentifikatsiya xatosi');
         }
     });
 
     io.on('connection', (socket) => {
         const currentUser = socket.user;
+        // Xatolar ulanishning joriy tilida (til almashtirilsa xona ham almashadi)
+        const chatError = (message) => socket.emit('chat_error', { message: translate(socketLanguage(socket), message) });
 
         // Shaxsiy xona: takliflar, buyurtma holati va usta joylashuvi shu yerga yuboriladi
         socket.join(`user_${currentUser.id}`);
+        // Til xonasi: matnli hodisalar foydalanuvchi tilida keladi (socket/language.js)
+        joinLanguageRoom(socket, currentUser.language);
 
         // Buyurtma bo'yicha chat xonasiga kirish
         socket.on('join_order_chat', async ({ order_id } = {}) => {
             try {
                 const access = await getChatAccess(order_id, currentUser);
                 if (!access.allowed) {
-                    return socket.emit('chat_error', { message: access.message });
+                    return chatError(access.message);
                 }
 
                 const room = `order_${order_id}`;
@@ -80,7 +91,7 @@ const initChatSocket = (io) => {
                 socket.emit('chat_history', { order_id, messages: messagesRes.rows });
             } catch (err) {
                 console.error('Chat xatosi:', err.message);
-                socket.emit('chat_error', { message: 'Chatga ulanishda xatolik' });
+                chatError('Chatga ulanishda xatolik');
             }
         });
 
@@ -93,13 +104,13 @@ const initChatSocket = (io) => {
             try {
                 if (typeof text !== 'string' || !text.trim()) return;
                 if (text.length > MAX_MESSAGE_LENGTH) {
-                    return socket.emit('chat_error', { message: `Xabar ${MAX_MESSAGE_LENGTH} belgidan oshmasligi kerak` });
+                    return chatError(`Xabar ${MAX_MESSAGE_LENGTH} belgidan oshmasligi kerak`);
                 }
 
                 // Har bir xabarda ishtirokchilikni qayta tekshirish
                 const access = await getChatAccess(order_id, currentUser);
                 if (!access.allowed) {
-                    return socket.emit('chat_error', { message: access.message });
+                    return chatError(access.message);
                 }
 
                 const insertRes = await query(
@@ -120,7 +131,7 @@ const initChatSocket = (io) => {
                 notifyChatMessage({ io, orderId: order_id, senderId: currentUser.id, senderName: currentUser.name, text: message.text });
             } catch (err) {
                 console.error('Xabar yuborishda xatolik:', err.message);
-                socket.emit('chat_error', { message: 'Xabarni yuborib bo\'lmadi' });
+                chatError('Xabarni yuborib bo\'lmadi');
             }
         });
     });

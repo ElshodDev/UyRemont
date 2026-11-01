@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PageLoader } from './Spinner';
 import EmptyState from './EmptyState';
+import { t } from '../i18n';
 
 /**
  * Sahifani faqat tizimga kirgan (va kerak bo'lsa ma'lum roldagi) foydalanuvchiga ko'rsatadi
@@ -20,14 +21,14 @@ export default function RequireAuth({ roles, children }) {
       <div className="max-w-xl mx-auto px-4 py-16 w-full">
         <EmptyState
           icon="🔐"
-          title="Tizimga kiring"
-          description="Bu sahifani ko'rish uchun telefon raqamingiz orqali tizimga kiring."
+          title={t('Tizimga kiring')}
+          description={t('Bu sahifani ko\'rish uchun telefon raqamingiz orqali tizimga kiring.')}
           action={(
             <button
               onClick={() => requireAuth()}
               className="btn btn-primary px-4"
             >
-              Kirish
+              {t('Kirish')}
             </button>
           )}
         />
@@ -38,7 +39,7 @@ export default function RequireAuth({ roles, children }) {
   if (roles && !roles.includes(user.role)) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 w-full">
-        <EmptyState icon="⛔" title="Ruxsat yo'q" description="Bu sahifa sizning hisobingiz uchun mavjud emas." />
+        <EmptyState icon="⛔" title={t('Ruxsat yo\'q')} description={t('Bu sahifa sizning hisobingiz uchun mavjud emas.')} />
       </div>
     );
   }

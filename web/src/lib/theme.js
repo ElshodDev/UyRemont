@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'usta24_theme';
+// Yorliqlar o'zbekcha: ko'rsatishda t(label) qilinadi (ThemeSwitch)
 export const THEME_OPTIONS = [
   { id: 'system', label: 'Telefon bo\'yicha' },
   { id: 'light', label: 'Yorug\'' },

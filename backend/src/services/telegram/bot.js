@@ -10,34 +10,55 @@ const { issueOtp } = require('../otp.service');
 const offersService = require('../offers.service');
 const links = require('./links');
 const { syncOfferMessage } = require('./notify');
+const { resolveLanguage } = require('../language.service');
+const {
+    tr, translate, normalizeLanguage, languageFromTelegram,
+} = require('../../i18n');
 const {
     isTelegramConfigured, callTelegram, sendMessage, escapeHtml, urlButton, keyboard,
     webhookSecret, maskPhone, setBotUsername, getBotUsername,
 } = require('./client');
 
-const CONTACT_KEYBOARD = {
-    keyboard: [[{ text: '📱 Raqamni yuborish', request_contact: true }]],
-    resize_keyboard: true,
-    one_time_keyboard: true,
-};
 const REMOVE_KEYBOARD = { remove_keyboard: true };
 const POLL_TIMEOUT_SEC = 25;
 
 let polling = false;
 let pollController = null;
 
-const siteKeyboard = () => keyboard([[urlButton('🌐 Usta24 ni ochish', '/')]]);
+const contactKeyboard = (lang) => ({
+    keyboard: [[{ text: tr(lang, '📱 Raqamni yuborish'), request_contact: true }]],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+});
+
+const siteKeyboard = (lang) => keyboard([[urlButton(tr(lang, '🌐 Usta24 ni ochish'), '/')]]);
+
+// Bot buyruqlari menyusi (o'zbekcha - sukut bo'yicha, ruscha - Telegram ilovasi ruscha bo'lganlarga)
+const botCommands = (lang) => [
+    { command: 'start', description: tr(lang, 'Boshlash va xabarlarni yoqish') },
+    { command: 'stop', description: tr(lang, 'Xabarlarni o\'chirish') },
+];
+
+// Yozgan odamning tili: ulangan hisobi (yoki shu raqamli hisob) tili, bo'lmasa Telegram ilovasi tili
+const languageOf = (from, extra = {}) => resolveLanguage({
+    telegramUserId: from?.id, telegramLanguage: from?.language_code, ...extra,
+});
 
 /**
  * Kirish kodini Telegram'ga yuborish. Yetib bormasa kod o'chiriladi (60 soniyalik oraliqni band qilmasligi uchun).
+ * @param {string} [lang] - berilmasa shu raqamli foydalanuvchining tili
  */
-const sendLoginCode = async (chatId, phone) => {
+const sendLoginCode = async (chatId, phone, lang) => {
+    const language = lang || await resolveLanguage({ phone });
     const { code, expiresIn } = await issueOtp(phone);
     try {
         await sendMessage(
             chatId,
-            `🔐 <b>Usta24</b> kirish kodi: <code>${code}</code>\n\n`
-            + `Kod ${Math.round(expiresIn / 60)} daqiqa amal qiladi. Uni hech kimga bermang — Usta24 xodimlari kodni hech qachon so'ramaydi.`,
+            tr(
+                language,
+                '🔐 <b>Usta24</b> kirish kodi: <code>{code}</code>\n\nKod {minutes} daqiqa amal qiladi. Uni hech kimga bermang — Usta24 xodimlari kodni hech qachon so\'ramaydi.',
+                { code, minutes: Math.round(expiresIn / 60) }
+            ),
             { replyMarkup: REMOVE_KEYBOARD }
         );
     } catch (error) {
@@ -49,13 +70,17 @@ const sendLoginCode = async (chatId, phone) => {
 /**
  * Kod yuborish; 60 soniyalik oraliq yoki kunlik limit bo'lsa foydalanuvchiga tushuntiriladi
  */
-const deliverLoginCode = async (chatId, phone) => {
+const deliverLoginCode = async (chatId, phone, lang) => {
     try {
-        await sendLoginCode(chatId, phone);
+        await sendLoginCode(chatId, phone, lang);
         return true;
     } catch (error) {
         if (error.statusCode === 429) {
-            await sendMessage(chatId, `⏳ ${escapeHtml(error.message)}. Keyin saytda «Qayta yuborish» ni bosing.`, { replyMarkup: REMOVE_KEYBOARD });
+            await sendMessage(
+                chatId,
+                tr(lang, '⏳ {error}. Keyin saytda «Qayta yuborish» ni bosing.', { error: escapeHtml(translate(lang, error.message)) }),
+                { replyMarkup: REMOVE_KEYBOARD }
+            );
             return false;
         }
         throw error;
@@ -69,36 +94,36 @@ const profileFrom = (from) => ({
     lastName: from.last_name,
 });
 
+const linkedText = (lang) => tr(lang, '✅ Telegram hisobingizga ulandi. Buyurtmalar haqidagi xabarlar shu yerga keladi.');
+
 // ---------- /start ----------
 
 const sendWelcome = async (chatId, from) => {
+    const lang = await languageOf(from);
     const link = await links.getLinkByTelegramId(from.id);
     if (link) {
         await links.setNotifications(from.id, true);
         return sendMessage(
             chatId,
-            `👋 Salom, ${escapeHtml(from.first_name || '')}!\n\nUsta24 boti ulangan: <b>${maskPhone(link.phone)}</b>\n`
-            + '• buyurtmalar va takliflar haqidagi xabarlar shu yerga keladi;\n'
-            + '• saytga kirishda «Telegram orqali» ni tanlasangiz, kod shu yerga keladi.\n\n'
-            + 'Xabarlarni o\'chirish: /stop',
-            { replyMarkup: siteKeyboard() }
+            tr(
+                lang,
+                '👋 Salom, {name}!\n\nUsta24 boti ulangan: <b>{phone}</b>\n• buyurtmalar va takliflar haqidagi xabarlar shu yerga keladi;\n• saytga kirishda «Telegram orqali» ni tanlasangiz, kod shu yerga keladi.\n\nXabarlarni o\'chirish: /stop',
+                { name: escapeHtml(from.first_name || ''), phone: maskPhone(link.phone) }
+            ),
+            { replyMarkup: siteKeyboard(lang) }
         );
     }
     return sendMessage(
         chatId,
-        '👋 <b>Usta24</b> botiga xush kelibsiz!\n\n'
-        + 'Bu yerda:\n• saytga kirish kodini olasiz (SMS shart emas);\n'
-        + '• usta bo\'lsangiz, yangi buyurtmalarni ilova yopiq bo\'lsa ham olasiz va shu yerda qabul qilasiz;\n'
-        + '• mijoz bo\'lsangiz, usta yo\'lga chiqqani va yetib kelgani haqida xabar olasiz.\n\n'
-        + 'Boshlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.',
-        { replyMarkup: CONTACT_KEYBOARD }
+        tr(lang, '👋 <b>Usta24</b> botiga xush kelibsiz!\n\nBu yerda:\n• saytga kirish kodini olasiz (SMS shart emas);\n• usta bo\'lsangiz, yangi buyurtmalarni ilova yopiq bo\'lsa ham olasiz va shu yerda qabul qilasiz;\n• mijoz bo\'lsangiz, usta yo\'lga chiqqani va yetib kelgani haqida xabar olasiz.\n\nBoshlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.'),
+        { replyMarkup: contactKeyboard(lang) }
     );
 };
 
-const sendExpired = (chatId) => sendMessage(
+const sendExpired = (chatId, lang) => sendMessage(
     chatId,
-    '⌛ Bu havola eskirgan yoki allaqachon ishlatilgan. Saytda «Telegram orqali» tugmasini qaytadan bosing.',
-    { replyMarkup: siteKeyboard() }
+    tr(lang, '⌛ Bu havola eskirgan yoki allaqachon ishlatilgan. Saytda «Telegram orqali» tugmasini qaytadan bosing.'),
+    { replyMarkup: siteKeyboard(lang) }
 );
 
 const handleStart = async (message, payload) => {
@@ -106,39 +131,49 @@ const handleStart = async (message, payload) => {
     if (!payload) return sendWelcome(chat.id, from);
 
     const request = await links.findAuthRequest(payload);
-    if (!request || request.expired || request.status !== 'pending') return sendExpired(chat.id);
+    if (!request || request.expired || request.status !== 'pending') return sendExpired(chat.id, await languageOf(from));
 
     const link = await links.getLinkByTelegramId(from.id);
 
     if (request.purpose === 'login') {
+        // Kirish: shu raqamli hisob bo'lsa uning tili, yangi foydalanuvchi bo'lsa Telegram ilovasi tili
+        const lang = await resolveLanguage({ phone: request.phone, telegramLanguage: from.language_code });
         // Shu Telegram hisobi bu raqam bilan avval tasdiqlangan: kod darhol yuboriladi
         if (link && link.phone === request.phone) {
             await links.saveLink({ ...profileFrom(from), chatId: chat.id, phone: link.phone });
             await links.updateAuthRequest(request.token_hash, { status: 'sent', telegramUserId: from.id });
-            return deliverLoginCode(chat.id, request.phone);
+            return deliverLoginCode(chat.id, request.phone, lang);
         }
         await links.updateAuthRequest(request.token_hash, { telegramUserId: from.id });
         return sendMessage(
             chat.id,
-            `👋 <b>Usta24</b> ga kirish\n\nSaytda kiritilgan raqam: <b>${maskPhone(request.phone)}</b>\n`
-            + 'Bu sizning raqamingiz ekanini tasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing. Kod shu yerga keladi.',
-            { replyMarkup: CONTACT_KEYBOARD }
+            tr(
+                lang,
+                '👋 <b>Usta24</b> ga kirish\n\nSaytda kiritilgan raqam: <b>{phone}</b>\nBu sizning raqamingiz ekanini tasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing. Kod shu yerga keladi.',
+                { phone: maskPhone(request.phone) }
+            ),
+            { replyMarkup: contactKeyboard(lang) }
         );
     }
 
     // Profil sahifasidan Telegram'ni ulash
-    const user = (await query('SELECT id, phone FROM users WHERE id = $1 AND deleted_at IS NULL', [request.user_id])).rows[0];
-    if (!user) return sendExpired(chat.id);
+    const user = (await query('SELECT id, phone, language FROM users WHERE id = $1 AND deleted_at IS NULL', [request.user_id])).rows[0];
+    if (!user) return sendExpired(chat.id, await languageOf(from));
+    const lang = normalizeLanguage(user.language);
     if (link && link.phone === user.phone) {
         await links.saveLink({ ...profileFrom(from), chatId: chat.id, phone: user.phone });
         await links.updateAuthRequest(request.token_hash, { status: 'linked', telegramUserId: from.id });
-        return sendMessage(chat.id, '✅ Telegram hisobingizga ulandi. Buyurtmalar haqidagi xabarlar shu yerga keladi.', { replyMarkup: REMOVE_KEYBOARD });
+        return sendMessage(chat.id, linkedText(lang), { replyMarkup: REMOVE_KEYBOARD });
     }
     await links.updateAuthRequest(request.token_hash, { telegramUserId: from.id });
     return sendMessage(
         chat.id,
-        `🔗 Usta24 hisobini ulash: <b>${maskPhone(user.phone)}</b>\nTasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.`,
-        { replyMarkup: CONTACT_KEYBOARD }
+        tr(
+            lang,
+            '🔗 Usta24 hisobini ulash: <b>{phone}</b>\nTasdiqlash uchun pastdagi «📱 Raqamni yuborish» tugmasini bosing.',
+            { phone: maskPhone(user.phone) }
+        ),
+        { replyMarkup: contactKeyboard(lang) }
     );
 };
 
@@ -147,16 +182,26 @@ const handleStart = async (message, payload) => {
 const handleContact = async (message) => {
     const { contact, from, chat } = message;
     // Faqat o'z raqami: boshqa odamning kontaktini yuborish orqali uning hisobiga kirib bo'lmaydi
-    if (!contact || contact.user_id !== from.id) {
-        return sendMessage(chat.id, '⚠️ Faqat o\'zingizning raqamingizni yuboring: pastdagi «📱 Raqamni yuborish» tugmasini bosing.', { replyMarkup: CONTACT_KEYBOARD });
+    const ownContact = Boolean(contact) && contact.user_id === from.id;
+    const raw = ownContact ? String(contact.phone_number || '') : '';
+    const phone = ownContact ? normalizePhone(raw.startsWith('+') ? raw : `+${raw}`) : null;
+    const request = await links.findPendingRequestForTelegramUser(from.id);
+    const lang = await languageOf(from, {
+        userId: request?.purpose === 'link' ? request.user_id : null,
+        phone: request?.purpose === 'login' ? request.phone : phone,
+    });
+
+    if (!ownContact) {
+        return sendMessage(
+            chat.id,
+            tr(lang, '⚠️ Faqat o\'zingizning raqamingizni yuboring: pastdagi «📱 Raqamni yuborish» tugmasini bosing.'),
+            { replyMarkup: contactKeyboard(lang) }
+        );
     }
-    const raw = String(contact.phone_number || '');
-    const phone = normalizePhone(raw.startsWith('+') ? raw : `+${raw}`);
     if (!phone) {
-        return sendMessage(chat.id, 'Hozircha faqat O\'zbekiston (+998) raqamlari qo\'llab-quvvatlanadi.', { replyMarkup: REMOVE_KEYBOARD });
+        return sendMessage(chat.id, tr(lang, 'Hozircha faqat O\'zbekiston (+998) raqamlari qo\'llab-quvvatlanadi.'), { replyMarkup: REMOVE_KEYBOARD });
     }
 
-    const request = await links.findPendingRequestForTelegramUser(from.id);
     const expected = request?.purpose === 'link'
         ? (await query('SELECT phone FROM users WHERE id = $1 AND deleted_at IS NULL', [request.user_id])).rows[0]?.phone
         : request?.phone;
@@ -165,8 +210,11 @@ const handleContact = async (message) => {
         await links.updateAuthRequest(request.token_hash, { status: 'mismatch' });
         return sendMessage(
             chat.id,
-            `❌ Telegram raqamingiz (${maskPhone(phone)}) saytdagi raqamga (${maskPhone(expected)}) mos kelmadi.\n`
-            + 'Saytda Telegram\'dagi raqamingizni kiriting yoki SMS orqali kiring.',
+            tr(
+                lang,
+                '❌ Telegram raqamingiz ({phone}) saytdagi raqamga ({expected}) mos kelmadi.\nSaytda Telegram\'dagi raqamingizni kiriting yoki SMS orqali kiring.',
+                { phone: maskPhone(phone), expected: maskPhone(expected) }
+            ),
             { replyMarkup: REMOVE_KEYBOARD }
         );
     }
@@ -175,20 +223,23 @@ const handleContact = async (message) => {
 
     if (request?.purpose === 'login') {
         await links.updateAuthRequest(request.token_hash, { status: 'sent' });
-        return deliverLoginCode(chat.id, phone);
+        return deliverLoginCode(chat.id, phone, lang);
     }
     if (request?.purpose === 'link') {
         await links.updateAuthRequest(request.token_hash, { status: 'linked' });
-        return sendMessage(chat.id, '✅ Telegram hisobingizga ulandi. Buyurtmalar haqidagi xabarlar shu yerga keladi.', { replyMarkup: REMOVE_KEYBOARD });
+        return sendMessage(chat.id, linkedText(lang), { replyMarkup: REMOVE_KEYBOARD });
     }
     await sendMessage(
         chat.id,
-        `✅ Raqamingiz ulandi: <b>${maskPhone(phone)}</b>\n\nEndi saytga kirishda «Telegram orqali» ni tanlang — kod shu yerga keladi. `
-        + 'Buyurtmalar haqidagi xabarlar ham shu yerga keladi.',
+        tr(
+            lang,
+            '✅ Raqamingiz ulandi: <b>{phone}</b>\n\nEndi saytga kirishda «Telegram orqali» ni tanlang — kod shu yerga keladi. Buyurtmalar haqidagi xabarlar ham shu yerga keladi.',
+            { phone: maskPhone(phone) }
+        ),
         { replyMarkup: REMOVE_KEYBOARD }
     );
-    const site = siteKeyboard();
-    return site ? sendMessage(chat.id, 'Saytni ochish:', { replyMarkup: site }) : null;
+    const site = siteKeyboard(lang);
+    return site ? sendMessage(chat.id, tr(lang, 'Saytni ochish:'), { replyMarkup: site }) : null;
 };
 
 // ---------- Taklif tugmalari ----------
@@ -205,22 +256,23 @@ const handleCallback = async (callback) => {
 
     const link = await links.getLinkByTelegramId(callback.from.id);
     const user = link?.user_id
-        ? (await query('SELECT id, role, is_active, deleted_at FROM users WHERE id = $1', [link.user_id])).rows[0]
+        ? (await query('SELECT id, role, is_active, deleted_at, language FROM users WHERE id = $1', [link.user_id])).rows[0]
         : null;
+    const lang = user ? normalizeLanguage(user.language) : languageFromTelegram(callback.from.language_code);
     if (!user || user.role !== 'master' || !user.is_active || user.deleted_at) {
-        return answerCallback(callback.id, 'Usta hisobi topilmadi. Saytda kiring.', true);
+        return answerCallback(callback.id, tr(lang, 'Usta hisobi topilmadi. Saytda kiring.'), true);
     }
 
     try {
         if (action === 'a') {
             await offersService.acceptOffer(offerId, user.id);
-            return answerCallback(callback.id, '✅ Qabul qilindi. Mijoz manziliga yo\'l oling');
+            return answerCallback(callback.id, tr(lang, '✅ Qabul qilindi. Mijoz manziliga yo\'l oling'));
         }
         await offersService.declineOffer(offerId, user.id);
-        return answerCallback(callback.id, 'Rad etildi');
+        return answerCallback(callback.id, tr(lang, 'Rad etildi'));
     } catch (error) {
         syncOfferMessage(offerId);
-        return answerCallback(callback.id, error.expose ? error.message : 'Xatolik yuz berdi', true);
+        return answerCallback(callback.id, error.expose ? translate(lang, error.message) : tr(lang, 'Xatolik yuz berdi'), true);
     }
 };
 
@@ -239,7 +291,8 @@ const handleUpdate = async (update) => {
         if (start) return await handleStart(message, start[1]);
         if (/^\/stop(?:@\w+)?$/.test(text)) {
             await links.setNotifications(message.from.id, false);
-            return await sendMessage(message.chat.id, '🔕 Xabarlar o\'chirildi. Kirish kodlari baribir keladi.\nQayta yoqish: /start');
+            const lang = await languageOf(message.from);
+            return await sendMessage(message.chat.id, tr(lang, '🔕 Xabarlar o\'chirildi. Kirish kodlari baribir keladi.\nQayta yoqish: /start'));
         }
         return await sendWelcome(message.chat.id, message.from);
     } catch (error) {
@@ -289,12 +342,8 @@ const startTelegramBot = async () => {
     try {
         const me = await callTelegram('getMe');
         setBotUsername(me.username);
-        await callTelegram('setMyCommands', {
-            commands: [
-                { command: 'start', description: 'Boshlash va xabarlarni yoqish' },
-                { command: 'stop', description: 'Xabarlarni o\'chirish' },
-            ],
-        }).catch(() => {});
+        await callTelegram('setMyCommands', { commands: botCommands('uz') }).catch(() => {});
+        await callTelegram('setMyCommands', { commands: botCommands('ru'), language_code: 'ru' }).catch(() => {});
 
         const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
         if (webhookUrl) {

@@ -10,6 +10,7 @@ import { api, assetUrl } from '../lib/api';
 import { formatDate, formatPhone, formatPrice, formatRating } from '../lib/format';
 import { shareLink } from '../lib/share';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 export const masterPublicUrl = (master) => (master?.public_slug ? `${window.location.origin}/u/${master.public_slug}` : null);
 
@@ -22,8 +23,8 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
 
   const share = async () => {
     const result = await shareLink({ url: shareUrl, title: master.name, text: `${master.name} — ${specializationLabel(master)} (Usta24)` });
-    if (result === 'copied') toast.success('Havola nusxalandi');
-    if (result === 'failed') toast.error('Havolani nusxalab bo\'lmadi');
+    if (result === 'copied') toast.success(t('Havola nusxalandi'));
+    if (result === 'failed') toast.error(t('Havolani nusxalab bo\'lmadi'));
   };
 
   return (
@@ -33,7 +34,7 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
         <div className="min-w-0 flex-1">
           <h3 id={titleId} className="text-xl font-bold text-slate-900 flex items-center gap-1.5">
             <span className="truncate">{master.name}</span>
-            {master.is_verified && <ShieldCheck className="w-5 h-5 text-blue-600 flex-shrink-0" aria-label="Tasdiqlangan" />}
+            {master.is_verified && <ShieldCheck className="w-5 h-5 text-blue-600 flex-shrink-0" aria-label={t('Tasdiqlangan')} />}
           </h3>
           <p className="text-sm font-semibold text-blue-600">{specializationLabel(master)}</p>
           <div className="flex items-center gap-2 mt-1">
@@ -41,7 +42,7 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
               <Star className="w-4 h-4 fill-current mr-1" />
               {formatRating(master.rating)}
             </div>
-            <span className="text-xs text-slate-400">({master.reviews_count} ta baholash)</span>
+            <span className="text-xs text-slate-400">({t('{n} ta baholash', { n: master.reviews_count || 0 })})</span>
           </div>
         </div>
       </div>
@@ -50,25 +51,25 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
         <FavoriteButton master={master} variant="full" className="flex-1" />
         {shareUrl && (
           <button type="button" onClick={share} className="btn btn-secondary flex-1">
-            <Share2 className="w-4 h-4" /> Ulashish
+            <Share2 className="w-4 h-4" /> {t('Ulashish')}
           </button>
         )}
       </div>
 
       <div className="space-y-4 text-sm">
         <div>
-          <h4 className="font-semibold text-slate-900 mb-1">Usta haqida:</h4>
+          <h4 className="font-semibold text-slate-900 mb-1">{t('Usta haqida:')}</h4>
           <p className="text-slate-600 text-xs leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-            {master.bio || 'Ma\'lumot qo\'shilmagan.'}
+            {master.bio || t('Ma\'lumot qo\'shilmagan.')}
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           {[
-            { icon: Briefcase, label: 'Tajriba', value: `${master.experience_years || 0} yil` },
-            { icon: MapPin, label: 'Tuman', value: master.district || '—' },
-            { icon: CheckCircle, label: 'Bajarilgan', value: `${master.completed_orders} ta` },
-            { icon: Star, label: 'Narx', value: formatPrice(master.hourly_rate) }
+            { icon: Briefcase, label: t('Tajriba'), value: t('{n} yil', { n: master.experience_years || 0 }) },
+            { icon: MapPin, label: t('Tuman'), value: master.district ? t(master.district) : '—' },
+            { icon: CheckCircle, label: t('Bajarilgan'), value: t('{n} ta', { n: master.completed_orders || 0 }) },
+            { icon: Star, label: t('Narx'), value: formatPrice(master.hourly_rate) }
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-400 flex items-center gap-1"><Icon className="w-3 h-3" /> {label}</span>
@@ -79,13 +80,13 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
 
         {master.portfolio.length > 0 && (
           <div>
-            <h4 className="font-semibold text-slate-900 mb-2">Bajarilgan ishlar (Portfolio):</h4>
+            <h4 className="font-semibold text-slate-900 mb-2">{t('Bajarilgan ishlar (Portfolio):')}</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {master.portfolio.map((item) => (
                 <a key={item.id} href={assetUrl(item.image_url)} target="_blank" rel="noreferrer" className="group">
                   <img
                     src={assetUrl(item.image_url)}
-                    alt={item.description || 'ish namunasi'}
+                    alt={item.description || t('ish namunasi')}
                     loading="lazy"
                     className="rounded-xl h-28 w-full object-cover border border-slate-200 group-hover:opacity-90"
                   />
@@ -97,15 +98,15 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
         )}
 
         <div>
-          <h4 className="font-semibold text-slate-900 mb-2">Mijozlar sharhlari:</h4>
+          <h4 className="font-semibold text-slate-900 mb-2">{t('Mijozlar sharhlari:')}</h4>
           {master.recent_reviews.length === 0 ? (
-            <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl">Hozircha sharhlar yo'q.</p>
+            <p className="text-xs text-slate-400 bg-slate-50 p-3 rounded-xl">{t('Hozircha sharhlar yo\'q.')}</p>
           ) : (
             <div className="space-y-2">
               {master.recent_reviews.map((review) => (
                 <div key={review.id} className="p-3 rounded-xl border border-slate-100 bg-slate-50/60">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-800">{review.client_name || 'Mijoz'}</span>
+                    <span className="text-xs font-bold text-slate-800">{review.client_name || t('Mijoz')}</span>
                     <StarRating value={review.rating} size="w-3.5 h-3.5" />
                   </div>
                   {review.comment && <p className="text-xs text-slate-600 mt-1">{review.comment}</p>}
@@ -118,12 +119,12 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
 
         <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-between gap-3">
           <div>
-            <span className="text-xs text-blue-700 font-semibold block">To'g'ridan-to'g'ri raqam:</span>
+            <span className="text-xs text-blue-700 font-semibold block">{t('To\'g\'ridan-to\'g\'ri raqam:')}</span>
             <span className="text-base font-extrabold text-blue-900">{formatPhone(master.phone)}</span>
           </div>
           <a href={`tel:${master.phone}`} className="btn btn-sm btn-primary min-h-11">
             <Phone className="w-3.5 h-3.5" />
-            Qo'ng'iroq
+            {t('Qo\'ng\'iroq')}
           </a>
         </div>
       </div>
@@ -133,7 +134,7 @@ export function MasterProfileView({ master, onOrder, titleId = 'master-profile-t
           onClick={() => onOrder(master)}
           className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20"
         >
-          Ushbu ustaga buyurtma berish
+          {t('Ushbu ustaga buyurtma berish')}
         </button>
       </div>
     </>
@@ -157,7 +158,7 @@ export default function MasterProfileModal({ masterId, onClose, onOrder }) {
   return (
     <Modal onClose={onClose} size="lg" labelledBy="master-profile-title">
       {!master && !error && (
-        <div className="py-16 flex justify-center"><Spinner className="w-6 h-6 text-blue-600" label="Yuklanmoqda..." /></div>
+        <div className="py-16 flex justify-center"><Spinner className="w-6 h-6 text-blue-600" label={t('Yuklanmoqda...')} /></div>
       )}
       {error && <p className="py-10 text-center text-sm text-red-600">{error}</p>}
       {master && <MasterProfileView master={master} onOrder={onOrder} />}

@@ -51,7 +51,8 @@ const startLogin = async (req, res, next) => {
         const link = await links.getLinkByPhone(phone);
         if (link) {
             try {
-                await sendLoginCode(link.chat_id, phone);
+                // Kod xabari saytning joriy tilida (Accept-Language), bo'lmasa hisob tilida
+                await sendLoginCode(link.chat_id, phone, req.headerLanguage);
                 return res.status(200).json({ success: true, data: { status: 'sent', channel: 'telegram', phone } });
             } catch (error) {
                 // 429 (oraliq/limit) foydalanuvchiga qaytariladi; bot bloklangan bo'lsa havola orqali qayta ulanadi

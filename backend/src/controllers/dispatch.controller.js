@@ -27,6 +27,7 @@ const { parsePhotoIds, attachPhotos } = require('./photos.controller');
 const offersService = require('../services/offers.service');
 const { syncOfferMessage, notifyOrderEvent } = require('../services/telegram/notify');
 const { formatSum, isOverLimit } = require('../services/commission.service');
+const { tr } = require('../i18n');
 
 const ACTIVE_INSTANT_STATUSES = ['searching', 'accepted', 'arrived', 'in_progress'];
 const CLIENT_CANCEL_REASONS = ['Rejalar o\'zgardi', 'Usta uzoq kutdirmoqda', 'Usta bilan kelisha olmadik', 'Xato buyurtma berdim', 'Boshqa sabab'];
@@ -282,11 +283,11 @@ const cancelInstantOrder = async (req, res, next) => {
 
         // Xabarnomalar
         if (outcome.reopened) {
-            emitToUser(outcome.order.client_id, 'order_updated', {
+            emitToUser(outcome.order.client_id, 'order_updated', (lang) => ({
                 order_id: id,
                 status: 'searching',
-                message: 'Usta buyurtmani bekor qildi. Yangi usta qidirilmoqda',
-            });
+                message: tr(lang, 'Usta buyurtmani bekor qildi. Yangi usta qidirilmoqda'),
+            }));
             const io = getIo();
             if (io) io.to(`order_${id}`).emit('order_updated', { order_id: id, status: 'searching' });
             notifyOrderEvent(outcome.order, { actor: 'master' });

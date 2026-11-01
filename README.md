@@ -263,6 +263,23 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 
 ---
 
+## 🌐 Til / Язык
+
+Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ | RU) sarlavhada va profil sahifasida turadi, tanlov brauzerda va hisobda saqlanadi. Admin panel faqat o'zbekcha.
+
+- **Sayt:** matnlar kodda o'zbekcha yoziladi va `t('...')` ga o'raladi. Ruscha tarjimalar `web/src/i18n/ru/*.js` da. Qoidalar va atamalar lug'ati: `web/src/i18n/README.md`. `npm test` (web) koddagi har bir `t()` matnining tarjimasi borligini tekshiradi.
+- **Bazadagi nomlar:** mutaxassisliklar — `specializations.name_ru`; narxlar ro'yxatidagi ishlar — `price_items.name_ru` (standart ishlar tarjima qilingan, yangilarini admin «Narxlar» bo'limida yozadi).
+- **Server:** matnlar kodda o'zbekcha yoziladi, o'zbekcha matnning o'zi kalit. Ruscha tarjimasi `backend/src/i18n/ru.js` da (qoidalar: `backend/src/i18n/index.js`).
+
+- **API javoblari:** sayt har so'rovda `Accept-Language: uz|ru` yuboradi. `backend/src/middleware/language.js` `res.json` ni o'raydi va javobdagi faqat `message` maydonini tarjima qiladi (xatolar, `errorHandler`, avtorizatsiya, so'rovlar cheklovi ham). Sarlavha bo'lmasa yoki tanilmasa — kirgan foydalanuvchining saqlangan tili, aks holda o'zbekcha. Ma'lumotlar (`data`) tarjima qilinmaydi.
+- **Foydalanuvchi tili:** `users.language` (`uz` | `ru`, sukut bo'yicha `uz`; ruscha saytda ro'yxatdan o'tganda `ru`). Til almashtirilganda sayt `PUT /api/auth/me { language }` yuboradi, `GET /api/auth/me` uni qaytaradi.
+- **Server o'zi yuboradigan xabarlar** shu tilda: Telegram bildirishnomalari va bot javoblari (hisobi yo'q foydalanuvchiga — Telegram ilovasi tilida), socket xabarlari (`commission_updated.message`, `dispatch_offline.reason`, `order_updated.message` — har bir ulanish `lang_uz`/`lang_ru` xonasida). Tezkor chaqiruv sarlavhasida mutaxassislik `specializations.name_ru` bilan ko'rsatiladi.
+- **Yangi matn qo'shganda:** o'zbekcha matnni kodga yozing va tarjimasini `ru.js` ga qo'shing. O'zgaruvchili matnlar andoza bilan: `'{field} majburiy': 'Заполните поле «{field}»'` (`{n:num}` — son, `{x:raw}` — tarjima qilinmaydi, `{x:list}` — ro'yxat). Telegram matnlari `tr(lang, 'andoza {name}', { name: escapeHtml(...) })` bilan yoziladi. `tests/i18n.test.js` koddagi har bir xabar, maydon nomi va `tr()` andozasining tarjimasi borligini tekshiradi.
+- O'zbekcha qoladi: SMS kodi matni (Eskiz'da tasdiqlangan andoza) va ustaning havola kartochkasi (`/u/:slug`, `/ustalar` — Telegram/WhatsApp ko'rinishi uchun serverda yoziladigan HTML).
+- Mavjud bazada ustunni qo'shish: `cd backend && npm run db:setup` (sxema qayta ishga tushirilsa xavfsiz).
+
+---
+
 ## ⚙️ Muhit o'zgaruvchilari
 
 `backend/.env` (namuna: `backend/.env.example`):

@@ -11,6 +11,7 @@ import { formatRating } from '../lib/format';
 import { mainVerticals, districtsList } from '../data/catalog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t, specName } from '../i18n';
 
 const inputClass = 'input';
 
@@ -37,7 +38,7 @@ function PortfolioManager() {
     e.preventDefault();
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) {
-      toast.error('Rasm hajmi 8 MB dan oshmasligi kerak');
+      toast.error(t('Rasm hajmi 8 MB dan oshmasligi kerak'));
       return;
     }
     const body = new FormData();
@@ -50,7 +51,7 @@ function PortfolioManager() {
       setFile(null);
       setDescription('');
       if (fileRef.current) fileRef.current.value = '';
-      toast.success('Rasm qo\'shildi');
+      toast.success(t('Rasm qo\'shildi'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -64,7 +65,7 @@ function PortfolioManager() {
     try {
       await api(`/masters/portfolio/${item.id}`, { method: 'DELETE' });
       setItems((list) => list.filter((i) => i.id !== item.id));
-      toast.success('Rasm o\'chirildi');
+      toast.success(t('Rasm o\'chirildi'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -75,8 +76,8 @@ function PortfolioManager() {
 
   return (
     <section className="card p-5 sm:p-6">
-      <h2 className="font-bold text-slate-900 mb-1">Portfolio</h2>
-      <p className="text-xs text-slate-500 mb-4">Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 8 MB gacha). Rasmdagi joylashuv (GPS) ma'lumotlari avtomatik o'chiriladi.</p>
+      <h2 className="font-bold text-slate-900 mb-1">{t('Portfolio')}</h2>
+      <p className="text-xs text-slate-500 mb-4">{t('Bajargan ishlaringiz rasmlari mijozlar ishonchini oshiradi (JPG, PNG, WEBP, 8 MB gacha). Rasmdagi joylashuv (GPS) ma\'lumotlari avtomatik o\'chiriladi.')}</p>
 
       <form onSubmit={upload} className="flex flex-col sm:flex-row gap-2 mb-5">
         <input
@@ -88,7 +89,7 @@ function PortfolioManager() {
         />
         <input
           className={`${inputClass} flex-1`}
-          placeholder="Qisqa tavsif (ixtiyoriy)"
+          placeholder={t('Qisqa tavsif (ixtiyoriy)')}
           maxLength={300}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -98,25 +99,25 @@ function PortfolioManager() {
           disabled={!file || uploading}
           className="btn btn-primary px-4 font-bold"
         >
-          {uploading ? <Spinner className="w-4 h-4 text-white" /> : <><ImagePlus className="w-4 h-4" /> Yuklash</>}
+          {uploading ? <Spinner className="w-4 h-4 text-white" /> : <><ImagePlus className="w-4 h-4" /> {t('Yuklash')}</>}
         </button>
       </form>
 
       {items === null ? (
-        <Spinner label="Yuklanmoqda..." />
+        <Spinner label={t('Yuklanmoqda...')} />
       ) : items.length === 0 ? (
-        <p className="text-xs text-slate-400 bg-slate-50 p-4 rounded-xl text-center">Hali rasmlar qo'shilmagan.</p>
+        <p className="text-xs text-slate-400 bg-slate-50 p-4 rounded-xl text-center">{t('Hali rasmlar qo\'shilmagan.')}</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {items.map((item) => (
             <div key={item.id} className="relative group">
-              <img src={assetUrl(item.image_url)} alt={item.description || 'portfolio'} className="h-32 w-full object-cover rounded-xl border border-slate-200" />
+              <img src={assetUrl(item.image_url)} alt={item.description || t('Portfolio')} className="h-32 w-full object-cover rounded-xl border border-slate-200" />
               {item.description && <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{item.description}</p>}
               <button
                 onClick={() => setConfirmItem(item)}
                 disabled={deleting === item.id}
                 className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 text-red-600 hover:bg-white shadow-sm"
-                aria-label="O'chirish"
+                aria-label={t('O\'chirish')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -127,8 +128,8 @@ function PortfolioManager() {
 
       {confirmItem && (
         <ConfirmDialog
-          title="Rasmni o'chirasizmi?"
-          confirmLabel="O'chirish"
+          title={t('Rasmni o\'chirasizmi?')}
+          confirmLabel={t('O\'chirish')}
           loading={Boolean(deleting)}
           onConfirm={remove}
           onClose={() => setConfirmItem(null)}
@@ -181,7 +182,7 @@ export default function MasterSetupPage() {
   const submit = async (e) => {
     e.preventDefault();
     if (form.specialization_ids.length === 0) {
-      toast.error('Kamida bitta mutaxassislikni tanlang');
+      toast.error(t('Kamida bitta mutaxassislikni tanlang'));
       return;
     }
     setSaving(true);
@@ -198,7 +199,7 @@ export default function MasterSetupPage() {
         }
       });
       await refresh();
-      toast.success(isMaster ? 'Profil yangilandi' : 'Xush kelibsiz! Profilingiz katalogga qo\'shildi');
+      toast.success(isMaster ? t('Profil yangilandi') : t('Xush kelibsiz! Profilingiz katalogga qo\'shildi'));
       if (!isMaster) navigate('/master/profile', { replace: true });
     } catch (err) {
       toast.error(err.message);
@@ -210,7 +211,7 @@ export default function MasterSetupPage() {
   if (user.role === 'admin') {
     return (
       <main className="max-w-xl mx-auto px-4 py-16 w-full flex-1 text-center text-sm text-slate-500">
-        Administrator hisobi usta profiliga ega bo'la olmaydi.
+        {t('Administrator hisobi usta profiliga ega bo\'la olmaydi.')}
       </main>
     );
   }
@@ -222,10 +223,10 @@ export default function MasterSetupPage() {
           <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-600"><Wrench className="w-6 h-6" /></div>
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900">
-              {isMaster ? 'Usta profilim' : 'Usta sifatida qo\'shilish'}
+              {isMaster ? t('Usta profilim') : t('Usta sifatida qo\'shilish')}
             </h1>
             <p className="text-xs text-slate-500">
-              {isMaster ? 'Ma\'lumotlaringiz katalogda shunday ko\'rinadi' : 'Qaysi sohada xizmat ko\'rsatishingizni tanlang va profil yarating'}
+              {isMaster ? t('Ma\'lumotlaringiz katalogda shunday ko\'rinadi') : t('Qaysi sohada xizmat ko\'rsatishingizni tanlang va profil yarating')}
             </p>
           </div>
         </div>
@@ -236,10 +237,10 @@ export default function MasterSetupPage() {
             </span>
             {user.is_verified ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Tasdiqlangan
+                <ShieldCheck className="w-3.5 h-3.5" /> {t('Tasdiqlangan')}
               </span>
             ) : (
-              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 font-semibold">Tasdiqlanmagan</span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 font-semibold">{t('Tasdiqlanmagan')}</span>
             )}
           </div>
         )}
@@ -250,7 +251,7 @@ export default function MasterSetupPage() {
 
       <form onSubmit={submit} className="card p-5 sm:p-6 space-y-4 text-xs">
         <div>
-          <label className="font-semibold text-slate-700 block mb-1.5">Xizmat sohasi va mutaxassislik *</label>
+          <label className="font-semibold text-slate-700 block mb-1.5">{t('Xizmat sohasi va mutaxassislik *')}</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
             {mainVerticals.map((v) => {
               const selectedInVertical = specializations.filter((s) => s.vertical === v.id && form.specialization_ids.includes(s.id)).length;
@@ -264,7 +265,7 @@ export default function MasterSetupPage() {
                   }`}
                 >
                   <span className="text-base">{v.icon}</span>
-                  <span className="text-xs truncate flex-1">{v.name}</span>
+                  <span className="text-xs truncate flex-1">{t(v.name)}</span>
                   {selectedInVertical > 0 && (
                     <span className="text-[10px] bg-blue-600 text-white rounded-full px-1.5">{selectedInVertical}</span>
                   )}
@@ -284,7 +285,7 @@ export default function MasterSetupPage() {
                     selected ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  {s.icon} {s.name_uz}
+                  {s.icon} {specName(s)}
                 </button>
               );
             })}
@@ -293,25 +294,25 @@ export default function MasterSetupPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Ism va familiyangiz *</label>
+            <label className="font-semibold text-slate-700 block mb-1">{t('Ism va familiyangiz *')}</label>
             <input
               required
               minLength={2}
               maxLength={100}
               className={inputClass}
-              placeholder="Masalan: Davronbek Aliyev"
+              placeholder={t('Masalan: Davronbek Aliyev')}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Tuman *</label>
+            <label className="font-semibold text-slate-700 block mb-1">{t('Tuman *')}</label>
             <select className={inputClass} value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })}>
-              {districtsList.slice(1).map((d) => <option key={d} value={d}>{d}</option>)}
+              {districtsList.slice(1).map((d) => <option key={d} value={d}>{t(d)}</option>)}
             </select>
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Tajriba (yil) *</label>
+            <label className="font-semibold text-slate-700 block mb-1">{t('Tajriba (yil) *')}</label>
             <input
               type="number"
               required
@@ -323,7 +324,7 @@ export default function MasterSetupPage() {
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Boshlang'ich narx (so'm) *</label>
+            <label className="font-semibold text-slate-700 block mb-1">{t('Boshlang\'ich narx (so\'m) *')}</label>
             <input
               type="number"
               required
@@ -337,12 +338,12 @@ export default function MasterSetupPage() {
         </div>
 
         <div>
-          <label className="font-semibold text-slate-700 block mb-1">Qisqacha ma'lumot</label>
+          <label className="font-semibold text-slate-700 block mb-1">{t('Qisqacha ma\'lumot')}</label>
           <textarea
             rows="3"
             maxLength={1000}
             className={inputClass}
-            placeholder="Ish tajribangiz, kafolatlaringiz haqida..."
+            placeholder={t('Ish tajribangiz, kafolatlaringiz haqida...')}
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
           />
@@ -356,8 +357,8 @@ export default function MasterSetupPage() {
             onChange={(e) => setForm({ ...form, is_available: e.target.checked })}
           />
           <span>
-            <span className="font-bold text-slate-800 block">Hozir buyurtma qabul qilaman</span>
-            <span className="text-slate-500">O'chirsangiz, katalogda "Band" deb ko'rinasiz.</span>
+            <span className="font-bold text-slate-800 block">{t('Hozir buyurtma qabul qilaman')}</span>
+            <span className="text-slate-500">{t('O\'chirsangiz, katalogda "Band" deb ko\'rinasiz.')}</span>
           </span>
         </label>
 
@@ -366,7 +367,7 @@ export default function MasterSetupPage() {
           disabled={saving}
           className="btn btn-primary w-full font-bold shadow-md shadow-blue-500/20 min-h-12"
         >
-          {saving ? <Spinner className="w-4 h-4 text-white" /> : isMaster ? 'O\'zgarishlarni saqlash' : 'Profilni saqlash'}
+          {saving ? <Spinner className="w-4 h-4 text-white" /> : isMaster ? t('O\'zgarishlarni saqlash') : t('Profilni saqlash')}
         </button>
       </form>
 

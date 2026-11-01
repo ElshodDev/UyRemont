@@ -9,59 +9,69 @@ import { ErrorState } from '../components/EmptyState';
 import { api } from '../lib/api';
 import { buildMasterRules } from '../lib/rules';
 import { useAuth } from '../context/AuthContext';
+import { t } from '../i18n';
 
+// Matnlar funksiyalar ichida (chaqirilgan paytda) joriy tilda olinadi
 const BENEFITS = (config) => [
-  { icon: Zap, title: 'Buyurtmalar o\'zi keladi', text: 'Ish rejimini yoqasiz — eng yaqin mijozlarning chaqiruvlari telefoningizga keladi. Mijoz qidirib yurish shart emas.' },
-  { icon: Clock, title: 'Vaqtingiz o\'z qo\'lingizda', text: 'Xohlagan paytda ishga chiqasiz, band bo\'lsangiz ish rejimini o\'chirasiz.' },
-  { icon: Percent, title: `Faqat bajarilgan ishdan ${config.commission_percent}%`, text: 'Ro\'yxatdan o\'tish, profil va shaxsiy sahifa bepul. Komissiya faqat tezkor chaqiruv orqali yakunlangan ishning ish haqidan olinadi, materiallardan emas.' },
-  { icon: QrCode, title: 'Shaxsiy sahifa va QR kod', text: 'Sharhlaringiz, ishlaringiz rasmlari va o\'z havolangiz. Uni Telegram\'da, vizitkada va mashinangizda ulashasiz.' }
+  { icon: Zap, title: t('Buyurtmalar o\'zi keladi'), text: t('Ish rejimini yoqasiz — eng yaqin mijozlarning chaqiruvlari telefoningizga keladi. Mijoz qidirib yurish shart emas.') },
+  { icon: Clock, title: t('Vaqtingiz o\'z qo\'lingizda'), text: t('Xohlagan paytda ishga chiqasiz, band bo\'lsangiz ish rejimini o\'chirasiz.') },
+  { icon: Percent, title: t('Faqat bajarilgan ishdan {percent}%', { percent: config.commission_percent }), text: t('Ro\'yxatdan o\'tish, profil va shaxsiy sahifa bepul. Komissiya faqat tezkor chaqiruv orqali yakunlangan ishning ish haqidan olinadi, materiallardan emas.') },
+  { icon: QrCode, title: t('Shaxsiy sahifa va QR kod'), text: t('Sharhlaringiz, ishlaringiz rasmlari va o\'z havolangiz. Uni Telegram\'da, vizitkada va mashinangizda ulashasiz.') }
 ];
 
 const STEPS = (config) => [
   {
     icon: UserPlus,
-    title: 'Ro\'yxatdan o\'ting',
-    text: 'Telefon raqamingiz bilan kiring (kod SMS yoki Telegram orqali keladi) va «Usta bo\'lib qo\'shilish» ni tanlang.'
+    title: t('Ro\'yxatdan o\'ting'),
+    text: t('Telefon raqamingiz bilan kiring (kod SMS yoki Telegram orqali keladi) va «Usta bo\'lib qo\'shilish» ni tanlang.')
   },
   {
     icon: ClipboardList,
-    title: 'Profilni to\'ldiring',
-    text: 'Ism, mutaxassisliklar (bir nechtasini tanlash mumkin), tuman, tajriba, narx va o\'zingiz haqingizda 2–3 gap. Ishlaringizdan 3–6 ta rasm qo\'shing.'
+    title: t('Profilni to\'ldiring'),
+    text: t('Ism, mutaxassisliklar (bir nechtasini tanlash mumkin), tuman, tajriba, narx va o\'zingiz haqingizda 2–3 gap. Ishlaringizdan 3–6 ta rasm qo\'shing.')
   },
   {
     icon: ShieldCheck,
-    title: 'Hujjat yuklang',
-    text: 'Profil sahifasidagi tasdiqlash bo\'limiga pasport yoki ID karta rasmini (majburiy) va hujjat bilan selfi yuklab, tekshiruvga yuboring. Odatda 24 soat ichida ko\'rib chiqiladi, natija saytda keladi.'
+    title: t('Hujjat yuklang'),
+    text: t('Profil sahifasidagi tasdiqlash bo\'limiga pasport yoki ID karta rasmini (majburiy) va hujjat bilan selfi yuklab, tekshiruvga yuboring. Odatda 24 soat ichida ko\'rib chiqiladi, natija saytda keladi.')
   },
   {
     icon: Power,
-    title: 'Ishga chiqing',
-    text: '«Ish rejimi» sahifasida «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering. Shundan keyin takliflar kela boshlaydi.'
+    title: t('Ishga chiqing'),
+    text: t('«Ish rejimi» sahifasida «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering. Shundan keyin takliflar kela boshlaydi.')
   },
   {
     icon: CheckCircle,
-    title: 'Buyurtmani bajaring',
-    text: `Taklif kelganda ${config.offer_timeout_sec} soniya ichida qabul qiling → Navigator bilan boring → «Yetib keldim» → narxni mijoz bilan kelishib «Ishni boshlash» → «Yakunlash» (ish haqi va material alohida) → mijozni baholang.`
+    title: t('Buyurtmani bajaring'),
+    text: t('Taklif kelganda {sec} soniya ichida qabul qiling → Navigator bilan boring → «Yetib keldim» → narxni mijoz bilan kelishib «Ishni boshlash» → «Yakunlash» (ish haqi va material alohida) → mijozni baholang.', { sec: config.offer_timeout_sec })
   }
 ];
 
-const TIPS = [
-  'Portfolio\'ga ishlaringizning aniq, yorug\' rasmlarini qo\'shing: mijozlar ustani ko\'pincha rasmga qarab tanlaydi.',
-  'Ishlay olmaydigan paytingizda ish rejimini o\'chiring: javobsiz qolgan takliflar ish rejimini avtomatik o\'chiradi.',
-  'Ish tugagach, mijozdan sharh qoldirishni so\'rang. Masofa teng bo\'lsa, taklif reytingi yuqori ustaga birinchi boriladi.',
-  'Ish narxini boshlashdan oldin aniq kelishing: nizolarning ko\'pi shu yerdan boshlanadi.',
-  'O\'z havolangiz va QR kodingizni ulashing: mijoz to\'g\'ridan-to\'g\'ri sizning profilingizni ochib buyurtma beradi.'
+const TIPS = () => [
+  t('Portfolio\'ga ishlaringizning aniq, yorug\' rasmlarini qo\'shing: mijozlar ustani ko\'pincha rasmga qarab tanlaydi.'),
+  t('Ishlay olmaydigan paytingizda ish rejimini o\'chiring: javobsiz qolgan takliflar ish rejimini avtomatik o\'chiradi.'),
+  t('Ish tugagach, mijozdan sharh qoldirishni so\'rang. Masofa teng bo\'lsa, taklif reytingi yuqori ustaga birinchi boriladi.'),
+  t('Ish narxini boshlashdan oldin aniq kelishing: nizolarning ko\'pi shu yerdan boshlanadi.'),
+  t('O\'z havolangiz va QR kodingizni ulashing: mijoz to\'g\'ridan-to\'g\'ri sizning profilingizni ochib buyurtma beradi.')
 ];
 
 const FAQ = (config) => [
-  ['Ro\'yxatdan o\'tish pullikmi?', 'Yo\'q. Ro\'yxatdan o\'tish, profil, portfolio va shaxsiy havola bepul.'],
-  ['Komissiya qancha?', `Tezkor chaqiruvlar bo'yicha ish haqining ${config.commission_percent}%. Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to'lovni mijoz sizga to'g'ridan-to'g'ri qiladi.`],
-  ['Komissiyani qanday to\'layman?', `Har bir yakunlangan tezkor ishdan keyin komissiya «Komissiya hisobi» sahifasiga yoziladi. U yerdagi rekvizitlarga o'tkazasiz, administrator qabul qilgach qarz kamayadi.${config.commission_debt_limit > 0 ? ` Qarz ${Number(config.commission_debt_limit).toLocaleString('ru-RU')} so'mdan oshsa, to'lamaguningizcha yangi takliflar kelmaydi.` : ''}`],
-  ['Ish narxini kim belgilaydi?', 'Mijoz chiqish narxini oldindan ko\'radi. Ish narxini esa muammoni ko\'rgach, mijoz bilan joyida kelishasiz.'],
-  ['Mijozning telefon raqamini qachon ko\'raman?', 'Chaqiruvni qabul qilganingizdan keyin. Ungacha raqamlar ikki tomonga ham ko\'rinmaydi.'],
-  ['Bir nechta sohada ishlasam bo\'ladimi?', 'Ha. Profilda bir nechta mutaxassislikni tanlang: takliflar hammasi bo\'yicha keladi.'],
-  ['Profilim tasdiqlanmasa nima qilaman?', 'Administrator sababini yozadi. Kamchilikni tuzatib (masalan, aniqroq rasm yuklab), qayta tekshiruvga yuboring.'],
-  ['Hujjatlarimni kim ko\'radi?', 'Faqat administrator. Ular ochiq havola orqali berilmaydi, mijozlarga ko\'rsatilmaydi va hisob o\'chirilganda o\'chiriladi.']
+  [t('Ro\'yxatdan o\'tish pullikmi?'), t('Yo\'q. Ro\'yxatdan o\'tish, profil, portfolio va shaxsiy havola bepul.')],
+  [t('Komissiya qancha?'), t('Tezkor chaqiruvlar bo\'yicha ish haqining {percent}%. Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.', { percent: config.commission_percent })],
+  [
+    t('Komissiyani qanday to\'layman?'),
+    [
+      t('Har bir yakunlangan tezkor ishdan keyin komissiya «Komissiya hisobi» sahifasiga yoziladi. U yerdagi rekvizitlarga o\'tkazasiz, administrator qabul qilgach qarz kamayadi.'),
+      config.commission_debt_limit > 0
+        ? t('Qarz {limit} so\'mdan oshsa, to\'lamaguningizcha yangi takliflar kelmaydi.', { limit: Number(config.commission_debt_limit).toLocaleString('ru-RU') })
+        : null
+    ].filter(Boolean).join(' ')
+  ],
+  [t('Ish narxini kim belgilaydi?'), t('Mijoz chiqish narxini oldindan ko\'radi. Ish narxini esa muammoni ko\'rgach, mijoz bilan joyida kelishasiz.')],
+  [t('Mijozning telefon raqamini qachon ko\'raman?'), t('Chaqiruvni qabul qilganingizdan keyin. Ungacha raqamlar ikki tomonga ham ko\'rinmaydi.')],
+  [t('Bir nechta sohada ishlasam bo\'ladimi?'), t('Ha. Profilda bir nechta mutaxassislikni tanlang: takliflar hammasi bo\'yicha keladi.')],
+  [t('Profilim tasdiqlanmasa nima qilaman?'), t('Administrator sababini yozadi. Kamchilikni tuzatib (masalan, aniqroq rasm yuklab), qayta tekshiruvga yuboring.')],
+  [t('Hujjatlarimni kim ko\'radi?'), t('Faqat administrator. Ular ochiq havola orqali berilmaydi, mijozlarga ko\'rsatilmaydi va hisob o\'chirilganda o\'chiriladi.')]
 ];
 
 /**
@@ -85,9 +95,9 @@ export default function MasterGuidePage() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Ustalar uchun — Usta24';
+    document.title = t('Ustalar uchun — Usta24');
     return () => {
-      document.title = 'Usta24 — Usta topish endi oson!';
+      document.title = t('Usta24 — Usta topish endi oson!');
     };
   }, []);
 
@@ -101,24 +111,24 @@ export default function MasterGuidePage() {
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full flex-1 space-y-6">
       <section className="rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 dark:ring-1 dark:ring-white/10 text-white p-6 sm:p-10">
         <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wide">
-          <Wrench className="w-4 h-4" aria-hidden="true" /> Ustalar uchun
+          <Wrench className="w-4 h-4" aria-hidden="true" /> {t('Ustalar uchun')}
         </div>
-        <h1 className="mt-3 text-3xl sm:text-4xl font-black leading-tight max-w-2xl">Usta24 da ishlang — mijozlar sizni o'zi topadi</h1>
+        <h1 className="mt-3 text-3xl sm:text-4xl font-black leading-tight max-w-2xl">{t('Usta24 da ishlang — mijozlar sizni o\'zi topadi')}</h1>
         <p className="mt-3 text-white/85 max-w-xl">
-          Yaqin atrofingizdagi buyurtmalar telefoningizga keladi. Ro'yxatdan o'tish bepul, komissiya faqat bajarilgan ishdan.
+          {t('Yaqin atrofingizdagi buyurtmalar telefoningizga keladi. Ro\'yxatdan o\'tish bepul, komissiya faqat bajarilgan ishdan.')}
         </p>
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
           <button type="button" onClick={start} className="btn btn-lg bg-snow text-ink font-extrabold hover:bg-primary-50">
-            {isMaster ? 'Ish rejimiga o\'tish' : 'Usta bo\'lib ro\'yxatdan o\'tish'}
+            {isMaster ? t('Ish rejimiga o\'tish') : t('Usta bo\'lib ro\'yxatdan o\'tish')}
           </button>
           <a href="#qanday-boshlash" className="btn btn-lg bg-white/10 text-white hover:bg-white/20 ring-1 ring-white/25">
-            Qanday boshlash
+            {t('Qanday boshlash')}
           </a>
         </div>
       </section>
 
       <section aria-labelledby="benefits-title">
-        <h2 id="benefits-title" className="sr-only">Nega Usta24</h2>
+        <h2 id="benefits-title" className="sr-only">{t('Nega Usta24')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {BENEFITS(config).map(({ icon: Icon, title, text }) => (
             <div key={title} className="card p-5 flex gap-4">
@@ -133,7 +143,7 @@ export default function MasterGuidePage() {
       </section>
 
       <section id="qanday-boshlash" className="card p-5 sm:p-7 scroll-mt-24" aria-labelledby="steps-title">
-        <h2 id="steps-title" className="text-xl font-extrabold text-slate-900">Qanday boshlash — 5 qadam</h2>
+        <h2 id="steps-title" className="text-xl font-extrabold text-slate-900">{t('Qanday boshlash — 5 qadam')}</h2>
         <ol className="mt-5 space-y-5">
           {STEPS(config).map(({ icon: Icon, title, text }, i) => (
             <li key={title} className="flex gap-4">
@@ -150,29 +160,29 @@ export default function MasterGuidePage() {
         </ol>
         <div className="mt-6 flex flex-col sm:flex-row gap-2">
           <button type="button" onClick={start} className="btn btn-primary">
-            {isMaster ? 'Ish rejimiga o\'tish' : 'Hozir boshlash'}
+            {isMaster ? t('Ish rejimiga o\'tish') : t('Hozir boshlash')}
           </button>
-          {isMaster && <Link to="/master/profile" className="btn btn-secondary">Profilim</Link>}
+          {isMaster && <Link to="/master/profile" className="btn btn-secondary">{t('Profilim')}</Link>}
         </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section id="qoidalar" className="card p-5 sm:p-6 scroll-mt-24" aria-labelledby="rules-title">
           <h2 id="rules-title" className="font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-blue-600" aria-hidden="true" /> Tezkor chaqiruv qoidalari
+            <BookOpen className="w-5 h-5 text-blue-600" aria-hidden="true" /> {t('Tezkor chaqiruv qoidalari')}
           </h2>
           <ol className="mt-3 space-y-2.5 text-sm text-slate-700 list-decimal pl-5">
             {buildMasterRules(config).map((rule) => <li key={rule}>{rule}</li>)}
           </ol>
-          <Link to="/rules" className="link text-sm mt-3 inline-block">Mijozlar uchun qoidalar ham →</Link>
+          <Link to="/rules" className="link text-sm mt-3 inline-block">{t('Mijozlar uchun qoidalar ham →')}</Link>
         </section>
 
         <section className="card p-5 sm:p-6" aria-labelledby="tips-title">
           <h2 id="tips-title" className="font-bold text-slate-900 flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" aria-hidden="true" /> Ko'proq buyurtma olish uchun
+            <Lightbulb className="w-5 h-5 text-amber-500" aria-hidden="true" /> {t('Ko\'proq buyurtma olish uchun')}
           </h2>
           <ul className="mt-3 space-y-2.5 text-sm text-slate-700">
-            {TIPS.map((tip) => (
+            {TIPS().map((tip) => (
               <li key={tip} className="flex gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{tip}</span>
@@ -181,7 +191,7 @@ export default function MasterGuidePage() {
           </ul>
           {isMaster && (
             <Link to="/master/varaqa" className="btn btn-soft mt-4 w-full sm:w-auto">
-              <Printer className="w-4 h-4" /> Varaqa va vizitkangizni chop eting
+              <Printer className="w-4 h-4" /> {t('Varaqa va vizitkangizni chop eting')}
             </Link>
           )}
         </section>
@@ -189,7 +199,7 @@ export default function MasterGuidePage() {
 
       <section className="card p-5 sm:p-6" aria-labelledby="faq-title">
         <h2 id="faq-title" className="font-bold text-slate-900 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-blue-600" aria-hidden="true" /> Ko'p beriladigan savollar
+          <HelpCircle className="w-5 h-5 text-blue-600" aria-hidden="true" /> {t('Ko\'p beriladigan savollar')}
         </h2>
         <div className="mt-3 divide-y divide-slate-100">
           {FAQ(config).map(([question, answer]) => (
@@ -208,18 +218,18 @@ export default function MasterGuidePage() {
         <div className="flex gap-3">
           <LifeBuoy className="w-6 h-6 text-blue-600 flex-shrink-0" aria-hidden="true" />
           <div>
-            <h2 className="font-bold text-slate-900">Savolingiz bormi?</h2>
+            <h2 className="font-bold text-slate-900">{t('Savolingiz bormi?')}</h2>
             <p className="text-sm text-slate-600">
-              {contacts?.phone || contacts?.telegram ? 'Qo\'ng\'iroq qiling yoki Telegram\'da yozing.' : 'Yordam sahifasida bizga yozing.'}
+              {contacts?.phone || contacts?.telegram ? t('Qo\'ng\'iroq qiling yoki Telegram\'da yozing.') : t('Yordam sahifasida bizga yozing.')}
             </p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           {contacts?.phone && <a href={`tel:${contacts.phone.replace(/[^+\d]/g, '')}`} className="btn btn-secondary">{contacts.phone}</a>}
           {contacts?.telegram && <a href={`https://t.me/${contacts.telegram}`} target="_blank" rel="noreferrer" className="btn btn-secondary">@{contacts.telegram}</a>}
-          {user && !contacts?.phone && !contacts?.telegram && <Link to="/support" className="btn btn-secondary">Yordam</Link>}
+          {user && !contacts?.phone && !contacts?.telegram && <Link to="/support" className="btn btn-secondary">{t('Yordam')}</Link>}
           <Link to="/ustalar/varaqa" className="btn btn-ghost">
-            <Printer className="w-4 h-4" /> Do'stlaringiz uchun varaqa
+            <Printer className="w-4 h-4" /> {t('Do\'stlaringiz uchun varaqa')}
           </Link>
         </div>
       </section>

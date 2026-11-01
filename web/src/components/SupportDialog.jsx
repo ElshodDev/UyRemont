@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { categoriesFor } from '../lib/support';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 /**
  * Murojaat yuborish: buyurtma sahifasidan (orderId bilan) yoki "Murojaatlarim" dan
@@ -38,24 +39,24 @@ export default function SupportDialog({ orderId, orderTitle, onClose, onCreated 
       <div className="flex items-center gap-3 mb-4 pr-8">
         <span className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0"><LifeBuoy className="w-6 h-6" /></span>
         <div className="min-w-0">
-          <h3 id="support-title" className="text-lg font-bold text-slate-900">Muammo haqida xabar berish</h3>
-          <p className="text-xs text-slate-500 truncate">{orderTitle ? `Buyurtma: ${orderTitle}` : 'Administratorga murojaat'}</p>
+          <h3 id="support-title" className="text-lg font-bold text-slate-900">{t('Muammo haqida xabar berish')}</h3>
+          <p className="text-xs text-slate-500 truncate">{orderTitle ? t('Buyurtma: {title}', { title: orderTitle }) : t('Administratorga murojaat')}</p>
         </div>
       </div>
       <form onSubmit={submit} className="space-y-4">
         <fieldset>
-          <legend className="label">Nima bo'ldi?</legend>
+          <legend className="label">{t('Nima bo\'ldi?')}</legend>
           <div className="space-y-2">
             {categories.map((c) => (
               <label key={c.id} className={`flex items-center gap-2 min-h-11 px-3 rounded-xl border cursor-pointer text-sm ${category === c.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
                 <input type="radio" name="category" className="accent-blue-600" checked={category === c.id} onChange={() => setCategory(c.id)} />
-                {c.label}
+                {t(c.label)}
               </label>
             ))}
           </div>
         </fieldset>
         <div>
-          <label className="label" htmlFor="support-message">Batafsil yozing</label>
+          <label className="label" htmlFor="support-message">{t('Batafsil yozing')}</label>
           <textarea
             id="support-message"
             className="input"
@@ -63,14 +64,14 @@ export default function SupportDialog({ orderId, orderTitle, onClose, onCreated 
             required
             minLength={10}
             maxLength={2000}
-            placeholder="Nima bo'ldi, qachon, kelishilgan narx qancha edi..."
+            placeholder={t('Nima bo\'ldi, qachon, kelishilgan narx qancha edi...')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <p className="hint mt-1">Administrator ko'rib chiqadi va javobni shu yerda (Profil → Murojaatlarim) hamda Telegram'da yuboradi.</p>
+          <p className="hint mt-1">{t('Administrator ko\'rib chiqadi va javobni shu yerda (Profil → Murojaatlarim) hamda Telegram\'da yuboradi.')}</p>
         </div>
         <button type="submit" disabled={sending || message.trim().length < 10} className="btn btn-primary w-full min-h-12 font-bold">
-          {sending ? <Spinner className="w-4 h-4 text-white" /> : 'Yuborish'}
+          {sending ? <Spinner className="w-4 h-4 text-white" /> : t('Yuborish')}
         </button>
       </form>
     </Modal>

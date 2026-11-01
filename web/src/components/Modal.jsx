@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { t } from '../i18n';
 
 /**
  * Umumiy modal oyna: telefonda pastdan chiqadi, kompyuterda markazda.
@@ -49,7 +50,7 @@ export default function Modal({ onClose, children, size = 'md', className = '', 
         <button
           onClick={onClose}
           className="icon-btn absolute top-3 right-3 text-slate-400"
-          aria-label="Yopish"
+          aria-label={t('Yopish')}
         >
           <X className="w-5 h-5" />
         </button>

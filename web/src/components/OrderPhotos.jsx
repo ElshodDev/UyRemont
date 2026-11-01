@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react';
 import { fetchObjectUrl } from '../lib/api';
+import { t } from '../i18n';
 
 /**
  * Token bilan yuklanadigan rasm (buyurtma rasmlarining ochiq havolasi yo'q)
@@ -33,7 +34,7 @@ function Thumb({ orderId, photoId, index, onOpen, className }) {
       type="button"
       onClick={() => url && onOpen(index)}
       className={`relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 ${className}`}
-      aria-label={`Muammo rasmi ${index + 1}ni kattalashtirish`}
+      aria-label={t('Muammo rasmi {n}ni kattalashtirish', { n: index + 1 })}
     >
       {url && <img src={url} alt="" className="w-full h-full object-cover" />}
       {!url && !failed && <span className="absolute inset-0 animate-pulse bg-slate-200" />}
@@ -55,17 +56,17 @@ function Lightbox({ orderId, photoIds, index, onClose, onChange }) {
   }, [index, photoIds.length, onClose, onChange]);
 
   return (
-    <div className="fixed inset-0 z-[70] bg-ink/95 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Muammo rasmi" onClick={onClose}>
-      {url && <img src={url} alt={`Muammo rasmi ${index + 1}`} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />}
-      <button type="button" onClick={onClose} className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label="Yopish">
+    <div className="fixed inset-0 z-[70] bg-ink/95 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={t('Muammo rasmi')} onClick={onClose}>
+      {url && <img src={url} alt={t('Muammo rasmi {n}', { n: index + 1 })} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />}
+      <button type="button" onClick={onClose} className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label={t('Yopish')}>
         <X className="w-6 h-6" />
       </button>
       {photoIds.length > 1 && (
         <>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange((index - 1 + photoIds.length) % photoIds.length); }} className="absolute left-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label="Oldingi rasm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onChange((index - 1 + photoIds.length) % photoIds.length); }} className="absolute left-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label={t('Oldingi rasm')}>
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange((index + 1) % photoIds.length); }} className="absolute right-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label="Keyingi rasm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onChange((index + 1) % photoIds.length); }} className="absolute right-3 w-11 h-11 rounded-full bg-snow/10 text-white flex items-center justify-center" aria-label={t('Keyingi rasm')}>
             <ChevronRight className="w-6 h-6" />
           </button>
           <span className="absolute bottom-[calc(env(safe-area-inset-bottom)+1rem)] text-white/80 text-sm font-semibold">{index + 1} / {photoIds.length}</span>

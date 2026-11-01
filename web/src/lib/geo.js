@@ -2,9 +2,12 @@
 // Geolokatsiya yordamchilari
 // =============================================
 
+import { t } from '../i18n';
+
 export const TASHKENT_CENTER = { lat: 41.3111, lng: 69.2797 };
 
-// Tuman markazlari (xaritani boshlang'ich joylashtirish va tumanni aniqlash uchun)
+// Tuman markazlari (xaritani boshlang'ich joylashtirish va tumanni aniqlash uchun).
+// Nomlar API/filtr qiymati sifatida o'zbekcha qoladi, ko'rsatishda t(district)
 export const DISTRICT_COORDS = {
   Chilonzor: { lat: 41.2756, lng: 69.2034 },
   Yunusobod: { lat: 41.364, lng: 69.2855 },
@@ -52,12 +55,12 @@ const GEO_ERRORS = {
 export function getCurrentPosition({ timeout = 10000 } = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Brauzeringiz geolokatsiyani qo\'llab-quvvatlamaydi. Xaritada belgilang.'));
+      reject(new Error(t('Brauzeringiz geolokatsiyani qo\'llab-quvvatlamaydi. Xaritada belgilang.')));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
-      (err) => reject(new Error(GEO_ERRORS[err.code] || GEO_ERRORS[2])),
+      (err) => reject(new Error(t(GEO_ERRORS[err.code] || GEO_ERRORS[2]))),
       { enableHighAccuracy: true, timeout, maximumAge: 30000 }
     );
   });

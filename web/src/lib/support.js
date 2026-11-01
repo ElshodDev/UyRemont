@@ -1,4 +1,5 @@
 // Murojaat turlari va holatlari (backend support.controller bilan mos)
+// Yorliqlar o'zbekcha: ko'rsatishda t(label) qilinadi
 export const SUPPORT_CATEGORIES = {
   master_no_show: { label: 'Usta kelmadi yoki kechikdi', roles: ['client'], needsOrder: true },
   price_dispute: { label: 'Narx bo\'yicha kelishmovchilik', roles: ['client', 'master'], needsOrder: true },

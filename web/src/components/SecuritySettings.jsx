@@ -7,6 +7,10 @@ import Spinner from './Spinner';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
+
+// [qavs] ichidagi so'zlar qalin: tarjimada so'z tartibi o'zgarsa ham belgi o'z joyida qoladi
+const withBold = (text) => text.split(/\[(.+?)\]/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
 
 const codeInputClass = 'input min-h-12 text-center tracking-[0.4em] font-mono font-bold';
 
@@ -29,7 +33,7 @@ function TwoFactorSetup({ onClose, onEnabled }) {
     setError('');
     try {
       const { data } = await api('/auth/2fa/enable', { method: 'POST', body: { code } });
-      toast.success('Ikki bosqichli kirish yoqildi');
+      toast.success(t('Ikki bosqichli kirish yoqildi'));
       onEnabled(data);
     } catch (err) {
       setError(err.message);
@@ -40,22 +44,22 @@ function TwoFactorSetup({ onClose, onEnabled }) {
 
   return (
     <Modal onClose={onClose} size="sm">
-      <h3 className="text-lg font-bold text-slate-900 mb-1">Ikki bosqichli kirishni yoqish</h3>
+      <h3 className="text-lg font-bold text-slate-900 mb-1">{t('Ikki bosqichli kirishni yoqish')}</h3>
       <ol className="text-xs text-slate-600 space-y-1 mb-4 list-decimal pl-4">
-        <li>Telefoningizga <strong>Google Authenticator</strong> yoki <strong>Microsoft Authenticator</strong> ilovasini o'rnating.</li>
-        <li>Ilovada «+» → «QR kodni skanerlash» ni tanlang.</li>
-        <li>Ilova ko'rsatgan 6 xonali kodni pastga yozing.</li>
+        <li>{withBold(t('Telefoningizga [Google Authenticator] yoki [Microsoft Authenticator] ilovasini o\'rnating.'))}</li>
+        <li>{t('Ilovada «+» → «QR kodni skanerlash» ni tanlang.')}</li>
+        <li>{t('Ilova ko\'rsatgan 6 xonali kodni pastga yozing.')}</li>
       </ol>
       {error && <p className="mb-3 p-2.5 rounded-xl bg-red-50 text-red-700 text-xs">{error}</p>}
       {!setup && !error && <div className="py-10 flex justify-center"><Spinner className="w-6 h-6" /></div>}
       {setup && (
         <form onSubmit={enable} className="space-y-3">
-          <img src={setup.qr} alt="2FA QR kod" className="w-48 h-48 mx-auto rounded-xl border border-slate-200" />
+          <img src={setup.qr} alt={t('2FA QR kod')} className="w-48 h-48 mx-auto rounded-xl border border-slate-200" />
           <button
             type="button"
-            onClick={() => navigator.clipboard?.writeText(setup.secret).then(() => toast.success('Kalit nusxalandi'))}
+            onClick={() => navigator.clipboard?.writeText(setup.secret).then(() => toast.success(t('Kalit nusxalandi')))}
             className="w-full text-[11px] font-mono text-slate-500 bg-slate-50 rounded-lg p-2 break-all inline-flex items-center justify-center gap-1.5 hover:bg-slate-100"
-            title="Skanerlab bo'lmasa, kalitni qo'lda kiriting"
+            title={t('Skanerlab bo\'lmasa, kalitni qo\'lda kiriting')}
           >
             <Copy className="w-3 h-3 flex-shrink-0" /> {setup.secret}
           </button>
@@ -74,7 +78,7 @@ function TwoFactorSetup({ onClose, onEnabled }) {
             disabled={loading || code.length !== 6}
             className="btn btn-primary w-full font-bold min-h-12"
           >
-            {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Tasdiqlash va yoqish'}
+            {loading ? <Spinner className="w-4 h-4 text-white" /> : t('Tasdiqlash va yoqish')}
           </button>
         </form>
       )}
@@ -94,7 +98,7 @@ function TwoFactorDisable({ onClose, onDisabled }) {
     setError('');
     try {
       const { data } = await api('/auth/2fa/disable', { method: 'POST', body: { code } });
-      toast.success('Ikki bosqichli kirish o\'chirildi');
+      toast.success(t('Ikki bosqichli kirish o\'chirildi'));
       onDisabled(data);
     } catch (err) {
       setError(err.message);
@@ -105,8 +109,8 @@ function TwoFactorDisable({ onClose, onDisabled }) {
 
   return (
     <Modal onClose={onClose} size="sm">
-      <h3 className="text-lg font-bold text-slate-900 mb-1">2FA ni o'chirish</h3>
-      <p className="text-xs text-slate-500 mb-3">Tasdiqlash uchun authenticator ilovasidagi joriy kodni kiriting.</p>
+      <h3 className="text-lg font-bold text-slate-900 mb-1">{t('2FA ni o\'chirish')}</h3>
+      <p className="text-xs text-slate-500 mb-3">{t('Tasdiqlash uchun authenticator ilovasidagi joriy kodni kiriting.')}</p>
       {error && <p className="mb-3 p-2.5 rounded-xl bg-red-50 text-red-700 text-xs">{error}</p>}
       <form onSubmit={disable} className="space-y-3">
         <input
@@ -125,7 +129,7 @@ function TwoFactorDisable({ onClose, onDisabled }) {
           disabled={loading || code.length !== 6}
           className="btn btn-danger w-full font-bold min-h-12"
         >
-          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'O\'chirish'}
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : t('O\'chirib qo\'yish')}
         </button>
       </form>
     </Modal>
@@ -154,27 +158,27 @@ function DeleteAccountDialog({ onClose, onDeleted }) {
       <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-3">
         <Trash2 className="w-6 h-6" />
       </div>
-      <h3 className="text-lg font-bold text-slate-900 mb-2">Hisobni o'chirasizmi?</h3>
+      <h3 className="text-lg font-bold text-slate-900 mb-2">{t('Hisobni o\'chirasizmi?')}</h3>
       <ul className="text-xs text-slate-600 space-y-1.5 mb-4 list-disc pl-4">
-        <li>Ismingiz, telefon raqamingiz, usta profilingiz, portfolio rasmlari va yozgan xabarlaringiz o'chiriladi.</li>
-        <li>Bajarilgan buyurtmalar ikkinchi tomon tarixi uchun <strong>ismsiz</strong> holda qoladi.</li>
-        <li>Bu amalni qaytarib bo'lmaydi. Shu raqam bilan keyinroq yangi hisob ochishingiz mumkin.</li>
+        <li>{t('Ismingiz, telefon raqamingiz, usta profilingiz, portfolio rasmlari va yozgan xabarlaringiz o\'chiriladi.')}</li>
+        <li>{withBold(t('Bajarilgan buyurtmalar ikkinchi tomon tarixi uchun [ismsiz] holda qoladi.'))}</li>
+        <li>{t('Bu amalni qaytarib bo\'lmaydi. Shu raqam bilan keyinroq yangi hisob ochishingiz mumkin.')}</li>
       </ul>
       {error && <p className="mb-3 p-2.5 rounded-xl bg-red-50 text-red-700 text-xs">{error}</p>}
       <label className="flex items-center gap-2 text-sm text-slate-700 mb-4 cursor-pointer">
         <input type="checkbox" className="w-4 h-4 accent-red-600" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} />
-        Tushundim, hisobimni o'chirmoqchiman
+        {t('Tushundim, hisobimni o\'chirmoqchiman')}
       </label>
       <div className="grid grid-cols-2 gap-2">
         <button onClick={onClose} disabled={loading} className="py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700">
-          Ortga
+          {t('Ortga')}
         </button>
         <button
           onClick={remove}
           disabled={!understood || loading}
           className="btn btn-danger font-bold"
         >
-          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'O\'chirish'}
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : t('O\'chirish')}
         </button>
       </div>
     </Modal>
@@ -203,7 +207,7 @@ export default function SecuritySettings() {
     try {
       await api('/auth/logout-all', { method: 'POST' });
       logout();
-      toast.success('Barcha qurilmalardan chiqildi');
+      toast.success(t('Barcha qurilmalardan chiqildi'));
       navigate('/');
     } catch (err) {
       toast.error(err.message);
@@ -213,20 +217,22 @@ export default function SecuritySettings() {
 
   return (
     <section id="xavfsizlik" ref={sectionRef} className="scroll-mt-24 card p-5 sm:p-6 space-y-4">
-      <h3 className="font-bold text-slate-900 flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> Xavfsizlik</h3>
+      <h3 className="font-bold text-slate-900 flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> {t('Xavfsizlik')}</h3>
 
       <div className={`p-4 rounded-xl border ${user.totp_enabled ? 'bg-emerald-50 border-emerald-200' : user.role === 'admin' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             {user.totp_enabled ? <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5" /> : <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5" />}
             <div>
-              <p className="text-sm font-bold text-slate-900">Ikki bosqichli kirish (2FA) {user.totp_enabled ? 'yoqilgan' : 'o\'chiq'}</p>
+              <p className="text-sm font-bold text-slate-900">
+                {user.totp_enabled ? t('Ikki bosqichli kirish (2FA) yoqilgan') : t('Ikki bosqichli kirish (2FA) o\'chiq')}
+              </p>
               <p className="text-xs text-slate-500">
                 {user.totp_enabled
-                  ? 'Kirishda SMS koddan tashqari authenticator ilovasidagi kod ham so\'raladi.'
+                  ? t('Kirishda SMS koddan tashqari authenticator ilovasidagi kod ham so\'raladi.')
                   : user.role === 'admin'
-                    ? 'Administrator hisobi uchun albatta yoqing: SIM karta o\'g\'irlansa ham hisobingiz himoyalangan bo\'ladi.'
-                    : 'Qo\'shimcha himoya: SIM karta o\'g\'irlansa ham hisobingizga kira olishmaydi.'}
+                    ? t('Administrator hisobi uchun albatta yoqing: SIM karta o\'g\'irlansa ham hisobingiz himoyalangan bo\'ladi.')
+                    : t('Qo\'shimcha himoya: SIM karta o\'g\'irlansa ham hisobingizga kira olishmaydi.')}
               </p>
             </div>
           </div>
@@ -236,7 +242,7 @@ export default function SecuritySettings() {
               user.totp_enabled ? 'border border-slate-200 text-slate-700 hover:bg-white' : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            <KeyRound className="w-4 h-4" /> {user.totp_enabled ? 'O\'chirish' : 'Yoqish'}
+            <KeyRound className="w-4 h-4" /> {user.totp_enabled ? t('O\'chirib qo\'yish') : t('Yoqish')}
           </button>
         </div>
       </div>
@@ -246,14 +252,14 @@ export default function SecuritySettings() {
           onClick={() => setDialog('logoutAll')}
           className="btn btn-secondary flex-1 px-4"
         >
-          <LogOut className="w-4 h-4" /> Barcha qurilmalardan chiqish
+          <LogOut className="w-4 h-4" /> {t('Barcha qurilmalardan chiqish')}
         </button>
         {user.role !== 'admin' && (
           <button
             onClick={() => setDialog('delete')}
             className="flex-1 px-4 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 inline-flex items-center justify-center gap-2"
           >
-            <Trash2 className="w-4 h-4" /> Hisobni o'chirish
+            <Trash2 className="w-4 h-4" /> {t('Hisobni o\'chirish')}
           </button>
         )}
       </div>
@@ -266,9 +272,9 @@ export default function SecuritySettings() {
       )}
       {dialog === 'logoutAll' && (
         <ConfirmDialog
-          title="Barcha qurilmalardan chiqasizmi?"
-          description="Shu va boshqa barcha telefon/kompyuterlardagi sessiyalar yopiladi. Qayta kirish uchun SMS kod kerak bo'ladi."
-          confirmLabel="Chiqish"
+          title={t('Barcha qurilmalardan chiqasizmi?')}
+          description={t('Shu va boshqa barcha telefon/kompyuterlardagi sessiyalar yopiladi. Qayta kirish uchun SMS kod kerak bo\'ladi.')}
+          confirmLabel={t('Chiqish')}
           tone="primary"
           loading={loggingOut}
           onConfirm={logoutEverywhere}

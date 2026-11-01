@@ -25,7 +25,7 @@ const resolveUserFromToken = async (token) => {
     if (decoded.purpose) return { status: 401, message: 'Noto\'g\'ri token' };
 
     const result = await query(
-        `SELECT id, phone, role, name, avatar_url, is_active, token_version, deleted_at, totp_enabled
+        `SELECT id, phone, role, name, avatar_url, is_active, token_version, deleted_at, totp_enabled, language
          FROM users WHERE id = $1`,
         [decoded.userId]
     );

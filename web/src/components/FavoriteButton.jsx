@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart } from 'lucide-react';
 import { useFavorites } from '../context/FavoritesContext';
+import { t } from '../i18n';
 
 /**
  * Yurakcha: ustani sevimlilarga qo'shish / olib tashlash
@@ -10,7 +11,7 @@ export default function FavoriteButton({ master, variant = 'icon', className = '
   const favorites = useFavorites();
   if (!favorites || !master?.id) return null;
   const active = favorites.isFavorite(master.id);
-  const label = active ? 'Sevimlilardan olib tashlash' : 'Sevimlilarga qo\'shish';
+  const label = active ? t('Sevimlilardan olib tashlash') : t('Sevimlilarga qo\'shish');
 
   if (variant === 'full') {
     return (
@@ -22,7 +23,7 @@ export default function FavoriteButton({ master, variant = 'icon', className = '
         className={`btn btn-secondary ${active ? 'text-rose-600 border-rose-200' : ''} ${className}`}
       >
         <Heart className={`w-4 h-4 ${active ? 'fill-current text-rose-500' : ''}`} />
-        {active ? 'Sevimlida' : 'Sevimlilarga'}
+        {active ? t('Sevimlida') : t('Sevimlilarga')}
       </button>
     );
   }
@@ -35,7 +36,7 @@ export default function FavoriteButton({ master, variant = 'icon', className = '
         favorites.toggle(master);
       }}
       aria-pressed={active}
-      aria-label={`${master.name || 'Usta'}: ${label.toLowerCase()}`}
+      aria-label={`${master.name || t('Usta')}: ${label.toLowerCase()}`}
       title={label}
       className={`w-10 h-10 rounded-full inline-flex items-center justify-center transition ${
         active ? 'text-rose-500 bg-rose-50 hover:bg-rose-100' : 'text-slate-400 hover:text-rose-500 hover:bg-slate-100'

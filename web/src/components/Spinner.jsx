@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { t } from '../i18n';
 
 export default function Spinner({ className = 'w-5 h-5', label }) {
   return (
@@ -10,7 +11,7 @@ export default function Spinner({ className = 'w-5 h-5', label }) {
   );
 }
 
-export function PageLoader({ label = 'Yuklanmoqda...' }) {
+export function PageLoader({ label = t('Yuklanmoqda...') }) {
   return (
     <div className="flex items-center justify-center py-24">
       <Spinner className="w-6 h-6 text-blue-600" label={label} />

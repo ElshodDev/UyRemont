@@ -9,6 +9,7 @@ const { query } = require('../config/database');
 const { emitToUser } = require('./dispatch.service');
 const { notifyUser } = require('./telegram/notify');
 const { escapeHtml, urlButton, keyboard } = require('./telegram/client');
+const { tr, translate } = require('../i18n');
 
 const PAYMENT_METHODS = ['card', 'cash', 'transfer', 'other'];
 
@@ -68,14 +69,18 @@ const accrueCommission = async (client, order) => {
 };
 
 /**
- * Ustaga xabar: saytda (socket) va Telegram'da
+ * Ustaga xabar: saytda (socket) va Telegram'da. message o'zbekcha yoziladi va ustaning tiliga tarjima qilinadi
  */
 const notifyCommission = (masterId, { due, message, telegram = true }) => {
-    emitToUser(masterId, 'commission_updated', {
-        due, limit: config.COMMISSION_DEBT_LIMIT, blocked: isOverLimit(due), message,
-    });
+    emitToUser(masterId, 'commission_updated', (lang) => ({
+        due, limit: config.COMMISSION_DEBT_LIMIT, blocked: isOverLimit(due), message: translate(lang, message),
+    }));
     if (telegram) {
-        notifyUser(masterId, `💳 ${escapeHtml(message)}`, keyboard([[urlButton('Komissiya hisobi', '/master/hisob')]])).catch(() => {});
+        notifyUser(
+            masterId,
+            (lang) => `💳 ${escapeHtml(translate(lang, message))}`,
+            (lang) => keyboard([[urlButton(tr(lang, 'Komissiya hisobi'), '/master/hisob')]])
+        ).catch(() => {});
     }
 };
 

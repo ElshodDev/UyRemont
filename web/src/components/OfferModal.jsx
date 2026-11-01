@@ -3,6 +3,7 @@ import { MapPin, Navigation, Star, Wallet, Zap } from 'lucide-react';
 import Spinner from './Spinner';
 import OrderPhotos from './OrderPhotos';
 import { formatPrice, formatRating } from '../lib/format';
+import { t } from '../i18n';
 
 /**
  * Qisqa ovozli signal (brauzer ruxsat bergan bo'lsa)
@@ -69,9 +70,9 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
         <div className="p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6">
           <div className="flex items-center justify-between mb-4">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
-              <Zap className="w-3.5 h-3.5" /> Yangi buyurtma
+              <Zap className="w-3.5 h-3.5" /> {t('Yangi buyurtma')}
             </span>
-            <span className={`text-2xl font-black tabular-nums ${left <= 5 ? 'text-red-600' : 'text-slate-900'}`}>{left}s</span>
+            <span className={`text-2xl font-black tabular-nums ${left <= 5 ? 'text-red-600' : 'text-slate-900'}`}>{t('{sec}s', { sec: left })}</span>
           </div>
 
           <h3 id="offer-title" className="text-xl font-extrabold text-slate-900">
@@ -86,21 +87,21 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
 
           <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
             <div className="p-3 rounded-xl bg-slate-50">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Navigation className="w-3 h-3" /> Masofa</span>
-              <span className="font-bold text-slate-900">{Number(offer.distance_km).toFixed(1)} km · ~{offer.eta_min} daq</span>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Navigation className="w-3 h-3" /> {t('Masofa')}</span>
+              <span className="font-bold text-slate-900">{t('{km} km · ~{min} daq', { km: Number(offer.distance_km).toFixed(1), min: offer.eta_min })}</span>
             </div>
             <div className="p-3 rounded-xl bg-slate-50">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Wallet className="w-3 h-3" /> Chiqish narxi</span>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Wallet className="w-3 h-3" /> {t('Chiqish narxi')}</span>
               <span className="font-bold text-slate-900">{formatPrice(offer.call_fee)}</span>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 col-span-2">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> Manzil</span>
-              <span className="font-semibold text-slate-800">{[offer.district, offer.address].filter(Boolean).join(', ')}</span>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> {t('Manzil')}</span>
+              <span className="font-semibold text-slate-800">{[offer.district && t(offer.district), offer.address].filter(Boolean).join(', ')}</span>
             </div>
           </div>
 
           <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
-            Mijoz: <strong className="text-slate-700">{offer.client_name}</strong>
+            {t('Mijoz:')} <strong className="text-slate-700">{offer.client_name}</strong>
             <Star className="w-3.5 h-3.5 text-amber-500 fill-current ml-1" /> {formatRating(offer.client_rating)}
           </p>
 
@@ -110,14 +111,14 @@ export default function OfferModal({ offer, onAccept, onDecline }) {
               disabled={Boolean(busy)}
               className="btn btn-secondary min-h-14 rounded-2xl font-bold"
             >
-              {busy === 'decline' ? <Spinner className="w-4 h-4" /> : 'Rad etish'}
+              {busy === 'decline' ? <Spinner className="w-4 h-4" /> : t('Rad etish')}
             </button>
             <button
               onClick={() => act('accept')}
               disabled={Boolean(busy) || left === 0}
               className="btn btn-success btn-lg col-span-2"
             >
-              {busy === 'accept' ? <Spinner className="w-5 h-5 text-white" /> : 'Qabul qilish'}
+              {busy === 'accept' ? <Spinner className="w-5 h-5 text-white" /> : t('Qabul qilish')}
             </button>
           </div>
         </div>

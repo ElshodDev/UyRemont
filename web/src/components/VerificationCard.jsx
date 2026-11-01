@@ -6,19 +6,21 @@ import { api } from '../lib/api';
 import { downscaleImage } from '../lib/images';
 import { getSocket } from '../lib/socket';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
-const KINDS = [
-  { id: 'passport', label: 'Pasport yoki ID karta', hint: 'Majburiy: ism va rasm aniq ko\'rinsin' },
-  { id: 'selfie', label: 'Hujjat bilan selfi', hint: 'Tavsiya etiladi: tekshiruv tezlashadi' },
-  { id: 'certificate', label: 'Sertifikat yoki diplom', hint: 'Ixtiyoriy' }
+// Matnlar ko'rsatish paytida joriy tilda olinadi (modul darajasida t() chaqirilmaydi)
+const KINDS = () => [
+  { id: 'passport', label: t('Pasport yoki ID karta'), hint: t('Majburiy: ism va rasm aniq ko\'rinsin') },
+  { id: 'selfie', label: t('Hujjat bilan selfi'), hint: t('Tavsiya etiladi: tekshiruv tezlashadi') },
+  { id: 'certificate', label: t('Sertifikat yoki diplom'), hint: t('Ixtiyoriy') }
 ];
 
-const STATUS_VIEW = {
-  none: { icon: ShieldQuestion, title: 'Profil tasdiqlanmagan', text: 'Tezkor buyurtmalar faqat tasdiqlangan ustalarga yuboriladi. Hujjat yuklab, tekshiruvga yuboring.', tone: 'bg-slate-50 border-slate-200 text-slate-700' },
-  pending: { icon: Clock, title: 'Tekshirilmoqda', text: 'Odatda 24 soat ichida ko\'rib chiqiladi. Natija shu yerda va Telegram\'da chiqadi.', tone: 'bg-blue-50 border-blue-200 text-blue-800' },
-  rejected: { icon: AlertTriangle, title: 'Tasdiqlanmadi', text: '', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
-  verified: { icon: BadgeCheck, title: 'Profil tasdiqlangan', text: 'Mijozlar profilingizda ✓ belgisini ko\'radi va siz tezkor buyurtmalar olasiz.', tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' }
-};
+const STATUS_VIEW = () => ({
+  none: { icon: ShieldQuestion, title: t('Profil tasdiqlanmagan'), text: t('Tezkor buyurtmalar faqat tasdiqlangan ustalarga yuboriladi. Hujjat yuklab, tekshiruvga yuboring.'), tone: 'bg-slate-50 border-slate-200 text-slate-700' },
+  pending: { icon: Clock, title: t('Tekshirilmoqda'), text: t('Odatda 24 soat ichida ko\'rib chiqiladi. Natija shu yerda va Telegram\'da chiqadi.'), tone: 'bg-blue-50 border-blue-200 text-blue-800' },
+  rejected: { icon: AlertTriangle, title: t('Tasdiqlanmadi'), text: '', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
+  verified: { icon: BadgeCheck, title: t('Profil tasdiqlangan'), text: t('Mijozlar profilingizda ✓ belgisini ko\'radi va siz tezkor buyurtmalar olasiz.'), tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' }
+});
 
 /**
  * Usta: tasdiqlash holati, hujjatlar va tekshiruvga yuborish
@@ -48,7 +50,7 @@ export default function VerificationCard() {
   if (state === false) return null;
   if (!state) return <div className="card p-5"><Spinner className="w-4 h-4" /></div>;
 
-  const view = STATUS_VIEW[state.status];
+  const view = STATUS_VIEW()[state.status];
   const Icon = view.icon;
   const editable = state.status !== 'verified' && state.status !== 'pending';
 
@@ -102,7 +104,7 @@ export default function VerificationCard() {
         <Icon className="w-6 h-6 flex-shrink-0" aria-hidden="true" />
         <div>
           <h2 id="verification-title" className="font-bold">{view.title}</h2>
-          <p className="text-xs mt-0.5">{state.status === 'rejected' ? `Sabab: ${state.note}. Kamchilikni tuzatib, qayta yuboring.` : view.text}</p>
+          <p className="text-xs mt-0.5">{state.status === 'rejected' ? t('Sabab: {note}. Kamchilikni tuzatib, qayta yuboring.', { note: state.note }) : view.text}</p>
         </div>
       </div>
 
@@ -110,9 +112,9 @@ export default function VerificationCard() {
         <>
           <ul className="space-y-1.5 text-sm">
             {[
-              [req.has_name, 'Ism kiritilgan'],
-              [req.has_specializations, 'Kamida bitta mutaxassislik tanlangan (pastdagi formada)'],
-              [req.has_passport, 'Pasport yoki ID karta rasmi yuklangan']
+              [req.has_name, t('Ism kiritilgan')],
+              [req.has_specializations, t('Kamida bitta mutaxassislik tanlangan (pastdagi formada)')],
+              [req.has_passport, t('Pasport yoki ID karta rasmi yuklangan')]
             ].map(([ok, text]) => (
               <li key={text} className={`flex items-center gap-2 ${ok ? 'text-emerald-700' : 'text-slate-500'}`}>
                 {ok ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />} {text}
@@ -121,7 +123,7 @@ export default function VerificationCard() {
           </ul>
 
           <div className="space-y-3">
-            {KINDS.map((kind) => {
+            {KINDS().map((kind) => {
               const docs = state.documents.filter((d) => d.kind === kind.id);
               return (
                 <div key={kind.id} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -132,7 +134,7 @@ export default function VerificationCard() {
                     </div>
                     {editable && (
                       <label className="btn btn-sm btn-secondary min-h-10 cursor-pointer flex-shrink-0">
-                        {busy === kind.id ? <Spinner className="w-4 h-4" /> : <Upload className="w-4 h-4" />} Yuklash
+                        {busy === kind.id ? <Spinner className="w-4 h-4" /> : <Upload className="w-4 h-4" />} {t('Yuklash')}
                         <input
                           ref={(el) => { inputs.current[kind.id] = el; }}
                           type="file"
@@ -155,7 +157,7 @@ export default function VerificationCard() {
                               onClick={() => remove(doc.id)}
                               disabled={Boolean(busy)}
                               className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-ink/80 text-white flex items-center justify-center"
-                              aria-label={`${kind.label}: o'chirish`}
+                              aria-label={t('{label}: o\'chirish', { label: kind.label })}
                             >
                               {busy === doc.id ? <Spinner className="w-3.5 h-3.5 text-white" /> : <Trash2 className="w-3.5 h-3.5" />}
                             </button>
@@ -168,7 +170,7 @@ export default function VerificationCard() {
               );
             })}
           </div>
-          <p className="hint">Hujjatlarni faqat administrator ko'radi, joylashuv ma'lumotlari o'chiriladi. Hisobni o'chirsangiz, ular ham o'chadi.</p>
+          <p className="hint">{t('Hujjatlarni faqat administrator ko\'radi, joylashuv ma\'lumotlari o\'chiriladi. Hisobni o\'chirsangiz, ular ham o\'chadi.')}</p>
 
           {editable && (
             <button
@@ -177,7 +179,7 @@ export default function VerificationCard() {
               disabled={Boolean(busy) || !req.has_passport || !req.has_specializations || !req.has_name}
               className="btn btn-primary w-full min-h-12 font-bold"
             >
-              {busy === 'submit' ? <Spinner className="w-4 h-4 text-white" /> : 'Tekshiruvga yuborish'}
+              {busy === 'submit' ? <Spinner className="w-4 h-4 text-white" /> : t('Tekshiruvga yuborish')}
             </button>
           )}
         </>

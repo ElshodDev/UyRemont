@@ -8,7 +8,9 @@ import { api } from '../lib/api';
 import { ORDER_STATUSES } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
+// Yorliqlar o'zbekcha (kalit), ko'rsatishda t(label)
 const STATUS_FILTERS = [{ id: '', label: 'Barchasi' }, ...Object.entries(ORDER_STATUSES).map(([id, s]) => ({ id, label: s.label }))];
 
 export default function OrdersPage({ embedded = false }) {
@@ -62,7 +64,7 @@ export default function OrdersPage({ embedded = false }) {
     setClaiming(order.id);
     try {
       await api(`/orders/${order.id}/status`, { method: 'PUT', body: { status: 'accepted' } });
-      toast.success('Buyurtma sizga biriktirildi');
+      toast.success(t('Buyurtma sizga biriktirildi'));
       setOrders((list) => list.filter((o) => o.id !== order.id));
     } catch (err) {
       toast.error(err.message);
@@ -72,7 +74,7 @@ export default function OrdersPage({ embedded = false }) {
     }
   };
 
-  const title = isAdmin ? 'Barcha buyurtmalar' : isMaster ? 'Buyurtmalar' : 'Mening buyurtmalarim';
+  const title = isAdmin ? t('Barcha buyurtmalar') : isMaster ? t('Buyurtmalar') : t('Mening buyurtmalarim');
 
   return (
     <Wrapper embedded={embedded}>
@@ -81,22 +83,22 @@ export default function OrdersPage({ embedded = false }) {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">{title}</h1>
           <p className="text-xs text-slate-500">
-            {isMaster ? 'Sizga kelgan va hududingizdagi ochiq buyurtmalar' : 'Buyurtmalar holati va usta bilan yozishmalar'}
+            {isMaster ? t('Sizga kelgan va hududingizdagi ochiq buyurtmalar') : t('Buyurtmalar holati va usta bilan yozishmalar')}
           </p>
         </div>
       </div>}
 
       {isMaster && (
         <div className="inline-flex p-1 bg-slate-100 rounded-xl mb-4">
-          {[{ id: 'mine', label: 'Mening buyurtmalarim' }, { id: 'open', label: 'Ochiq buyurtmalar' }].map((t) => (
+          {[{ id: 'mine', label: t('Mening buyurtmalarim') }, { id: 'open', label: t('Ochiq buyurtmalar') }].map((item) => (
             <button
-              key={t.id}
-              onClick={() => setParam('tab', t.id === 'mine' ? '' : t.id)}
+              key={item.id}
+              onClick={() => setParam('tab', item.id === 'mine' ? '' : item.id)}
               className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition ${
-                tab === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                tab === item.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              {t.label}
+              {item.label}
             </button>
           ))}
         </div>
@@ -113,7 +115,7 @@ export default function OrdersPage({ embedded = false }) {
                   statusFilter === s.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                {s.label}
+                {t(s.label)}
               </button>
             ))}
           </div>
@@ -122,7 +124,7 @@ export default function OrdersPage({ embedded = false }) {
               <Search className="w-4 h-4 text-slate-400 mr-2" />
               <input
                 className="w-full py-2 text-sm outline-none bg-transparent"
-                placeholder="Sarlavha yoki ism..."
+                placeholder={t('Sarlavha yoki ism...')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -138,17 +140,17 @@ export default function OrdersPage({ embedded = false }) {
         tab === 'open' ? (
           <EmptyState
             icon={<Inbox className="w-10 h-10 mx-auto text-slate-300" />}
-            title="Hozircha ochiq buyurtmalar yo'q"
-            description="Mutaxassisligingizga mos yangi buyurtma paydo bo'lganda shu yerda ko'rinadi."
+            title={t('Hozircha ochiq buyurtmalar yo\'q')}
+            description={t('Mutaxassisligingizga mos yangi buyurtma paydo bo\'lganda shu yerda ko\'rinadi.')}
           />
         ) : (
           <EmptyState
             icon="📋"
-            title="Buyurtmalar topilmadi"
-            description={user.role === 'client' ? 'Ustalar ro\'yxatidan kerakli ustani tanlab, birinchi buyurtmangizni bering.' : 'Bu bo\'limda hali buyurtmalar yo\'q.'}
+            title={t('Buyurtmalar topilmadi')}
+            description={user.role === 'client' ? t('Ustalar ro\'yxatidan kerakli ustani tanlab, birinchi buyurtmangizni bering.') : t('Bu bo\'limda hali buyurtmalar yo\'q.')}
             action={user.role === 'client' && (
               <Link to="/" className="btn btn-primary px-4">
-                Usta topish
+                {t('Usta topish')}
               </Link>
             )}
           />
@@ -168,7 +170,7 @@ export default function OrdersPage({ embedded = false }) {
                   disabled={claiming === order.id}
                   className="btn btn-primary w-full sm:w-auto px-4 font-bold"
                 >
-                  {claiming === order.id ? <Spinner className="w-4 h-4 text-white" /> : 'Buyurtmani olish'}
+                  {claiming === order.id ? <Spinner className="w-4 h-4 text-white" /> : t('Buyurtmani olish')}
                 </button>
               )}
             />
@@ -180,7 +182,7 @@ export default function OrdersPage({ embedded = false }) {
                 disabled={state === 'more'}
                 className="btn btn-secondary px-6"
               >
-                {state === 'more' ? <Spinner className="w-4 h-4" /> : 'Ko\'proq ko\'rsatish'}
+                {state === 'more' ? <Spinner className="w-4 h-4" /> : t('Ko\'proq ko\'rsatish')}
               </button>
             </div>
           )}

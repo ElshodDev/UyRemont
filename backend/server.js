@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 const routes = require('./src/routes');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
 const { apiLimiter, previewLimiter } = require('./src/middleware/rateLimit');
+const { languageMiddleware } = require('./src/middleware/language');
 const { getPublicMasterPage, getMasterOgImage, getGuidePage } = require('./src/controllers/og.controller');
 const { initChatSocket } = require('./src/socket/chat.socket');
 const { startDispatcher, stopDispatcher } = require('./src/services/dispatch.service');
@@ -50,6 +51,9 @@ app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
+// So'rov tili (Accept-Language) va javobdagi `message` tarjimasi. JSON tahlilidan oldin turadi:
+// noto'g'ri JSON xatosi ham (errorHandler -> res.json) tanlangan tilda qaytadi
+app.use(languageMiddleware);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 

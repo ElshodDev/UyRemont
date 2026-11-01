@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 /**
  * "Usta chaqirish" tugmasi: kirmagan bo'lsa avval kirish, faqat mijoz hisobidan /call sahifasiga
@@ -16,8 +17,8 @@ export function useCallMaster() {
     requireAuth((current) => {
       if (current.role !== 'client') {
         toast.error(current.role === 'master'
-          ? 'Usta chaqirish uchun profilingizda mijoz rejimiga o\'ting'
-          : 'Administrator hisobidan usta chaqirib bo\'lmaydi');
+          ? t('Usta chaqirish uchun profilingizda mijoz rejimiga o\'ting')
+          : t('Administrator hisobidan usta chaqirib bo\'lmaydi'));
         return;
       }
       const query = params ? new URLSearchParams(params).toString() : '';

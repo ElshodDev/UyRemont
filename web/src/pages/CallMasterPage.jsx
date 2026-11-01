@@ -4,7 +4,7 @@ import { Zap, LocateFixed, MapPin, Users, Clock, Wallet, Info, Tag } from 'lucid
 import MapView from '../components/MapView';
 import PhotoPicker from '../components/PhotoPicker';
 import SavedAddressChips from '../components/SavedAddressChips';
-import { ADDRESS_LABELS, useSavedAddresses } from '../lib/useSavedAddresses';
+import { ADDRESS_LABELS, DEFAULT_ADDRESS_LABEL, addressLabel, useSavedAddresses } from '../lib/useSavedAddresses';
 import Spinner, { PageLoader } from '../components/Spinner';
 import { api } from '../lib/api';
 import { useSpecializations } from '../lib/useSpecializations';
@@ -12,6 +12,7 @@ import { getCurrentPosition, nearestDistrict, TASHKENT_CENTER } from '../lib/geo
 import { formatPrice } from '../lib/format';
 import { mainVerticals, districtsList } from '../data/catalog';
 import { useToast } from '../context/ToastContext';
+import { t, specName } from '../i18n';
 
 const inputClass = 'input';
 
@@ -110,7 +111,7 @@ export default function CallMasterPage() {
       setLocation({ lat: Number(address.lat), lng: Number(address.lng) });
       setLocationError('');
     } else {
-      setLocationError('Bu manzil uchun xaritada joy saqlanmagan — xaritada belgilang');
+      setLocationError(t('Bu manzil uchun xaritada joy saqlanmagan — xaritada belgilang'));
     }
   };
 
@@ -155,9 +156,9 @@ export default function CallMasterPage() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!specId) return toast.error('Xizmat turini tanlang');
-    if (!location) return toast.error('Xaritada manzilingizni belgilang');
-    if (photosBusy) return toast.info('Rasmlar yuklanishini kuting');
+    if (!specId) return toast.error(t('Xizmat turini tanlang'));
+    if (!location) return toast.error(t('Xaritada manzilingizni belgilang'));
+    if (photosBusy) return toast.info(t('Rasmlar yuklanishini kuting'));
     setSubmitting(true);
     try {
       const { data } = await api('/dispatch/orders', {
@@ -167,7 +168,8 @@ export default function CallMasterPage() {
       if (saveAddress && !savedId) {
         // Manzilni saqlash ixtiyoriy: xato bo'lsa chaqiruv baribir yuborilgan
         await saved.create({
-          label: (saveLabel === 'other' ? customLabel : saveLabel).trim() || 'Manzil',
+          // Tayyor nomlar o'zbekcha saqlanadi (ko'rsatishda addressLabel tarjima qiladi)
+          label: (saveLabel === 'other' ? customLabel : saveLabel).trim() || DEFAULT_ADDRESS_LABEL,
           address: form.address,
           district: form.district,
           lat: location.lat,
@@ -190,15 +192,15 @@ export default function CallMasterPage() {
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white"><Zap className="w-6 h-6" /></div>
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Usta chaqirish</h1>
-          <p className="text-xs text-slate-500">Eng yaqin bo'sh usta avtomatik topiladi va manzilingizga yo'l oladi</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">{t('Usta chaqirish')}</h1>
+          <p className="text-xs text-slate-500">{t('Eng yaqin bo\'sh usta avtomatik topiladi va manzilingizga yo\'l oladi')}</p>
         </div>
       </div>
 
       <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
           <section className="card-pad">
-            <h2 className="font-bold text-slate-900 text-sm mb-3">1. Qanday usta kerak?</h2>
+            <h2 className="font-bold text-slate-900 text-sm mb-3">{t('1. Qanday usta kerak?')}</h2>
             <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
               {mainVerticals.map((v) => (
                 <button
@@ -210,7 +212,7 @@ export default function CallMasterPage() {
                     vertical === v.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  {v.icon} {v.name}
+                  {v.icon} {t(v.name)}
                 </button>
               ))}
             </div>
@@ -226,8 +228,8 @@ export default function CallMasterPage() {
                   }`}
                 >
                   <span className="text-xl">{s.icon}</span>
-                  <span className="block text-xs font-bold text-slate-800 mt-1">{s.name_uz}</span>
-                  <span className="block text-[11px] text-slate-500">Chiqish: {formatPrice(s.call_fee)}</span>
+                  <span className="block text-xs font-bold text-slate-800 mt-1">{specName(s)}</span>
+                  <span className="block text-[11px] text-slate-500">{t('Chiqish: {price}', { price: formatPrice(s.call_fee) })}</span>
                 </button>
               ))}
             </div>
@@ -235,7 +237,7 @@ export default function CallMasterPage() {
 
           <section className="card-pad">
             <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="font-bold text-slate-900 text-sm">2. Qayerga?</h2>
+              <h2 className="font-bold text-slate-900 text-sm">{t('2. Qayerga?')}</h2>
               <button
                 type="button"
                 onClick={() => locate()}
@@ -243,39 +245,39 @@ export default function CallMasterPage() {
                 className="btn btn-sm btn-soft font-bold"
               >
                 {locating ? <Spinner className="w-3.5 h-3.5" /> : <LocateFixed className="w-3.5 h-3.5" />}
-                Mening joylashuvim
+                {t('Mening joylashuvim')}
               </button>
             </div>
             <SavedAddressChips addresses={saved.addresses} selectedId={savedId} onSelect={pickSaved} className="mb-3" />
             <MapView
               center={location || TASHKENT_CENTER}
-              markers={location ? [{ id: 'client', ...location, type: 'client', draggable: true, label: 'Usta shu yerga keladi' }] : []}
+              markers={location ? [{ id: 'client', ...location, type: 'client', draggable: true, label: t('Usta shu yerga keladi') }] : []}
               onPick={pickOnMap}
               className="h-64 sm:h-72"
             />
             <p className={`text-[11px] mt-2 ${locationError ? 'text-amber-700' : 'text-slate-400'}`}>
-              {locationError || (location ? 'Markerni surib yoki xaritani bosib aniq joyni belgilang.' : 'Xaritani bosib manzilingizni belgilang.')}
+              {locationError || (location ? t('Markerni surib yoki xaritani bosib aniq joyni belgilang.') : t('Xaritani bosib manzilingizni belgilang.'))}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
               <select
                 className={inputClass}
-                aria-label="Tuman"
+                aria-label={t('Tuman')}
                 value={form.district}
                 onChange={(e) => {
                   setSavedId(null);
                   setForm({ ...form, district: e.target.value });
                 }}
               >
-                <option value="">Tuman</option>
-                {districtsList.slice(1).map((d) => <option key={d} value={d}>{d}</option>)}
+                <option value="">{t('Tuman')}</option>
+                {districtsList.slice(1).map((d) => <option key={d} value={d}>{t(d)}</option>)}
               </select>
               <input
                 required
                 minLength={3}
                 maxLength={500}
                 className={`${inputClass} sm:col-span-2`}
-                aria-label="Manzil"
-                placeholder="Ko'cha, uy, xonadon, mo'ljal"
+                aria-label={t('Manzil')}
+                placeholder={t('Ko\'cha, uy, xonadon, mo\'ljal')}
                 value={form.address}
                 onChange={(e) => {
                   setSavedId(null);
@@ -287,10 +289,10 @@ export default function CallMasterPage() {
               <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer min-h-9">
                   <input type="checkbox" className="w-4 h-4 accent-blue-600" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} />
-                  Bu manzilni saqlash — keyingi safar bir bosishda tanlanadi
+                  {t('Bu manzilni saqlash — keyingi safar bir bosishda tanlanadi')}
                 </label>
                 {saveAddress && (
-                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Manzil nomi">
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('Manzil nomi')}>
                     {[...ADDRESS_LABELS, 'other'].map((label) => (
                       <button
                         key={label}
@@ -300,15 +302,15 @@ export default function CallMasterPage() {
                         onClick={() => setSaveLabel(label)}
                         className={`chip border ${saveLabel === label ? 'chip-active border-blue-600' : 'bg-white border-slate-200'}`}
                       >
-                        {label === 'other' ? 'Boshqa' : label}
+                        {label === 'other' ? t('Boshqa') : addressLabel(label)}
                       </button>
                     ))}
                     {saveLabel === 'other' && (
                       <input
                         className={`${inputClass} flex-1 min-w-[10rem]`}
                         maxLength={40}
-                        placeholder="Masalan: Dacha"
-                        aria-label="Manzil nomi"
+                        placeholder={t('Masalan: Dacha')}
+                        aria-label={t('Manzil nomi')}
                         value={customLabel}
                         onChange={(e) => setCustomLabel(e.target.value)}
                       />
@@ -320,56 +322,56 @@ export default function CallMasterPage() {
           </section>
 
           <section className="card-pad">
-            <h2 className="font-bold text-slate-900 text-sm mb-3">3. Muammo nimada? <span className="font-normal text-slate-400">(ixtiyoriy)</span></h2>
+            <h2 className="font-bold text-slate-900 text-sm mb-3">{t('3. Muammo nimada?')} <span className="font-normal text-slate-400">{t('(ixtiyoriy)')}</span></h2>
             <textarea
               rows="3"
               maxLength={2000}
               className={inputClass}
-              aria-label="Muammo tavsifi"
-              placeholder="Masalan: oshxonadagi kran oqyapti, smesitelni almashtirish kerak"
+              aria-label={t('Muammo tavsifi')}
+              placeholder={t('Masalan: oshxonadagi kran oqyapti, smesitelni almashtirish kerak')}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
-            <p className="label mt-4">Rasm <span className="font-normal text-slate-400">— usta kerakli asbobni oldindan oladi</span></p>
+            <p className="label mt-4">{t('Rasm')} <span className="font-normal text-slate-400">{t('— usta kerakli asbobni oldindan oladi')}</span></p>
             <PhotoPicker onChange={setPhotoIds} onBusyChange={setPhotosBusy} />
           </section>
         </div>
 
         <aside className="lg:col-span-2">
           <div className="card-pad lg:sticky lg:top-24 space-y-4">
-            <h2 className="font-bold text-slate-900">Chaqiruv</h2>
+            <h2 className="font-bold text-slate-900">{t('Chaqiruv')}</h2>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-2"><Wallet className="w-4 h-4" /> Chiqish narxi</span>
+                <span className="text-slate-500 flex items-center gap-2"><Wallet className="w-4 h-4" /> {t('Chiqish narxi')}</span>
                 <span className="font-bold text-slate-900">{selectedSpec ? formatPrice(estimate?.call_fee ?? selectedSpec.call_fee) : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-2"><Users className="w-4 h-4" /> Hozir bo'sh ustalar</span>
-                <span className="font-bold text-slate-900">{estimate ? `${estimate.online_masters} ta` : '—'}</span>
+                <span className="text-slate-500 flex items-center gap-2"><Users className="w-4 h-4" /> {t('Hozir bo\'sh ustalar')}</span>
+                <span className="font-bold text-slate-900">{estimate ? t('{n} ta', { n: estimate.online_masters }) : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-2"><Clock className="w-4 h-4" /> Yetib kelish</span>
-                <span className="font-bold text-slate-900">{estimate?.eta_min ? `~${estimate.eta_min} daqiqa` : '—'}</span>
+                <span className="text-slate-500 flex items-center gap-2"><Clock className="w-4 h-4" /> {t('Yetib kelish')}</span>
+                <span className="font-bold text-slate-900">{estimate?.eta_min ? t('~{n} daqiqa', { n: estimate.eta_min }) : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-2"><MapPin className="w-4 h-4" /> Tuman</span>
-                <span className="font-bold text-slate-900">{form.district || '—'}</span>
+                <span className="text-slate-500 flex items-center gap-2"><MapPin className="w-4 h-4" /> {t('Tuman')}</span>
+                <span className="font-bold text-slate-900">{form.district ? t(form.district) : '—'}</span>
               </div>
             </div>
 
             {estimate && estimate.online_masters === 0 && (
               <p className="text-xs p-3 rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
-                Hozir yaqin atrofda bo'sh usta yo'q. Chaqiruv berishingiz mumkin — usta ishga chiqishi bilan taklif yuboriladi.
+                {t('Hozir yaqin atrofda bo\'sh usta yo\'q. Chaqiruv berishingiz mumkin — usta ishga chiqishi bilan taklif yuboriladi.')}
               </p>
             )}
 
             <p className="text-[11px] text-slate-500 flex gap-1.5">
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              Ish narxi usta muammoni ko'rgach kelishiladi. To'lov ish tugagach ustaga to'g'ridan-to'g'ri amalga oshiriladi.
+              {t('Ish narxi usta muammoni ko\'rgach kelishiladi. To\'lov ish tugagach ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.')}
             </p>
             {selectedSpec && (
               <Link to={`/prices#${selectedSpec.slug}`} className="link text-xs inline-flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5" /> {selectedSpec.name_uz}: taxminiy ish narxlari
+                <Tag className="w-3.5 h-3.5" /> {t('{name}: taxminiy ish narxlari', { name: specName(selectedSpec) })}
               </Link>
             )}
 
@@ -378,10 +380,10 @@ export default function CallMasterPage() {
               disabled={submitting || photosBusy || !specId || !location}
               className="btn btn-accent btn-lg w-full"
             >
-              {submitting ? <Spinner className="w-5 h-5 text-white" /> : <><Zap className="w-5 h-5" /> Usta chaqirish</>}
+              {submitting ? <Spinner className="w-5 h-5 text-white" /> : <><Zap className="w-5 h-5" /> {t('Usta chaqirish')}</>}
             </button>
             <Link to="/rules" className="link block text-center text-xs min-h-9 leading-9">
-              Ishlash qoidalari
+              {t('Ishlash qoidalari')}
             </Link>
           </div>
         </aside>

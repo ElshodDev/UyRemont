@@ -3,6 +3,7 @@ import StarRating from './StarRating';
 import Spinner from './Spinner';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
+import { t } from '../i18n';
 
 export default function ReviewForm({ orderId, onCreated }) {
   const toast = useToast();
@@ -15,7 +16,7 @@ export default function ReviewForm({ orderId, onCreated }) {
     setSubmitting(true);
     try {
       await api('/reviews', { method: 'POST', body: { order_id: orderId, rating, comment } });
-      toast.success('Rahmat! Sharhingiz qabul qilindi');
+      toast.success(t('Rahmat! Sharhingiz qabul qilindi'));
       onCreated();
     } catch (err) {
       toast.error(err.message);
@@ -27,16 +28,16 @@ export default function ReviewForm({ orderId, onCreated }) {
   return (
     <form onSubmit={submit} className="bg-white rounded-2xl border border-amber-200 p-5 space-y-3">
       <div>
-        <h3 className="font-bold text-slate-900">Ustani baholang</h3>
-        <p className="text-xs text-slate-500">Sharhingiz boshqa mijozlarga to'g'ri usta tanlashga yordam beradi.</p>
+        <h3 className="font-bold text-slate-900">{t('Ustani baholang')}</h3>
+        <p className="text-xs text-slate-500">{t('Sharhingiz boshqa mijozlarga to\'g\'ri usta tanlashga yordam beradi.')}</p>
       </div>
       <StarRating value={rating} onChange={setRating} size="w-7 h-7" />
       <textarea
         rows="3"
         maxLength={1000}
         className="input"
-        aria-label="Sharh"
-        placeholder="Ish sifati, o'z vaqtida kelgani, narxi haqida..."
+        aria-label={t('Sharh')}
+        placeholder={t('Ish sifati, o\'z vaqtida kelgani, narxi haqida...')}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
@@ -45,7 +46,7 @@ export default function ReviewForm({ orderId, onCreated }) {
         disabled={submitting}
         className="btn bg-amber-500 text-white hover:bg-amber-600 px-5 font-bold"
       >
-        {submitting ? <Spinner className="w-4 h-4 text-white" /> : 'Sharh qoldirish'}
+        {submitting ? <Spinner className="w-4 h-4 text-white" /> : t('Sharh qoldirish')}
       </button>
     </form>
   );

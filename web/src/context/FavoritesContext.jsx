@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { api } from '../lib/api';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { t } from '../i18n';
 
 const FavoritesContext = createContext(null);
 
@@ -33,7 +34,7 @@ export function FavoritesProvider({ children }) {
   const toggle = useCallback((master) => {
     requireAuth(async (current) => {
       if (current.id === master.id) {
-        toast.error('O\'zingizni sevimlilarga qo\'sha olmaysiz');
+        toast.error(t('O\'zingizni sevimlilarga qo\'sha olmaysiz'));
         return;
       }
       const wasFavorite = idsRef.current.has(master.id);
@@ -47,7 +48,9 @@ export function FavoritesProvider({ children }) {
       try {
         await api(`/favorites/${master.id}`, { method: wasFavorite ? 'DELETE' : 'POST' });
         setVersion((v) => v + 1);
-        toast.success(wasFavorite ? 'Sevimlilardan olib tashlandi' : `${master.name || 'Usta'} sevimlilarga qo'shildi`);
+        toast.success(wasFavorite
+          ? t('Sevimlilardan olib tashlandi')
+          : t('{name} sevimlilarga qo\'shildi', { name: master.name || t('Usta') }));
       } catch (error) {
         apply(wasFavorite);
         toast.error(error.message);

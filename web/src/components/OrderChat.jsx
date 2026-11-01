@@ -3,6 +3,7 @@ import { Send, MessageSquare, WifiOff } from 'lucide-react';
 import { getSocket } from '../lib/socket';
 import { formatDate } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
+import { t } from '../i18n';
 
 /**
  * Buyurtma bo'yicha real-time chat (Socket.io)
@@ -77,17 +78,17 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
     <div className="card flex flex-col h-[480px]">
       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
         <h3 className="font-bold text-slate-900 flex items-center gap-2 text-sm">
-          <MessageSquare className="w-4 h-4 text-blue-600" /> Chat
+          <MessageSquare className="w-4 h-4 text-blue-600" /> {t('Chat')}
         </h3>
         <span className={`text-[11px] font-semibold inline-flex items-center gap-1 ${connected ? 'text-emerald-600' : 'text-slate-400'}`}>
           {connected ? <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> : <WifiOff className="w-3 h-3" />}
-          {connected ? 'Onlayn' : 'Ulanmoqda...'}
+          {connected ? t('Onlayn') : t('Ulanmoqda...')}
         </span>
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/50">
         {messages.length === 0 && (
-          <p className="text-center text-xs text-slate-400 mt-10">Hali xabarlar yo'q. Birinchi bo'lib yozing!</p>
+          <p className="text-center text-xs text-slate-400 mt-10">{t('Hali xabarlar yo\'q. Birinchi bo\'lib yozing!')}</p>
         )}
         {messages.map((m) => {
           const mine = m.sender_id === user?.id;
@@ -96,7 +97,7 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
               <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                 mine ? 'bg-blue-600 text-white rounded-br-md' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-md'
               }`}>
-                {!mine && <p className="text-[10px] font-bold text-blue-600 mb-0.5">{m.sender_name || 'Foydalanuvchi'}</p>}
+                {!mine && <p className="text-[10px] font-bold text-blue-600 mb-0.5">{m.sender_name || t('Foydalanuvchi')}</p>}
                 <p className="whitespace-pre-wrap break-words">{m.text}</p>
                 <p className={`text-[10px] mt-1 text-right ${mine ? 'text-blue-100' : 'text-slate-400'}`}>
                   {formatDate(m.created_at)}
@@ -112,8 +113,8 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
       <form onSubmit={send} className="p-3 border-t border-slate-100 flex gap-2">
         <input
           className="input flex-1"
-          aria-label="Xabar"
-          placeholder={disabled ? 'Chat yopilgan' : 'Xabar yozing...'}
+          aria-label={t('Xabar')}
+          placeholder={disabled ? t('Chat yopilgan') : t('Xabar yozing...')}
           maxLength={2000}
           disabled={disabled}
           value={text}
@@ -123,7 +124,7 @@ export default function OrderChat({ orderId, initialMessages = [], disabled, onO
           type="submit"
           disabled={disabled || !text.trim() || !connected}
           className="btn btn-primary px-4"
-          aria-label="Yuborish"
+          aria-label={t('Yuborish')}
         >
           <Send className="w-4 h-4" />
         </button>

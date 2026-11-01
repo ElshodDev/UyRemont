@@ -3,10 +3,13 @@
 // Usta takliflarni ilova yopiq bo'lsa ham oladi va shu yerning o'zida qabul qiladi;
 // mijoz buyurtma bosqichlari haqida xabar oladi. Barcha funksiyalar xatoni o'zi ushlaydi
 // (Telegram ishlamasa ham asosiy jarayon to'xtamaydi).
+// Matnlar qabul qiluvchining tilida (users.language): andoza avval tarjima qilinadi, keyin unga
+// escapeHtml qilingan qiymatlar qo'yiladi.
 // =============================================
 
 const { query } = require('../../config/database');
 const config = require('../../config/dispatch');
+const { tr, phrase, normalizeLanguage, DEFAULT_LANGUAGE } = require('../../i18n');
 const {
     isTelegramConfigured, sendMessage, editMessage, escapeHtml, urlButton, keyboard,
 } = require('./client');
@@ -14,9 +17,23 @@ const {
 const CHAT_NOTIFY_COOLDOWN_MS = 2 * 60 * 1000;
 const chatNotifiedAt = new Map();
 
-const money = (value) => {
+const money = (value, lang) => {
     const num = Number(value);
-    return Number.isFinite(num) && num > 0 ? `${Math.round(num).toLocaleString('ru-RU')} so'm` : 'kelishiladi';
+    return Number.isFinite(num) && num > 0
+        ? tr(lang, '{sum} so\'m', { sum: Math.round(num).toLocaleString('ru-RU') })
+        : tr(lang, 'kelishiladi');
+};
+
+/**
+ * Tezkor chaqiruvning avtomatik sarlavhasi ("Santexnik chaqiruvi") boshqa tilda mutaxassislik nomi bilan
+ * (specializations.name_ru). Mijoz yozgan sarlavha o'zgarmaydi.
+ */
+const orderTitle = (order, lang) => {
+    if (lang !== DEFAULT_LANGUAGE && order.specialization_name && order.specialization_name_ru
+        && order.title === `${order.specialization_name} chaqiruvi`) {
+        return tr(lang, '{spec} chaqiruvi', { spec: order.specialization_name_ru });
+    }
+    return order.title;
 };
 
 const navigationUrl = (lat, lng) => `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto`;
@@ -26,38 +43,48 @@ const logError = (label) => (error) => {
 };
 
 /**
- * Xabar olishga rozi bo'lgan, faol foydalanuvchining Telegram chati
+ * Xabar olishga rozi bo'lgan, faol foydalanuvchining Telegram chati va tili (bitta so'rov)
+ * @returns {Promise<{ chatId: string, lang: 'uz'|'ru' }|null>}
  */
-const chatForUser = async (userId) => {
+const recipientFor = async (userId) => {
     if (!userId || !isTelegramConfigured()) return null;
     const result = await query(
-        `SELECT t.chat_id FROM telegram_links t JOIN users u ON u.id = t.user_id
+        `SELECT t.chat_id, u.language FROM telegram_links t JOIN users u ON u.id = t.user_id
          WHERE t.user_id = $1 AND t.notifications = TRUE AND u.is_active = TRUE AND u.deleted_at IS NULL`,
         [userId]
     );
-    return result.rows[0]?.chat_id || null;
+    const row = result.rows[0];
+    return row ? { chatId: row.chat_id, lang: normalizeLanguage(row.language) } : null;
 };
 
+/**
+ * Foydalanuvchiga xabar. text va replyMarkup qiymat yoki (lang) => qiymat (qabul qiluvchining tilida tuziladi)
+ */
 const notifyUser = async (userId, text, replyMarkup) => {
-    const chatId = await chatForUser(userId);
-    if (!chatId) return null;
-    return sendMessage(chatId, text, { replyMarkup });
+    const recipient = await recipientFor(userId);
+    if (!recipient) return null;
+    const resolve = (value) => (typeof value === 'function' ? value(recipient.lang) : value);
+    return sendMessage(recipient.chatId, resolve(text), { replyMarkup: resolve(replyMarkup) });
 };
 
 // ---------- Ustaga taklif ----------
 
-const offerText = (offer) => {
+const offerText = (offer, lang) => {
+    const clientName = offer.client_name === 'Mijoz' ? tr(lang, 'Mijoz') : offer.client_name;
     const lines = [
-        `🔔 <b>Yangi buyurtma</b> · ${offer.timeout_sec || 20} soniya ichida javob bering`,
+        tr(lang, '🔔 <b>Yangi buyurtma</b> · {sec} soniya ichida javob bering', { sec: offer.timeout_sec || 20 }),
         '',
-        `${escapeHtml(offer.specialization_icon || '🛠')} <b>${escapeHtml(offer.title)}</b>`,
+        `${escapeHtml(offer.specialization_icon || '🛠')} <b>${escapeHtml(orderTitle(offer, lang))}</b>`,
     ];
     if (offer.description) lines.push(`📝 ${escapeHtml(offer.description.slice(0, 300))}`);
     lines.push(`📍 ${escapeHtml([offer.district, offer.address].filter(Boolean).join(', '))}`);
-    lines.push(`🚗 ${Number(offer.distance_km).toFixed(1)} km · ~${offer.eta_min} daqiqa`);
-    lines.push(`💰 Chiqish narxi: ${money(offer.call_fee)}`);
-    if (offer.photos?.length) lines.push(`📷 Rasm: ${offer.photos.length} ta (saytda ko'ring)`);
-    lines.push(`👤 Mijoz: ${escapeHtml(offer.client_name)} · ⭐ ${Number(offer.client_rating || 5).toFixed(1)}`);
+    lines.push(tr(lang, '🚗 {km} km · ~{eta} daqiqa', { km: Number(offer.distance_km).toFixed(1), eta: offer.eta_min }));
+    lines.push(tr(lang, '💰 Chiqish narxi: {fee}', { fee: money(offer.call_fee, lang) }));
+    if (offer.photos?.length) lines.push(tr(lang, '📷 Rasm: {n} ta (saytda ko\'ring)', { n: offer.photos.length }));
+    lines.push(tr(lang, '👤 Mijoz: {name} · ⭐ {rating}', {
+        name: escapeHtml(clientName),
+        rating: Number(offer.client_rating || 5).toFixed(1),
+    }));
     return lines.join('\n');
 };
 
@@ -65,13 +92,14 @@ const offerText = (offer) => {
  * Taklifni ustaga Telegram orqali yuborish ("Qabul qilish" / "Rad etish" tugmalari bilan)
  */
 const notifyOffer = (masterId, offer) => (async () => {
-    const chatId = await chatForUser(masterId);
-    if (!chatId) return;
-    const message = await sendMessage(chatId, offerText(offer), {
+    const recipient = await recipientFor(masterId);
+    if (!recipient) return;
+    const { chatId, lang } = recipient;
+    const message = await sendMessage(chatId, offerText(offer, lang), {
         replyMarkup: keyboard([
             [
-                { text: '✅ Qabul qilish', callback_data: `o:${offer.offer_id}:a` },
-                { text: '❌ Rad etish', callback_data: `o:${offer.offer_id}:d` },
+                { text: tr(lang, '✅ Qabul qilish'), callback_data: `o:${offer.offer_id}:a` },
+                { text: tr(lang, '❌ Rad etish'), callback_data: `o:${offer.offer_id}:d` },
             ],
         ]),
     });
@@ -94,23 +122,28 @@ const OFFER_RESULT = {
 const syncOfferMessage = (offerId) => (async () => {
     if (!isTelegramConfigured()) return;
     const result = await query(
-        `SELECT d.status, d.telegram_chat_id, d.telegram_message_id,
-                o.id as order_id, o.title, o.address, o.district, o.lat, o.lng
-         FROM dispatch_offers d JOIN orders o ON o.id = d.order_id
+        `SELECT d.status, d.telegram_chat_id, d.telegram_message_id, u.language,
+                o.id as order_id, o.title, o.address, o.district, o.lat, o.lng,
+                s.name_uz as specialization_name, s.name_ru as specialization_name_ru
+         FROM dispatch_offers d
+         JOIN orders o ON o.id = d.order_id
+         JOIN users u ON u.id = d.master_id
+         LEFT JOIN specializations s ON s.id = o.specialization_id
          WHERE d.id = $1`,
         [offerId]
     );
     const offer = result.rows[0];
     if (!offer || !offer.telegram_message_id || offer.status === 'pending') return;
+    const lang = normalizeLanguage(offer.language);
 
-    const lines = [`${OFFER_RESULT[offer.status] || OFFER_RESULT.cancelled}: ${escapeHtml(offer.title)}`];
+    const lines = [`${tr(lang, OFFER_RESULT[offer.status] || OFFER_RESULT.cancelled)}: ${escapeHtml(orderTitle(offer, lang))}`];
     let replyMarkup;
     if (offer.status === 'accepted') {
         lines.push(`📍 ${escapeHtml([offer.district, offer.address].filter(Boolean).join(', '))}`);
-        lines.push('Mijoz manziliga yo\'l oling. Yetib kelgach saytda «Yetib keldim» ni bosing.');
+        lines.push(tr(lang, 'Mijoz manziliga yo\'l oling. Yetib kelgach saytda «Yetib keldim» ni bosing.'));
         replyMarkup = keyboard([[
-            offer.lat && offer.lng ? urlButton('🧭 Yo\'l ko\'rsatish', navigationUrl(offer.lat, offer.lng)) : null,
-            urlButton('📋 Buyurtmani ochish', `/orders/${offer.order_id}`),
+            offer.lat && offer.lng ? urlButton(tr(lang, '🧭 Yo\'l ko\'rsatish'), navigationUrl(offer.lat, offer.lng)) : null,
+            urlButton(tr(lang, '📋 Buyurtmani ochish'), `/orders/${offer.order_id}`),
         ]]);
     }
     await editMessage(offer.telegram_chat_id, offer.telegram_message_id, lines.join('\n'), { replyMarkup });
@@ -120,7 +153,8 @@ const syncOfferMessage = (offerId) => (async () => {
 
 const loadOrder = async (orderId) => {
     const result = await query(
-        `SELECT o.*, c.name as client_name, m.name as master_name, s.name_uz as specialization_name,
+        `SELECT o.*, c.name as client_name, m.name as master_name,
+                s.name_uz as specialization_name, s.name_ru as specialization_name_ru,
                 (SELECT distance_km FROM dispatch_offers d WHERE d.order_id = o.id AND d.status = 'accepted'
                  ORDER BY d.responded_at DESC LIMIT 1) as accepted_distance_km
          FROM orders o
@@ -135,49 +169,76 @@ const loadOrder = async (orderId) => {
 
 /**
  * Holat o'zgarganda kimga qanday xabar boradi. actor - amalni bajargan tomon (unga xabar yuborilmaydi).
+ * text va replyMarkup - (lang) => qiymat: har bir qabul qiluvchi o'z tilida oladi.
  */
 const orderMessages = (order, actor) => {
-    const title = escapeHtml(order.title);
-    const master = escapeHtml(order.master_name || 'Usta');
-    const open = urlButton('📋 Buyurtmani ochish', `/orders/${order.id}`);
     const messages = [];
-    const to = (role, text, buttons = [open]) => {
+    const open = (lang) => urlButton(tr(lang, '📋 Buyurtmani ochish'), `/orders/${order.id}`);
+    const to = (role, text, buttons = (lang) => [open(lang)]) => {
         const userId = role === 'client' ? order.client_id : order.master_id;
-        if (userId && actor !== role) messages.push({ userId, text, replyMarkup: keyboard([buttons]) });
+        if (userId && actor !== role) messages.push({ userId, text, replyMarkup: (lang) => keyboard([buttons(lang)]) });
     };
+    const names = (lang) => ({
+        title: escapeHtml(orderTitle(order, lang)),
+        master: escapeHtml(order.master_name || tr(lang, 'Usta')),
+    });
 
     switch (order.status) {
         case 'accepted':
             if (order.mode === 'instant') {
-                const eta = order.accepted_distance_km
-                    ? ` Taxminan ${Math.max(3, Math.round((Number(order.accepted_distance_km) / config.CITY_SPEED_KMH) * 60))} daqiqada yetib keladi.`
-                    : '';
-                to('client', `🚗 <b>Usta topildi!</b>\n${master} yo'lga chiqdi.${eta}\n${title}`, [urlButton('🗺 Xaritada kuzatish', `/orders/${order.id}`)]);
+                const etaMin = order.accepted_distance_km
+                    ? Math.max(3, Math.round((Number(order.accepted_distance_km) / config.CITY_SPEED_KMH) * 60))
+                    : null;
+                to('client', (lang) => (etaMin
+                    ? tr(lang, '🚗 <b>Usta topildi!</b>\n{master} yo\'lga chiqdi. Taxminan {n} daqiqada yetib keladi.\n{title}', { ...names(lang), n: etaMin })
+                    : tr(lang, '🚗 <b>Usta topildi!</b>\n{master} yo\'lga chiqdi.\n{title}', names(lang))),
+                (lang) => [urlButton(tr(lang, '🗺 Xaritada kuzatish'), `/orders/${order.id}`)]);
             } else {
-                to('client', `✅ ${master} buyurtmangizni qabul qildi:\n<b>${title}</b>`);
+                to('client', (lang) => tr(lang, '✅ {master} buyurtmangizni qabul qildi:\n<b>{title}</b>', names(lang)));
             }
             break;
         case 'arrived':
-            to('client', `📍 <b>Usta yetib keldi</b>: ${master}\n${title}`);
+            to('client', (lang) => tr(lang, '📍 <b>Usta yetib keldi</b>: {master}\n{title}', names(lang)));
             break;
         case 'in_progress':
-            to('client', `🔧 Ish boshlandi: <b>${title}</b>`);
+            to('client', (lang) => tr(lang, '🔧 Ish boshlandi: <b>{title}</b>', names(lang)));
             break;
         case 'completed':
-            to('client', `🎉 <b>Ish yakunlandi</b>: ${title}${order.final_price ? `\n💰 Summa: ${money(order.final_price)}${Number(order.materials_price) > 0 ? ` (ish haqi ${money(order.labor_price)} + material ${money(order.materials_price)})` : ''}` : ''}\nUstani baholang — bu boshqa mijozlarga yordam beradi.`, [urlButton('⭐ Baholash', `/orders/${order.id}`)]);
-            to('master', `✅ Buyurtma yakunlandi: <b>${title}</b>`);
+            to('client', (lang) => {
+                const lines = [tr(lang, '🎉 <b>Ish yakunlandi</b>: {title}', names(lang))];
+                if (order.final_price) {
+                    lines.push(Number(order.materials_price) > 0
+                        ? tr(lang, '💰 Summa: {sum} (ish haqi {labor} + material {materials})', {
+                            sum: money(order.final_price, lang),
+                            labor: money(order.labor_price, lang),
+                            materials: money(order.materials_price, lang),
+                        })
+                        : tr(lang, '💰 Summa: {sum}', { sum: money(order.final_price, lang) }));
+                }
+                lines.push(tr(lang, 'Ustani baholang — bu boshqa mijozlarga yordam beradi.'));
+                return lines.join('\n');
+            }, (lang) => [urlButton(tr(lang, '⭐ Baholash'), `/orders/${order.id}`)]);
+            to('master', (lang) => tr(lang, '✅ Buyurtma yakunlandi: <b>{title}</b>', names(lang)));
             break;
         case 'cancelled': {
-            const reason = order.cancel_reason ? `\nSabab: ${escapeHtml(order.cancel_reason)}` : '';
-            to('client', `❌ Buyurtma bekor qilindi: <b>${title}</b>${reason}`);
-            to('master', `❌ Buyurtma bekor qilindi: <b>${title}</b>${reason}`);
+            // Saytda tanlangan tayyor sabablar tarjima qilinadi, o'zi yozgan sabab o'zgarmaydi
+            const cancelled = (lang) => [
+                tr(lang, '❌ Buyurtma bekor qilindi: <b>{title}</b>', names(lang)),
+                order.cancel_reason ? tr(lang, 'Sabab: {reason}', { reason: escapeHtml(phrase(lang, order.cancel_reason)) }) : null,
+            ].filter(Boolean).join('\n');
+            to('client', cancelled);
+            to('master', cancelled);
             break;
         }
         case 'expired':
-            to('client', `😔 Afsuski, yaqin atrofda bo'sh usta topilmadi: <b>${title}</b>\nBirozdan so'ng qayta urinib ko'ring yoki oddiy buyurtma qoldiring.`, [urlButton('⚡ Qayta chaqirish', '/call')]);
+            to('client', (lang) => tr(
+                lang,
+                '😔 Afsuski, yaqin atrofda bo\'sh usta topilmadi: <b>{title}</b>\nBirozdan so\'ng qayta urinib ko\'ring yoki oddiy buyurtma qoldiring.',
+                names(lang)
+            ), (lang) => [urlButton(tr(lang, '⚡ Qayta chaqirish'), '/call')]);
             break;
         case 'searching':
-            to('client', `🔄 Usta buyurtmadan voz kechdi. Yangi usta qidirilmoqda: <b>${title}</b>`);
+            to('client', (lang) => tr(lang, '🔄 Usta buyurtmadan voz kechdi. Yangi usta qidirilmoqda: <b>{title}</b>', names(lang)));
             break;
         default:
             break;
@@ -209,15 +270,18 @@ const notifyOrderEvent = (order, extra = {}) => (async () => {
  */
 const notifyNewOrderForMaster = (order) => (async () => {
     if (!order?.master_id) return;
-    const lines = [
-        `📋 <b>Sizga yangi buyurtma</b>`,
-        `<b>${escapeHtml(order.title)}</b>`,
-        order.description ? `📝 ${escapeHtml(order.description.slice(0, 300))}` : null,
-        order.district ? `📍 ${escapeHtml(order.district)}` : null,
-        `💰 Byudjet: ${money(order.budget)}`,
-        order.photos?.length ? `📷 Rasm: ${order.photos.length} ta` : null,
-    ].filter(Boolean);
-    await notifyUser(order.master_id, lines.join('\n'), keyboard([[urlButton('📋 Ko\'rish va qabul qilish', `/orders/${order.id}`)]]));
+    await notifyUser(
+        order.master_id,
+        (lang) => [
+            tr(lang, '📋 <b>Sizga yangi buyurtma</b>'),
+            `<b>${escapeHtml(order.title)}</b>`,
+            order.description ? `📝 ${escapeHtml(order.description.slice(0, 300))}` : null,
+            order.district ? `📍 ${escapeHtml(order.district)}` : null,
+            tr(lang, '💰 Byudjet: {sum}', { sum: money(order.budget, lang) }),
+            order.photos?.length ? tr(lang, '📷 Rasm: {n} ta', { n: order.photos.length }) : null,
+        ].filter(Boolean).join('\n'),
+        (lang) => keyboard([[urlButton(tr(lang, '📋 Ko\'rish va qabul qilish'), `/orders/${order.id}`)]])
+    );
 })().catch(logError('yangi buyurtma'));
 
 /**
@@ -225,7 +289,12 @@ const notifyNewOrderForMaster = (order) => (async () => {
  */
 const notifyChatMessage = ({ io, orderId, senderId, senderName, text }) => (async () => {
     if (!isTelegramConfigured()) return;
-    const order = await query('SELECT client_id, master_id, title FROM orders WHERE id = $1', [orderId]);
+    const order = await query(
+        `SELECT o.client_id, o.master_id, o.title, s.name_uz as specialization_name, s.name_ru as specialization_name_ru
+         FROM orders o LEFT JOIN specializations s ON s.id = o.specialization_id
+         WHERE o.id = $1`,
+        [orderId]
+    );
     const row = order.rows[0];
     if (!row) return;
     const recipientId = row.client_id === senderId ? row.master_id : row.client_id;
@@ -240,8 +309,8 @@ const notifyChatMessage = ({ io, orderId, senderId, senderName, text }) => (asyn
     const preview = text.length > 200 ? `${text.slice(0, 200)}…` : text;
     await notifyUser(
         recipientId,
-        `💬 <b>${escapeHtml(senderName || 'Yangi xabar')}</b> · ${escapeHtml(row.title)}\n${escapeHtml(preview)}`,
-        keyboard([[urlButton('↩️ Javob berish', `/orders/${orderId}`)]])
+        (lang) => `💬 <b>${escapeHtml(senderName || tr(lang, 'Yangi xabar'))}</b> · ${escapeHtml(orderTitle(row, lang))}\n${escapeHtml(preview)}`,
+        (lang) => keyboard([[urlButton(tr(lang, '↩️ Javob berish'), `/orders/${orderId}`)]])
     );
 })().catch(logError('chat'));
 
@@ -253,4 +322,6 @@ module.exports = {
     notifyNewOrderForMaster,
     notifyChatMessage,
     orderMessages,
+    orderTitle,
+    OFFER_RESULT,
 };

@@ -8,6 +8,10 @@ import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from '../lib/support';
 import { getSocket } from '../lib/socket';
+import { t } from '../i18n';
+
+// [qavs] ichidagi so'zlar qalin: tarjimada so'z tartibi o'zgarsa ham belgi o'z joyida qoladi
+const withBold = (text) => text.split(/\[(.+?)\]/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
 
 /**
  * Yordam va murojaatlarim: aloqa, yuborilgan murojaatlar va administrator javoblari
@@ -37,8 +41,8 @@ export default function SupportPage() {
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-600"><LifeBuoy className="w-6 h-6" /></div>
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Yordam</h1>
-          <p className="text-xs text-slate-500">Muammo bo'lsa yozing — administrator ko'rib chiqadi</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">{t('Yordam')}</h1>
+          <p className="text-xs text-slate-500">{t('Muammo bo\'lsa yozing — administrator ko\'rib chiqadi')}</p>
         </div>
       </div>
 
@@ -58,43 +62,43 @@ export default function SupportPage() {
       )}
 
       <div className="card p-4 text-xs text-slate-600">
-        Buyurtma bo'yicha muammo (usta kelmadi, narx oshdi, to'lov) bo'lsa, o'sha buyurtma sahifasidagi
-        <strong> «Muammo haqida xabar berish»</strong> tugmasidan foydalaning — administrator buyurtma tafsilotlarini darhol ko'radi.
+        {withBold(t('Buyurtma bo\'yicha muammo (usta kelmadi, narx oshdi, to\'lov) bo\'lsa, o\'sha buyurtma sahifasidagi [«Muammo haqida xabar berish»] tugmasidan foydalaning — administrator buyurtma tafsilotlarini darhol ko\'radi.'))}
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-slate-900">Murojaatlarim</h2>
+        <h2 className="font-bold text-slate-900">{t('Murojaatlarim')}</h2>
         <button type="button" onClick={() => setCreating(true)} className="btn btn-sm btn-primary min-h-10">
-          <Plus className="w-4 h-4" /> Yangi murojaat
+          <Plus className="w-4 h-4" /> {t('Yangi murojaat')}
         </button>
       </div>
 
       {error && <ErrorState message={error} onRetry={load} />}
       {!tickets && !error && <PageLoader />}
       {tickets && tickets.length === 0 && (
-        <EmptyState icon="📭" title="Murojaatlar yo'q" description="Biror muammo bo'lsa, «Yangi murojaat» tugmasini bosing." />
+        <EmptyState icon="📭" title={t('Murojaatlar yo\'q')} description={t('Biror muammo bo\'lsa, «Yangi murojaat» tugmasini bosing.')} />
       )}
       {tickets && tickets.length > 0 && (
         <ul className="space-y-3">
-          {tickets.map((t) => {
-            const status = SUPPORT_STATUSES[t.status];
+          {tickets.map((ticket) => {
+            const status = SUPPORT_STATUSES[ticket.status];
+            const category = SUPPORT_CATEGORIES[ticket.category];
             return (
-              <li key={t.id} className="card p-4 space-y-2">
+              <li key={ticket.id} className="card p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900">#{t.number} · {SUPPORT_CATEGORIES[t.category]?.label || t.category}</p>
+                    <p className="text-sm font-bold text-slate-900">#{ticket.number} · {category ? t(category.label) : ticket.category}</p>
                     <p className="text-[11px] text-slate-400">
-                      {formatDate(t.created_at)}
-                      {t.order_id && <> · <Link to={`/orders/${t.order_id}`} className="link">{t.order_title || 'buyurtma'}</Link></>}
+                      {formatDate(ticket.created_at)}
+                      {ticket.order_id && <> · <Link to={`/orders/${ticket.order_id}`} className="link">{ticket.order_title || t('buyurtma')}</Link></>}
                     </p>
                   </div>
-                  <span className={`inline-flex px-2.5 py-1 rounded-lg border text-[11px] font-bold whitespace-nowrap ${status.className}`}>{status.label}</span>
+                  <span className={`inline-flex px-2.5 py-1 rounded-lg border text-[11px] font-bold whitespace-nowrap ${status.className}`}>{t(status.label)}</span>
                 </div>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap break-words">{t.message}</p>
-                {t.admin_reply && (
+                <p className="text-sm text-slate-700 whitespace-pre-wrap break-words">{ticket.message}</p>
+                {ticket.admin_reply && (
                   <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
-                    <p className="text-[11px] font-bold text-blue-700 flex items-center gap-1"><MessageSquareReply className="w-3.5 h-3.5" /> Administrator javobi</p>
-                    <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap break-words">{t.admin_reply}</p>
+                    <p className="text-[11px] font-bold text-blue-700 flex items-center gap-1"><MessageSquareReply className="w-3.5 h-3.5" /> {t('Administrator javobi')}</p>
+                    <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap break-words">{ticket.admin_reply}</p>
                   </div>
                 )}
               </li>
