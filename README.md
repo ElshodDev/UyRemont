@@ -68,7 +68,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `POST /api/auth/verify-otp` | Kodni tekshirish (5 urinish), JWT qaytaradi; yangi foydalanuvchi yaratiladi |
 | `GET/PUT /api/auth/me` | Profil ma'lumotlari / ismni yangilash |
 | `PUT /api/auth/set-role` | Mijoz ↔ usta rejimi |
-| `GET /api/masters` | Qidiruv (`q`), bo'lim (`vertical`), mutaxassislik (`specialization`), tuman, narx, saralash, sahifalash |
+| `GET /api/masters` | Qidiruv (`q`), bo'lim (`vertical`), mutaxassislik (`specialization`), tuman (`district`), narx (`min_rate`, `max_rate`), reyting (`min_rating`), tajriba (`min_experience`), `verified`, `available`, `has_reviews`, saralash (`sort_by`: `recommended`, `rating`, `reviews`, `experience`, `price_asc`, `price_desc`), sahifalash |
 | `GET /api/masters/verticals` | Har bir bo'limdagi ustalar soni |
 | `GET /api/masters/specializations` | Mutaxassisliklar katalogi (4 bo'lim) |
 | `GET /api/masters/:id` | Usta profili, portfolio, sharhlar |
@@ -112,7 +112,11 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
 **Xavfsizlik:** helmet, CORS (`CLIENT_URL`), so'rovlar chastotasi cheklovi, kiruvchi ma'lumotlarni tekshirish, parametrlangan SQL, bloklangan foydalanuvchi tokeni va socket ulanishi bekor qilinadi.
 
 ### Web Frontend (`/web`) — React + Vite + Tailwind CSS + React Router
-- **Katalog:** 4 bo'lim, mutaxassislik va tuman filtrlari, qidiruv, saralash, "ko'proq ko'rsatish" (filtrlar URL da saqlanadi).
+- **Katalog (bosh sahifa):** katta qidiruv va bitta asosiy tugma ("Usta chaqirish"), "Xizmatlar" bloki (4 bo'lim va soha plitkalari), ixcham usta kartochkalari.
+  - **Filtrlar:** tuman, boshlang'ich narx oralig'i, reyting (4+ / 4.5+), tajriba (3+ / 5+ / 10+), faqat tasdiqlangan, hozir bo'sh, sharhi bor. Kompyuterda chap panelda (darhol qo'llanadi), telefonda "Filtrlar" oynasida (tugmada mos ustalar soni ko'rinadi).
+  - Tanlangan filtrlar chip ko'rinishida (× bilan olib tashlanadi), "N ta usta topildi", bo'sh natijada "Filtrlarni tozalash".
+  - **Saralash:** "Tavsiya etilgan" (standart) - bo'sh va tasdiqlangan ustalar oldinda, reyting sharhlar soni bilan tortiladi (1 ta 5.0 sharh 50 ta 4.9 sharhdan yuqori chiqmaydi), shuningdek reyting, sharhlar, tajriba, narx bo'yicha.
+  - Qidiruvda soha tanlanmagan bo'lsa, hamma bo'limlar bo'yicha qidiriladi. Barcha tanlovlar URL da saqlanadi (havolani ulashish mumkin).
 - **Telefon + SMS kod orqali kirish**, yangi foydalanuvchidan ism so'raladi.
 - **Usta profili:** portfolio, sharhlar, bajarilgan buyurtmalar soni, qo'ng'iroq tugmasi.
 - **Buyurtma berish:** aniq ustaga yoki "Usta tanlamasdan buyurtma qoldirish", Telegram orqali ulashish.

@@ -26,7 +26,8 @@ const MAX_PORTFOLIO_ITEMS = 20;
  * Barcha ustalarni olish (filtr bilan)
  * GET /api/masters
  * Query: q, vertical, specialization (slug), specialization_id, district,
- *        min_rate, max_rate, available, sort_by, page, limit
+ *        min_rate, max_rate, available, min_rating, verified, has_reviews, min_experience,
+ *        sort_by (recommended|rating|price_asc|price_desc|reviews|experience), page, limit
  */
 const getAllMasters = async (req, res, next) => {
     try {
@@ -39,7 +40,11 @@ const getAllMasters = async (req, res, next) => {
             min_rate,
             max_rate,
             available,
-            sort_by = 'rating',
+            min_rating,
+            verified,
+            has_reviews,
+            min_experience,
+            sort_by = 'recommended',
         } = req.query;
         const { page, limit, offset } = parsePagination(req.query);
 
@@ -101,15 +106,36 @@ const getAllMasters = async (req, res, next) => {
             conditions.push('mp.is_available = TRUE');
         }
 
+        const minRating = Number(min_rating);
+        if (min_rating !== undefined && Number.isFinite(minRating) && minRating > 0 && minRating <= 5) {
+            conditions.push(`mp.rating >= ${addParam(minRating)}`);
+        }
+
+        if (verified === 'true') {
+            conditions.push('mp.is_verified = TRUE');
+        }
+
+        if (has_reviews === 'true') {
+            conditions.push('mp.reviews_count > 0');
+        }
+
+        const minExperience = Number(min_experience);
+        if (min_experience !== undefined && Number.isInteger(minExperience) && minExperience > 0 && minExperience <= 60) {
+            conditions.push(`mp.experience_years >= ${addParam(minExperience)}`);
+        }
+
         // Saralash (faqat oq ro'yxatdagi qiymatlar)
         const sortOptions = {
+            // Tavsiya etilgan: tasdiqlangan ustalar oldinda; reyting sharhlar soni bilan tortiladi
+            // (1 ta sharhli 5.0 ko'p sharhli 4.9 dan yuqori chiqib qolmasligi uchun)
+            recommended: 'mp.is_verified DESC, ((mp.rating * mp.reviews_count + 4.0 * 3) / (mp.reviews_count + 3)) DESC, mp.reviews_count DESC',
             rating: 'mp.rating DESC, mp.reviews_count DESC',
             price_asc: 'mp.hourly_rate ASC NULLS LAST',
             price_desc: 'mp.hourly_rate DESC NULLS LAST',
             reviews: 'mp.reviews_count DESC',
             experience: 'mp.experience_years DESC',
         };
-        const orderBy = sortOptions[sort_by] || sortOptions.rating;
+        const orderBy = sortOptions[sort_by] || sortOptions.recommended;
 
         const whereClause = `WHERE ${conditions.join(' AND ')}`;
         const filterParams = [...params];

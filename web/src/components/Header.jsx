@@ -30,12 +30,6 @@ export default function Header({ onOpenCalculator }) {
     return () => document.removeEventListener('mousedown', onClick);
   }, [menuOpen]);
 
-  const becomeMaster = () => {
-    requireAuth((current) => {
-      navigate(current.role === 'master' ? '/master/profile' : '/master/setup');
-    });
-  };
-
   const callMaster = useCallMaster();
 
   const menuLink = 'flex items-center gap-2.5 px-3 min-h-11 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50';
@@ -67,12 +61,11 @@ export default function Header({ onOpenCalculator }) {
           <ThemeToggleButton className="hidden sm:inline-flex" />
           <button
             onClick={onOpenCalculator}
-            className="btn px-2.5 sm:px-3 bg-amber-50 text-amber-900 hover:bg-amber-100 font-bold border border-amber-200/80"
+            className="icon-btn border border-slate-200 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
             title={t('Smeta hisoblash')}
             aria-label={t('Smeta hisoblash')}
           >
-            <Calculator className="w-4 h-4 text-amber-600" />
-            <span className="hidden xl:inline">{t('Smeta hisoblash')}</span>
+            <Calculator className="w-5 h-5" />
           </button>
 
           {(!user || user.role === 'client') && (
@@ -98,16 +91,6 @@ export default function Header({ onOpenCalculator }) {
               <span className="hidden sm:inline">{dispatch?.isOnline ? t('Ishdaman') : t('Dam olyapman')}</span>
               <Power className="w-4 h-4 sm:hidden" />
             </Link>
-          )}
-
-          {(!user || user.role === 'client') && (
-            <button
-              onClick={becomeMaster}
-              className="hidden xl:inline-flex btn btn-primary"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>{t('Usta bo\'lib qo\'shilish')}</span>
-            </button>
           )}
 
           {user ? (
@@ -152,7 +135,7 @@ export default function Header({ onOpenCalculator }) {
                     </NavLink>
                   )}
                   {user.role === 'client' && (
-                    <NavLink to="/master/setup" className={`${menuLink} xl:hidden`}>
+                    <NavLink to="/master/setup" className={menuLink}>
                       <PlusCircle className="w-4 h-4 text-slate-400" /> {t('Usta bo\'lish')}
                     </NavLink>
                   )}
