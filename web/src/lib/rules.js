@@ -29,8 +29,8 @@ export const buildMasterRules = (config) => [
   `Joylashuvi ${config.location_stale_min} daqiqadan ko'p yangilanmagan ustaga takliflar yuborilmaydi.`,
   'Faol ish bor paytda yangi tezkor takliflar kelmaydi.',
   'Qabul qilingan chaqiruvdan voz kechsangiz, sabab ko\'rsatiladi va statistikada qayd etiladi; chaqiruv boshqa ustaga beriladi.',
-  'Bosqichlarni o\'z vaqtida belgilang: "Yetib keldim" → "Ishni boshlash" → "Yakunlash" (yakuniy summa bilan).',
-  `Platforma komissiyasi — yakuniy summaning ${config.commission_percent}%. U har bir yakunlangan tezkor chaqiruvdan keyin «Komissiya hisobi» ga yoziladi.`,
+  'Bosqichlarni o\'z vaqtida belgilang: "Yetib keldim" → "Ishni boshlash" → "Yakunlash" (ish haqi va material alohida).',
+  `Platforma komissiyasi — ish haqining ${config.commission_percent}% (siz sotib olgan material summasidan olinmaydi). U har bir yakunlangan tezkor chaqiruvdan keyin «Komissiya hisobi» ga yoziladi.`,
   ...(config.commission_debt_limit > 0
     ? [`Komissiya qarzi ${Number(config.commission_debt_limit).toLocaleString('ru-RU')} so'mdan oshsa, to'lamaguningizcha ishga chiqib bo'lmaydi va takliflar kelmaydi.`]
     : [])

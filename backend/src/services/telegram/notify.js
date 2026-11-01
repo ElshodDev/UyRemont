@@ -164,7 +164,7 @@ const orderMessages = (order, actor) => {
             to('client', `🔧 Ish boshlandi: <b>${title}</b>`);
             break;
         case 'completed':
-            to('client', `🎉 <b>Ish yakunlandi</b>: ${title}${order.final_price ? `\n💰 Summa: ${money(order.final_price)}` : ''}\nUstani baholang — bu boshqa mijozlarga yordam beradi.`, [urlButton('⭐ Baholash', `/orders/${order.id}`)]);
+            to('client', `🎉 <b>Ish yakunlandi</b>: ${title}${order.final_price ? `\n💰 Summa: ${money(order.final_price)}${Number(order.materials_price) > 0 ? ` (ish haqi ${money(order.labor_price)} + material ${money(order.materials_price)})` : ''}` : ''}\nUstani baholang — bu boshqa mijozlarga yordam beradi.`, [urlButton('⭐ Baholash', `/orders/${order.id}`)]);
             to('master', `✅ Buyurtma yakunlandi: <b>${title}</b>`);
             break;
         case 'cancelled': {

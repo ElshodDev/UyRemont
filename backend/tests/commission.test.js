@@ -14,7 +14,7 @@ describe('komissiya hisobi', () => {
     let master;
 
     // Ish boshlangan tezkor buyurtma (to'g'ridan-to'g'ri bazada) va uni usta API orqali yakunlaydi
-    const completeInstant = async (finalPrice) => {
+    const completeInstant = async (finalPrice, body) => {
         const [order] = await app.db(
             `INSERT INTO orders (client_id, master_id, title, address, status, mode, specialization_id, lat, lng, call_fee,
                                  accepted_at, arrived_at, started_at)
@@ -24,7 +24,7 @@ describe('komissiya hisobi', () => {
             [client.id, master.id, POINT.lat, POINT.lng]
         );
         const res = await app.api(`/orders/${order.id}/status`, {
-            method: 'PUT', token: master.token, body: { status: 'completed', final_price: finalPrice },
+            method: 'PUT', token: master.token, body: { status: 'completed', ...(body || { final_price: finalPrice }) },
         });
         assert.equal(res.status, 200, res.data?.message);
         return order.id;
@@ -235,5 +235,40 @@ describe('komissiya hisobi', () => {
         const analytics = await app.api('/admin/analytics?days=7', { token: admin.token });
         assert.ok(analytics.data.data.kpi.commission >= 60000);
         assert.ok(analytics.data.data.kpi.commission_paid >= 60000);
+    });
+
+    it('material summasiga komissiya olinmaydi: yakuniy summa = ish haqi + material', async () => {
+        const before = (await ledger()).data.data.due;
+        const orderId = await completeInstant(null, { labor_price: 200000, materials_price: 500000 });
+
+        const [order] = await app.db('SELECT final_price, labor_price, materials_price FROM orders WHERE id = $1', [orderId]);
+        assert.equal(Number(order.final_price), 700000);
+        assert.equal(Number(order.labor_price), 200000);
+        assert.equal(Number(order.materials_price), 500000);
+
+        const detail = await app.api(`/orders/${orderId}`, { token: client.token });
+        assert.equal(Number(detail.data.data.materials_price), 500000, 'mijoz tafsilotni ko\'radi');
+
+        const mine = await ledger();
+        const [entry] = mine.data.data.entries;
+        assert.equal(entry.amount, 20000, '10% faqat ish haqidan');
+        assert.equal(entry.base_amount, 200000);
+        assert.equal(entry.materials_price, 500000);
+        assert.equal(mine.data.data.due, before + 20000);
+    });
+
+    it('ish haqisiz yoki manfiy material bilan yakunlanmaydi', async () => {
+        const [order] = await app.db(
+            `INSERT INTO orders (client_id, master_id, title, address, status, mode, specialization_id, call_fee, accepted_at, started_at)
+             VALUES ($1, $2, 'Tekshiruv', 'Sinov 2', 'in_progress', 'instant', 1, 50000, NOW(), NOW()) RETURNING id`,
+            [client.id, master.id]
+        );
+        const finish = (body) => app.api(`/orders/${order.id}/status`, { method: 'PUT', token: master.token, body: { status: 'completed', ...body } });
+        const noLabor = await finish({ materials_price: 100000 });
+        assert.equal(noLabor.status, 400);
+        assert.match(noLabor.data.message, /Ish haqini kiriting/);
+        assert.equal((await finish({ labor_price: 100000, materials_price: -1 })).status, 400);
+        const [still] = await app.db('SELECT status FROM orders WHERE id = $1', [order.id]);
+        assert.equal(still.status, 'in_progress');
     });
 });

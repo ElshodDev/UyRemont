@@ -457,12 +457,18 @@ const updateInstantStatus = async (req, res, order, status) => {
         });
     }
 
+    // Yakuniy summa = ish haqi (chiqish narxi bilan) + material. Komissiya faqat ish haqidan.
+    // Eski ilova faqat final_price yuboradi - u ish haqi hisoblanadi
     let finalPrice = null;
+    let laborPrice = null;
+    let materialsPrice = 0;
     if (status === 'completed') {
-        finalPrice = optionalNumber(req.body.final_price, { min: 0, max: 10000000000, field: 'Yakuniy narx' });
-        if (finalPrice === null) {
-            throw new HttpError(400, 'Yakuniy narxni kiriting (chiqish narxi bilan birga)');
+        laborPrice = optionalNumber(req.body.labor_price ?? req.body.final_price, { min: 0, max: 10000000000, field: 'Ish haqi' });
+        if (laborPrice === null) {
+            throw new HttpError(400, 'Ish haqini kiriting (chiqish narxi bilan birga)');
         }
+        materialsPrice = optionalNumber(req.body.materials_price, { min: 0, max: 10000000000, field: 'Material summasi' }) || 0;
+        finalPrice = laborPrice + materialsPrice;
     }
 
     // Yakunlashda holat va komissiya yozuvi bitta tranzaksiyada (biri yozilib, ikkinchisi qolib ketmasin)
@@ -470,10 +476,12 @@ const updateInstantStatus = async (req, res, order, status) => {
         const result = await client.query(
             `UPDATE orders
              SET status = $1, ${STATUS_TIMESTAMPS[status]} = NOW(),
-                 final_price = COALESCE($4, final_price)
+                 final_price = COALESCE($4, final_price),
+                 labor_price = COALESCE($5, labor_price),
+                 materials_price = CASE WHEN $4::numeric IS NULL THEN materials_price ELSE $6 END
              WHERE id = $2 AND status = $3
              RETURNING *`,
-            [status, order.id, order.status, finalPrice]
+            [status, order.id, order.status, finalPrice, laborPrice, materialsPrice]
         );
         const updated = result.rows[0];
         if (!updated || status !== 'completed') return { updated, accrued: null };

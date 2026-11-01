@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 import { getSocket } from '../lib/socket';
 import { navigationUrl } from '../lib/geo';
 import { formatPrice } from '../lib/format';
+import { formatSum } from '../lib/commission';
 import { useToast } from '../context/ToastContext';
 
 function useNow(intervalMs = 1000) {
@@ -74,38 +75,79 @@ function CancelDialog({ reasons, warning, onConfirm, onClose }) {
   );
 }
 
-function CompleteDialog({ callFee, onConfirm, onClose }) {
-  const [price, setPrice] = useState(String(Math.round(Number(callFee) || 0)));
+// "ish haqi 200 000 so'm + material 500 000 so'm" (material bo'lmasa bo'sh)
+const priceBreakdown = (order) => (Number(order.materials_price) > 0
+  ? `ish haqi ${formatSum(order.labor_price ?? Number(order.final_price) - Number(order.materials_price))} + material ${formatSum(order.materials_price)}`
+  : '');
+
+const toSum = (value) => Number(String(value || '').replace(/\s/g, '')) || 0;
+
+/**
+ * Ishni yakunlash: ish haqi (chiqish narxi bilan) va material alohida. Komissiya faqat ish haqidan
+ */
+function CompleteDialog({ callFee, commissionPercent, onConfirm, onClose }) {
+  const [labor, setLabor] = useState(String(Math.round(Number(callFee) || 0)));
+  const [materials, setMaterials] = useState('');
   const [loading, setLoading] = useState(false);
+  const laborSum = toSum(labor);
+  const materialsSum = toSum(materials);
+  const commission = Math.round((laborSum * (commissionPercent || 0)) / 100);
+
   return (
-    <Modal onClose={loading ? () => {} : onClose} size="sm">
-      <h3 className="text-lg font-bold text-slate-900 mb-1">Ishni yakunlash</h3>
-      <p className="text-xs text-slate-500 mb-3">Mijoz bilan kelishilgan yakuniy summani kiriting (chiqish narxi bilan birga).</p>
-      <input
-        type="number"
-        min="0"
-        step="1000"
-        autoFocus
-        className="input text-lg font-bold"
-        aria-label="Yakuniy summa (so'm)"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      <p className="text-[11px] text-slate-400 mt-1 mb-4">{formatPrice(price)}</p>
-      <button
-        onClick={async () => {
+    <Modal onClose={loading ? () => {} : onClose} size="sm" labelledBy="complete-title">
+      <h3 id="complete-title" className="text-lg font-bold text-slate-900 mb-1">Ishni yakunlash</h3>
+      <p className="text-xs text-slate-500 mb-4">Mijoz bilan kelishilgan summani kiriting. Material uchun alohida maydon bor: undan komissiya olinmaydi.</p>
+      <form
+        className="space-y-3"
+        onSubmit={async (e) => {
+          e.preventDefault();
           setLoading(true);
           try {
-            await onConfirm(Number(price));
+            await onConfirm({ labor_price: laborSum, materials_price: materialsSum });
           } finally {
             setLoading(false);
           }
         }}
-        disabled={loading || price === '' || Number(price) < 0}
-        className="btn btn-success w-full min-h-12 font-bold"
       >
-        {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Yakunlash'}
-      </button>
+        <div>
+          <label className="label" htmlFor="labor-price">Ish haqi (chiqish narxi bilan)</label>
+          <input
+            id="labor-price"
+            inputMode="numeric"
+            required
+            autoFocus
+            className="input text-lg font-bold tabular-nums"
+            value={labor}
+            onChange={(e) => setLabor(e.target.value.replace(/[^\d\s]/g, ''))}
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="materials-price">Material (siz sotib olgan qismlar)</label>
+          <input
+            id="materials-price"
+            inputMode="numeric"
+            className="input tabular-nums"
+            placeholder="0"
+            value={materials}
+            onChange={(e) => setMaterials(e.target.value.replace(/[^\d\s]/g, ''))}
+            aria-describedby="materials-hint"
+          />
+          <p id="materials-hint" className="hint mt-1">Mijoz summani ish haqi va material bo'yicha alohida ko'radi.</p>
+        </div>
+        <dl className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-sm space-y-1">
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-500">Mijoz to'laydi</dt>
+            <dd className="font-black text-slate-900 tabular-nums">{formatSum(laborSum + materialsSum)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-slate-500">Komissiya ({commissionPercent || 0}% ish haqidan)</dt>
+            <dd className="font-semibold text-slate-700 tabular-nums">{formatSum(commission)}</dd>
+          </div>
+        </dl>
+        <button type="submit" disabled={loading || labor === ''} className="btn btn-success w-full min-h-12 font-bold">
+          {loading ? <Spinner className="w-4 h-4 text-white" /> : 'Yakunlash'}
+        </button>
+      </form>
     </Modal>
   );
 }
@@ -283,7 +325,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
     completed: {
       tone: 'from-emerald-600 to-teal-600',
       title: 'Ish yakunlandi',
-      text: `Yakuniy summa: ${formatPrice(order.final_price)} — to'lov ustaga naqd yoki karta orqali`,
+      text: `Yakuniy summa: ${formatPrice(order.final_price)}${priceBreakdown(order) ? ` (${priceBreakdown(order)})` : ''} — to'lov ustaga naqd yoki karta orqali`,
       extra: order.started_at && order.completed_at
         ? `Ish davomiyligi: ${formatDuration(new Date(order.completed_at) - new Date(order.started_at))}`
         : null
@@ -372,6 +414,7 @@ export default function InstantOrderPanel({ order, user, reload }) {
             <div>
               <span className="text-[11px] text-slate-400 block">{order.final_price ? 'Yakuniy summa' : 'Ish narxi'}</span>
               <span className="font-semibold text-slate-800">{order.final_price ? formatPrice(order.final_price) : 'Joyida kelishiladi'}</span>
+              {order.final_price && priceBreakdown(order) && <span className="block text-[11px] text-slate-500">{priceBreakdown(order)}</span>}
             </div>
           </div>
         </div>
@@ -444,8 +487,9 @@ export default function InstantOrderPanel({ order, user, reload }) {
       {dialog === 'complete' && (
         <CompleteDialog
           callFee={order.call_fee}
-          onConfirm={async (price) => {
-            await setStatus('completed', { final_price: price });
+          commissionPercent={config?.commission_percent}
+          onConfirm={async (prices) => {
+            await setStatus('completed', prices);
             setDialog(null);
           }}
           onClose={() => setDialog(null)}

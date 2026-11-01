@@ -80,7 +80,7 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET /api/orders` | Rolga mos buyurtmalar (mijoz / usta / admin) |
 | `GET /api/orders/open` | Ustaning mutaxassisligiga mos ochiq buyurtmalar |
 | `GET /api/orders/:id` | Tafsilot va chat tarixi (faqat ishtirokchilarga) |
-| `PUT /api/orders/:id/status` | Holat o'zgarishi (quyidagi qoidalar bo'yicha) |
+| `PUT /api/orders/:id/status` | Holat o'zgarishi (quyidagi qoidalar bo'yicha). Tezkor chaqiruvni yakunlash: `labor_price` + `materials_price` |
 | `POST /api/reviews` | Yakunlangan buyurtmaga 1–5 yulduzli sharh |
 | `GET /api/admin/stats` | Platforma statistikasi (faqat admin) |
 | `GET /api/admin/users`, `PATCH /api/admin/users/:id` | Foydalanuvchilarni qidirish, bloklash, rol berish, ustani tasdiqlash |
@@ -168,7 +168,7 @@ Yandex Taxi kabi ishlaydi: mijoz usta chaqiradi, tizim eng yaqin bo'sh ustani o'
 | Platforma komissiyasi | 10% (`PLATFORM_COMMISSION_PERCENT`) |
 | Ikki tomonlama reyting | mijoz ↔ usta |
 
-**API:** `GET /api/dispatch/config`, `GET /api/dispatch/estimate`, `POST /api/dispatch/orders`, `GET /api/dispatch/active`, `POST /api/dispatch/orders/:id/cancel`, `GET /api/dispatch/me`, `PUT /api/dispatch/online`, `PUT /api/dispatch/location`, `POST /api/dispatch/offers/:id/accept|decline`, `POST /api/dispatch/orders/:id/rate-client`. Bosqichlar `PUT /api/orders/:id/status` (`arrived`, `in_progress`, `completed` + `final_price`).
+**API:** `GET /api/dispatch/config`, `GET /api/dispatch/estimate`, `POST /api/dispatch/orders`, `GET /api/dispatch/active`, `POST /api/dispatch/orders/:id/cancel`, `GET /api/dispatch/me`, `PUT /api/dispatch/online`, `PUT /api/dispatch/location`, `POST /api/dispatch/offers/:id/accept|decline`, `POST /api/dispatch/orders/:id/rate-client`. Bosqichlar `PUT /api/orders/:id/status` (`arrived`, `in_progress`, `completed` + `labor_price` va `materials_price`).
 
 **Socket hodisalari:** `order_offer`, `offer_closed`, `dispatch_offline` (usta), `search_update`, `master_location`, `order_updated` (mijoz). Dispetcher holatni bazada (`dispatch_offers`) saqlaydi, shuning uchun server qayta ishga tushsa ham qidiruv davom etadi; bir nechta server nusxasida PostgreSQL advisory lock bilan faqat bittasi dispetcherlik qiladi.
 
@@ -197,7 +197,8 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 Mijoz ish haqini ustaga to'g'ridan-to'g'ri to'laydi, usta esa platformaga komissiya qarzdor bo'ladi.
 
-- **Yozilishi:** tezkor chaqiruv yakunlanganda (yakuniy summa bilan) ustaning hisobiga `PLATFORM_COMMISSION_PERCENT` foiz yoziladi. Foiz yozilgan paytdagisi saqlanadi, bitta buyurtmaga bir marta yoziladi. Oddiy (katalog) buyurtmalardan komissiya olinmaydi.
+- **Ish haqi va material:** usta tezkor chaqiruvni yakunlaganda ikki summa kiritadi: «Ish haqi (chiqish narxi bilan)» va «Material» (o'zi sotib olgan qismlar). Yakuniy summa = ish haqi + material. Mijoz ikkalasini alohida ko'radi: saytda va Telegram xabarida.
+- **Yozilishi:** ustaning hisobiga **ish haqidan** `PLATFORM_COMMISSION_PERCENT` foiz yoziladi, materialdan komissiya olinmaydi. Eski ilova faqat `final_price` yuborsa, u ish haqi hisoblanadi. Foiz yozilgan paytdagisi saqlanadi, bitta buyurtmaga bir marta yoziladi. Oddiy (katalog) buyurtmalardan komissiya olinmaydi.
 - **Qarz limiti** (`COMMISSION_DEBT_LIMIT`, sukut bo'yicha 200 000 so'm; `0` — cheklov yo'q):
   - qarz limitdan oshsa, ish rejimi o'chadi va usta to'lamaguncha ishga chiqa olmaydi;
   - bunday ustaga dispetcher taklif yubormaydi;

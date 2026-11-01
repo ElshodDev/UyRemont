@@ -621,3 +621,9 @@ CREATE TABLE IF NOT EXISTS master_ledger (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_master_ledger_commission_order ON master_ledger(order_id) WHERE kind = 'commission';
 CREATE INDEX IF NOT EXISTS idx_master_ledger_master ON master_ledger(master_id, created_at DESC);
 ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS commission_due NUMERIC(12, 2) NOT NULL DEFAULT 0;
+
+-- Yakuniy summa = ish haqi (chiqish narxi bilan) + material. Komissiya faqat ish haqidan olinadi
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS labor_price DECIMAL(12, 2);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS materials_price DECIMAL(12, 2) NOT NULL DEFAULT 0;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_materials_price_check;
+ALTER TABLE orders ADD CONSTRAINT orders_materials_price_check CHECK (materials_price >= 0);
