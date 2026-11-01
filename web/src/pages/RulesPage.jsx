@@ -14,8 +14,8 @@ const FLOW = () => [
   { icon: Radar, title: t('Qidiruv'), text: t('Tizim eng yaqin bo\'sh (ish rejimidagi) ustaga taklif yuboradi. Rad etilsa yoki javob bo\'lmasa — keyingi ustaga.') },
   { icon: Car, title: t('Usta yo\'lda'), text: t('Mijoz ustani xaritada jonli kuzatadi va taxminiy yetib kelish vaqtini ko\'radi.') },
   { icon: Home, title: t('Yetib keldi'), text: t('Usta muammoni ko\'rib, ish narxini mijoz bilan kelishadi va ishni boshlaydi.') },
-  { icon: CheckCircle, title: t('Yakun'), text: t('Usta ish haqi va material summasini alohida kiritadi, to\'lov ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.') },
-  { icon: Star, title: t('Baholash'), text: t('Mijoz ustani, usta mijozni baholaydi. Reytinglar keyingi buyurtmalarga ta\'sir qiladi.') }
+  { icon: CheckCircle, title: t('Ish yakuni'), text: t('Usta ish haqi va material summasini alohida kiritadi, to\'lov ustaga to\'g\'ridan-to\'g\'ri amalga oshiriladi.') },
+  { icon: Star, title: t('O\'zaro baholash'), text: t('Mijoz ustani, usta mijozni baholaydi. Reytinglar keyingi buyurtmalarga ta\'sir qiladi.') }
 ];
 
 export default function RulesPage() {

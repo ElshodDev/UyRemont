@@ -158,7 +158,7 @@ export default function MasterFlyerPage() {
         title={t('Varaqa va vizitka')}
         description={t('QR kod sizning sahifangizga olib boradi: mijoz sharhlaringizni ko\'rib, to\'g\'ridan-to\'g\'ri buyurtma beradi. Eshik, mashina oynasi yoki do\'konga yopishtiring, vizitkalarni mijozlarga bering.')}
       >
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-fit" role="radiogroup" aria-label={t('Ko\'rinish')}>
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 w-fit" role="radiogroup" aria-label={t('Varaqa turi')}>
           {LAYOUTS().map(([id, label]) => (
             <button
               key={id}

@@ -1,6 +1,6 @@
 // Usta24 service worker: ilovani o'rnatish va internet yo'qligida oflayn sahifa.
 // Faqat sahifa navigatsiyasi ushlanadi (har doim avval tarmoqdan), API va fayllar keshlanmaydi.
-const CACHE = 'usta24-v1';
+const CACHE = 'usta24-v2';
 const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
