@@ -41,7 +41,7 @@ export default function FavoritesPage() {
 
       {error && <ErrorState message={error} onRetry={load} />}
       {!masters && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {[1, 2, 3].map((i) => <MasterCardSkeleton key={i} />)}
         </div>
       )}
@@ -54,7 +54,7 @@ export default function FavoritesPage() {
         />
       )}
       {visible && visible.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {visible.map((m) => (
             <MasterCard key={m.id} master={m} onView={() => setProfileId(m.id)} onOrder={(master) => order.open(master)} />
           ))}
