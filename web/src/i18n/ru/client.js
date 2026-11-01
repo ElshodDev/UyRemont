@@ -492,5 +492,10 @@ export default {
   'Administrator ogohlantirishlari': 'Предупреждения администратора',
   'Takrorlansa, hisobingiz bloklanishi mumkin.': 'При повторении ваш аккаунт может быть заблокирован.',
   'Shikoyat: {name}': 'Жалоба: {name}',
-  'Administrator ogohlantirishi: {message}': 'Предупреждение администратора: {message}'
+  'Administrator ogohlantirishi: {message}': 'Предупреждение администратора: {message}',
+  // Oddiy buyurtma: yakuniy summa
+  'Yakuniy summa: {sum} (ish haqi {labor} + material {materials})': 'Итоговая сумма: {sum} (работа {labor} + материалы {materials})',
+  'Yakuniy summa: {sum}': 'Итоговая сумма: {sum}',
+  'Buyurtma yakunlangan deb belgilanadi. Usta yakuniy summani kiritadi, siz uni tasdiqlab, sharh qoldirasiz.':
+    'Заказ будет отмечен как завершённый. Мастер укажет итоговую сумму, а вы подтвердите её и оставите отзыв.'
 };

@@ -228,10 +228,20 @@ Xarita: Leaflet + OpenStreetMap (kalit talab qilinmaydi). Katta yuklama uchun o'
 
 Mijoz ish haqini ustaga to'g'ridan-to'g'ri to'laydi, usta esa platformaga komissiya qarzdor bo'ladi.
 
-- **Ish haqi va material:** usta tezkor chaqiruvni yakunlaganda ikki summa kiritadi: «Ish haqi (chiqish narxi bilan)» va «Material» (o'zi sotib olgan qismlar). Yakuniy summa = ish haqi + material. Mijoz ikkalasini alohida ko'radi: saytda va Telegram xabarida.
-- **Yozilishi:** ustaning hisobiga **ish haqidan** `PLATFORM_COMMISSION_PERCENT` foiz yoziladi, materialdan komissiya olinmaydi. Eski ilova faqat `final_price` yuborsa, u ish haqi hisoblanadi. Foiz yozilgan paytdagisi saqlanadi, bitta buyurtmaga bir marta yoziladi. Oddiy (katalog) buyurtmalardan komissiya olinmaydi.
+- **Ish haqi va material:** usta ishni yakunlaganda ikki summa kiritadi: «Ish haqi (chiqish narxi bilan)» va «Material» (o'zi sotib olgan qismlar). Bu tezkor chaqiruvga ham, oddiy buyurtmaga ham tegishli. Yakuniy summa = ish haqi + material. Mijoz ikkalasini alohida ko'radi: saytda va Telegram xabarida.
+- **Yozilishi:** ustaning hisobiga **ish haqidan** foiz yoziladi:
+  - tezkor chaqiruvda `PLATFORM_COMMISSION_PERCENT`;
+  - oddiy (katalog) buyurtmada `CATALOG_COMMISSION_PERCENT` (berilmasa, `PLATFORM_COMMISSION_PERCENT` bilan bir xil; `0` — olinmaydi).
+
+  Materialdan komissiya olinmaydi. Eski ilova faqat `final_price` yuborsa, u ish haqi hisoblanadi. Foiz yozilgan paytdagisi saqlanadi, bitta buyurtmaga bir marta yoziladi.
+- **Oddiy buyurtmani mijoz yakunlasa** (yoki admin), komissiya darhol yozilmaydi.
+  - Usta yakuniy summani `PRICE_ENTRY_HOURS` (standart 24) soat ichida kiritadi (`orders.price_due_at`, `PUT /api/orders/:id/final-price`).
+  - Ustaga saytda «Yakuniy summani kiriting» kartasi va ro'yxatda belgi chiqadi, Telegram'da «💰 Summani kiritish» tugmasi keladi.
+  - Muddat o'tsa, usta yangi oddiy buyurtmani qabul qila olmaydi va ishga chiqa olmaydi, toki summani kiritmaguncha.
+  - Summa kiritilgach komissiya yoziladi va mijozdan to'lovni tasdiqlash so'raladi.
+  - Bu yangilanishdan oldin yakunlangan (muddatsiz) buyurtmalar hisobga olinmaydi.
 - **Qarz limiti** (`COMMISSION_DEBT_LIMIT`, sukut bo'yicha 200 000 so'm; `0` — cheklov yo'q):
-  - qarz limitdan oshsa, ish rejimi o'chadi va usta to'lamaguncha ishga chiqa olmaydi;
+  - qarz limitdan oshsa, ish rejimi o'chadi va usta to'lamaguncha ishga chiqa olmaydi va yangi oddiy buyurtmani qabul qila olmaydi;
   - bunday ustaga dispetcher taklif yubormaydi;
   - limitning 80% iga yetganda ogohlantirish keladi.
 - **Usta:**
@@ -351,7 +361,9 @@ Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ |
 | `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh bo'lsa Telegram o'chiq) |
 | `PUBLIC_APP_URL` | Telegram xabarlaridagi havolalar uchun sayt manzili |
 | `TELEGRAM_WEBHOOK_URL` | Production webhook (bo'sh bo'lsa long polling) |
-| `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi (standart: 10) |
+| `PLATFORM_COMMISSION_PERCENT` | Tezkor chaqiruv komissiyasi, ish haqidan % (standart: 10) |
+| `CATALOG_COMMISSION_PERCENT` | Oddiy (katalog) buyurtma komissiyasi, % (standart: `PLATFORM_COMMISSION_PERCENT` bilan bir xil; `0` — olinmaydi) |
+| `PRICE_ENTRY_HOURS` | Mijoz yakunlagan oddiy buyurtmaning summasini usta kiritadigan muddat, soat (standart: 24) |
 | `COMMISSION_DEBT_LIMIT` | Komissiya qarzi limiti, so'm (standart: 200 000; `0` — cheklov yo'q) |
 | `COMMISSION_PAYMENT_INFO` | Ustalarga ko'rsatiladigan to'lov rekvizitlari |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |

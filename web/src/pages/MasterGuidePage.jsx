@@ -15,7 +15,7 @@ import { t } from '../i18n';
 const BENEFITS = (config) => [
   { icon: Zap, title: t('Buyurtmalar o\'zi keladi'), text: t('Ish rejimini yoqasiz — eng yaqin mijozlarning chaqiruvlari telefoningizga keladi. Mijoz qidirib yurish shart emas.') },
   { icon: Clock, title: t('Vaqtingiz o\'z qo\'lingizda'), text: t('Xohlagan paytda ishga chiqasiz, band bo\'lsangiz ish rejimini o\'chirasiz.') },
-  { icon: Percent, title: t('Faqat bajarilgan ishdan {percent}%', { percent: config.commission_percent }), text: t('Ro\'yxatdan o\'tish, profil va shaxsiy sahifa bepul. Komissiya faqat tezkor chaqiruv orqali yakunlangan ishning ish haqidan olinadi, materiallardan emas.') },
+  { icon: Percent, title: t('Faqat bajarilgan ishdan {percent}%', { percent: config.commission_percent }), text: t('Ro\'yxatdan o\'tish, profil va shaxsiy sahifa bepul. Komissiya faqat yakunlangan ishning ish haqidan olinadi, materiallardan emas.') },
   { icon: QrCode, title: t('Shaxsiy sahifa va QR kod'), text: t('Sharhlaringiz, ishlaringiz rasmlari va o\'z havolangiz. Uni Telegram\'da, vizitkada va mashinangizda ulashasiz.') }
 ];
 
@@ -57,11 +57,13 @@ const TIPS = () => [
 
 const FAQ = (config) => [
   [t('Ro\'yxatdan o\'tish pullikmi?'), t('Yo\'q. Ro\'yxatdan o\'tish, profil, portfolio va shaxsiy havola bepul.')],
-  [t('Komissiya qancha?'), t('Tezkor chaqiruvlar bo\'yicha ish haqining {percent}%. Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.', { percent: config.commission_percent })],
+  [t('Komissiya qancha?'), config.catalog_commission_percent === config.commission_percent
+    ? t('Ish haqining {percent}% (tezkor chaqiruv ham, oddiy buyurtma ham). Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.', { percent: config.commission_percent })
+    : t('Tezkor chaqiruvda ish haqining {percent}%, oddiy buyurtmada {catalog}%. Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.', { percent: config.commission_percent, catalog: config.catalog_commission_percent ?? config.commission_percent })],
   [
     t('Komissiyani qanday to\'layman?'),
     [
-      t('Har bir yakunlangan tezkor ishdan keyin komissiya «Komissiya hisobi» sahifasiga yoziladi. U yerdagi rekvizitlarga o\'tkazasiz, administrator qabul qilgach qarz kamayadi.'),
+      t('Ishni yakunlaganda yakuniy summani (ish haqi va material) kiritasiz, komissiya «Komissiya hisobi» sahifasiga yoziladi. Mijoz ishni o\'zi yakunlasa, summani 24 soat ichida kiritasiz. U yerdagi rekvizitlarga o\'tkazasiz, administrator qabul qilgach qarz kamayadi.'),
       config.commission_debt_limit > 0
         ? t('Qarz {limit} so\'mdan oshsa, to\'lamaguningizcha yangi takliflar kelmaydi.', { limit: Number(config.commission_debt_limit).toLocaleString('ru-RU') })
         : null

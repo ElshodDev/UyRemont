@@ -303,7 +303,11 @@ export default function AdminCommissionTab({ onChanged }) {
             hint={summary.limit > 0 ? `limit ${formatSum(summary.limit)}` : 'limit o\'chirilgan'}
             warn={summary.over_limit > 0}
           />
-          <SummaryTile label="30 kunda yozildi" value={formatSum(summary.accrued_30d)} hint={`komissiya ${summary.percent}%`} />
+          <SummaryTile
+            label="30 kunda yozildi"
+            value={formatSum(summary.accrued_30d)}
+            hint={`chaqiruv ${summary.percent}% · oddiy ${summary.catalog_percent ?? summary.percent}%`}
+          />
           <SummaryTile label="30 kunda yig'ildi" value={formatSum(summary.collected_30d)} />
         </div>
       )}
@@ -377,7 +381,7 @@ export default function AdminCommissionTab({ onChanged }) {
       {result && (
         <p className="hint flex items-center gap-1.5">
           <Wallet className="w-3.5 h-3.5" aria-hidden="true" />
-          Komissiya tezkor chaqiruv yakunlanganda yoziladi. To'lov rekvizitlari va limit: .env dagi COMMISSION_PAYMENT_INFO va COMMISSION_DEBT_LIMIT.
+          Komissiya buyurtma yakuniy summa bilan yakunlanganda ish haqidan yoziladi: tezkor chaqiruv - PLATFORM_COMMISSION_PERCENT, oddiy buyurtma - CATALOG_COMMISSION_PERCENT. Rekvizitlar va limit: COMMISSION_PAYMENT_INFO, COMMISSION_DEBT_LIMIT (.env).
         </p>
       )}
 

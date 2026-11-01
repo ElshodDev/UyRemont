@@ -390,5 +390,23 @@ export default {
   'bajarilgan': 'выполнено',
   'bajarilmagan': 'не выполнено',
   'Masalan: 5': 'Например: 5',
-  'Bo\'sh qolsa: «Narx kelishiladi»': 'Если пусто: «Цена договорная»'
+  'Bo\'sh qolsa: «Narx kelishiladi»': 'Если пусто: «Цена договорная»',
+  // Oddiy buyurtma komissiyasi: yakuniy summa
+  'Yakuniy summani kiriting': 'Укажите итоговую сумму',
+  'Hali yozuv yo\'q. Ishni yakuniy summa bilan yakunlaganingizda komissiya shu yerda ko\'rinadi.':
+    'Записей пока нет. Комиссия появится здесь, когда вы завершите работу с итоговой суммой.',
+  'Ro\'yxatdan o\'tish, profil va shaxsiy sahifa bepul. Komissiya faqat yakunlangan ishning ish haqidan olinadi, materiallardan emas.':
+    'Регистрация, профиль и личная страница — бесплатно. Комиссия берётся только с оплаты выполненной работы, не с материалов.',
+  'Ish haqining {percent}% (tezkor chaqiruv ham, oddiy buyurtma ham). Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.':
+    '{percent}% от оплаты работы (и для срочных вызовов, и для обычных заказов). Купленные вами материалы указываются отдельно, комиссия с них не берётся. За работу клиент платит вам напрямую.',
+  'Tezkor chaqiruvda ish haqining {percent}%, oddiy buyurtmada {catalog}%. Siz sotib olgan materiallar alohida yoziladi va ulardan komissiya olinmaydi. Ish uchun to\'lovni mijoz sizga to\'g\'ridan-to\'g\'ri qiladi.':
+    'Срочный вызов — {percent}% от оплаты работы, обычный заказ — {catalog}%. Купленные вами материалы указываются отдельно, комиссия с них не берётся. За работу клиент платит вам напрямую.',
+  'Ishni yakunlaganda yakuniy summani (ish haqi va material) kiritasiz, komissiya «Komissiya hisobi» sahifasiga yoziladi. Mijoz ishni o\'zi yakunlasa, summani 24 soat ichida kiritasiz. U yerdagi rekvizitlarga o\'tkazasiz, administrator qabul qilgach qarz kamayadi.':
+    'Завершая работу, вы указываете итоговую сумму (оплата работы и материалы), и комиссия записывается на странице «Счёт комиссии». Если клиент сам отметил работу как завершённую, укажите сумму в течение 24 часов. Оплатите по реквизитам на той странице — после подтверждения администратором долг уменьшится.',
+  'Mijoz yakunlagan buyurtmalarning summasi kiritilgan': 'Указана сумма по заказам, завершённым клиентом',
+  'Muddat o\'tdi. Summani kiritmaguningizcha yangi buyurtma ololmaysiz va ishga chiqa olmaysiz.':
+    'Срок истёк. Пока вы не укажете сумму, вы не сможете брать новые заказы и выходить на линию.',
+  'Mijoz ishni yakunlandi deb belgiladi. Summani {date} gacha kiriting, aks holda yangi buyurtma ololmaysiz.':
+    'Клиент отметил работу как завершённую. Укажите сумму до {date}, иначе вы не сможете брать новые заказы.',
+  'Summani kiritish': 'Указать сумму'
 };

@@ -7,7 +7,7 @@ const { query, withTransaction } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { logAdminAction } = require('../services/audit.service');
 const {
-    PAYMENT_METHODS, formatSum, isOverLimit, addLedgerEntry, notifyCommission, loadMasterLedger,
+    PAYMENT_METHODS, formatSum, isOverLimit, addLedgerEntry, notifyCommission, loadMasterLedger, commissionPercentFor,
 } = require('../services/commission.service');
 const { assertUuid, optionalNumber, optionalString, requiredString } = require('../utils/validators');
 
@@ -105,6 +105,7 @@ const listCommission = async (req, res, next) => {
                 collected_30d: Number(period.rows[0].collected),
                 limit,
                 percent: config.COMMISSION_PERCENT,
+                catalog_percent: config.CATALOG_COMMISSION_PERCENT,
                 payment_reviews: reviews.rows[0].total,
             },
             counts: { debtors: s.debtors, over_limit: s.over_limit, all: s.all_masters },
@@ -215,7 +216,7 @@ const recordAdjustment = async (req, res, next) => {
 const REVIEW_STATUSES = ['pending', 'charged', 'dismissed'];
 
 const REVIEW_SELECT = `
-    SELECT o.id, o.title, o.completed_at, o.payment_confirmed_at, o.payment_review, o.payment_reviewed_at,
+    SELECT o.id, o.title, o.mode, o.completed_at, o.payment_confirmed_at, o.payment_review, o.payment_reviewed_at,
            o.final_price, o.labor_price, o.materials_price, o.client_paid_amount,
            o.master_id, m.name as master_name, m.phone as master_phone,
            o.client_id, c.name as client_name, c.phone as client_phone,
@@ -233,7 +234,7 @@ const REVIEW_SELECT = `
  */
 const reviewView = (row) => {
     const difference = Math.max(0, Number(row.client_paid_amount) - Number(row.final_price));
-    const percent = row.commission_percent !== null ? Number(row.commission_percent) : config.COMMISSION_PERCENT;
+    const percent = row.commission_percent !== null ? Number(row.commission_percent) : commissionPercentFor(row);
     return {
         ...row,
         difference,

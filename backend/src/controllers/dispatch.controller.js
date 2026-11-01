@@ -59,6 +59,8 @@ const getRequirements = (profile) => {
         active: profile.is_active,
         // Komissiya qarzi limitdan oshmagan (cheklov o'chirilgan bo'lsa doim true)
         commission_ok: !(config.COMMISSION_DEBT_LIMIT > 0 && Number(profile.commission_due) > config.COMMISSION_DEBT_LIMIT),
+        // Mijoz yakunlagan oddiy buyurtmalarning yakuniy summasi muddatida kiritilgan
+        prices_ok: !(Number(profile.overdue_prices) > 0),
     };
     return { ...requirements, can_go_online: Object.values(requirements).every(Boolean) };
 };
@@ -66,7 +68,9 @@ const getRequirements = (profile) => {
 const loadMasterProfile = async (userId) => {
     const result = await query(
         `SELECT mp.*, u.is_active,
-                (SELECT COUNT(*)::int FROM master_specializations ms WHERE ms.master_id = mp.id) as specializations_count
+                (SELECT COUNT(*)::int FROM master_specializations ms WHERE ms.master_id = mp.id) as specializations_count,
+                (SELECT COUNT(*)::int FROM orders o
+                 WHERE o.master_id = mp.user_id AND o.final_price IS NULL AND o.price_due_at < NOW()) as overdue_prices
          FROM master_profiles mp JOIN users u ON u.id = mp.user_id
          WHERE mp.user_id = $1`,
         [userId]
@@ -89,6 +93,8 @@ const getConfig = (req, res) => {
             max_missed_offers: config.MAX_MISSED_OFFERS,
             free_cancel_min: config.FREE_CANCEL_MIN,
             commission_percent: config.COMMISSION_PERCENT,
+            catalog_commission_percent: config.CATALOG_COMMISSION_PERCENT,
+            price_entry_hours: config.PRICE_ENTRY_HOURS,
             commission_debt_limit: config.COMMISSION_DEBT_LIMIT,
             min_rating: config.MIN_RATING,
             min_reviews_for_rating: config.MIN_REVIEWS_FOR_RATING,
@@ -416,6 +422,7 @@ const setOnline = async (req, res, next) => {
                 if (!requirements.verified) reasons.push('profilingiz administrator tomonidan tasdiqlanmagan');
                 if (!requirements.has_specializations) reasons.push('mutaxassislik tanlanmagan');
                 if (!requirements.rating_ok) reasons.push(`reytingingiz ${config.MIN_RATING} dan past`);
+                if (!requirements.prices_ok) reasons.push('yakunlangan buyurtmalarning summasi kiritilmagan');
                 if (!requirements.commission_ok) {
                     reasons.push(`komissiya qarzingiz ${formatSum(profile.commission_due)} — limitdan (${formatSum(config.COMMISSION_DEBT_LIMIT)}) oshgan, avval to'lang`);
                 }

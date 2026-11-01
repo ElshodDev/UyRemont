@@ -52,6 +52,12 @@ export default function OrderListItem({ order, viewerRole, action }) {
           </div>
         </div>
 
+        {/* Mijoz yakunlagan oddiy buyurtma: usta yakuniy summani kiritishi kerak */}
+        {viewerRole === 'master' && order.status === 'completed' && order.price_due_at && order.final_price === null && (
+          <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+            {t('Yakuniy summani kiriting')}
+          </p>
+        )}
         {order.description && <p className="text-xs text-slate-600 mt-2 line-clamp-2">{order.description}</p>}
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-slate-500">

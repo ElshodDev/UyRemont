@@ -9,9 +9,12 @@ const { emitOrderUpdate } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
 const { confirmPayment, paymentView } = require('../services/payment.service');
 const { containsContact, CONTACT_IN_TEXT_MESSAGE } = require('../utils/contacts');
-const { accrueCommission, afterAccrual, isOverLimit } = require('../services/commission.service');
+const {
+    accrueCommission, afterAccrual, isOverLimit, formatSum,
+} = require('../services/commission.service');
+const dispatchConfig = require('../config/dispatch');
 const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
-const { notifyNewOrderForMaster } = require('../services/telegram/notify');
+const { notifyNewOrderForMaster, notifyFinalPrice } = require('../services/telegram/notify');
 const {
     assertUuid,
     optionalString,
@@ -344,6 +347,42 @@ const getOrderById = async (req, res, next) => {
 };
 
 /**
+ * Yakuniy summa = ish haqi (chiqish narxi bilan) + material. Komissiya faqat ish haqidan.
+ * Eski ilova faqat final_price yuboradi - u ish haqi hisoblanadi
+ * @returns {{ finalPrice: number, laborPrice: number, materialsPrice: number }}
+ */
+const parseFinalPrices = (body) => {
+    const laborPrice = optionalNumber(body.labor_price ?? body.final_price, { min: 0, max: 10000000000, field: 'Ish haqi' });
+    if (laborPrice === null) {
+        throw new HttpError(400, 'Ish haqini kiriting (chiqish narxi bilan birga)');
+    }
+    const materialsPrice = optionalNumber(body.materials_price, { min: 0, max: 10000000000, field: 'Material summasi' }) || 0;
+    return { finalPrice: laborPrice + materialsPrice, laborPrice, materialsPrice };
+};
+
+/**
+ * Usta yangi oddiy buyurtmani qabul qila oladimi: komissiya qarzi limitdan oshmagan va
+ * mijoz yakunlagan buyurtmalarning yakuniy summasi muddatida kiritilgan
+ */
+const assertMasterCanTakeOrders = async (masterId) => {
+    const result = await query(
+        `SELECT mp.commission_due,
+                (SELECT COUNT(*)::int FROM orders o
+                 WHERE o.master_id = $1 AND o.final_price IS NULL AND o.price_due_at < NOW()) as overdue_prices
+         FROM master_profiles mp WHERE mp.user_id = $1`,
+        [masterId]
+    );
+    const row = result.rows[0];
+    if (!row) return;
+    if (row.overdue_prices > 0) {
+        throw new HttpError(400, 'Avval yakunlangan buyurtmalarning summasini kiriting (Buyurtmalarim)');
+    }
+    if (isOverLimit(row.commission_due)) {
+        throw new HttpError(400, `Komissiya qarzingiz ${formatSum(row.commission_due)} — limitdan (${formatSum(dispatchConfig.COMMISSION_DEBT_LIMIT)}) oshgan. Yangi buyurtma olish uchun avval to'lang`);
+    }
+};
+
+/**
  * Buyurtma holatini yangilash
  * PUT /api/orders/:id/status
  * Body: { status }
@@ -405,28 +444,53 @@ const updateOrderStatus = async (req, res, next) => {
             });
         }
 
+        // Yangi buyurtma: qarz limitdan oshgan yoki yakuniy summani kiritmagan usta qabul qila olmaydi
+        if (status === 'accepted' && actor === 'master') await assertMasterCanTakeOrders(userId);
+
+        // Usta yakunlasa - yakuniy summa bilan (komissiya yoziladi). Mijoz yoki admin yakunlasa -
+        // usta summani PRICE_ENTRY_HOURS ichida kiritadi (price_due_at)
+        const completing = status === 'completed';
+        const prices = completing && actor === 'master' ? parseFinalPrices(req.body) : null;
+        const priceDueHours = completing && !prices && order.master_id ? dispatchConfig.PRICE_ENTRY_HOURS : null;
+
         // Ochiq buyurtmani qabul qilgan usta unga biriktiriladi.
         // WHERE dagi status sharti bir vaqtda ikki kishi o'zgartirishining oldini oladi.
         const assignMaster = isOpenOrder && status === 'accepted' && actor === 'master';
-        const result = await query(
-            `UPDATE orders
-             SET status = $1, master_id = CASE WHEN $4::boolean THEN $5::uuid ELSE master_id END
-                 ${STATUS_TIMESTAMPS[status] ? `, ${STATUS_TIMESTAMPS[status]} = NOW()` : ''}
-             WHERE id = $2 AND status = $3
-               AND (NOT $4::boolean OR master_id IS NULL)
-             RETURNING *`,
-            [status, id, order.status, assignMaster, userId]
-        );
+        const outcome = await withTransaction(async (client) => {
+            const result = await client.query(
+                `UPDATE orders
+                 SET status = $1, master_id = CASE WHEN $4::boolean THEN $5::uuid ELSE master_id END
+                     ${STATUS_TIMESTAMPS[status] ? `, ${STATUS_TIMESTAMPS[status]} = NOW()` : ''},
+                     final_price = COALESCE($6, final_price),
+                     labor_price = COALESCE($7, labor_price),
+                     materials_price = CASE WHEN $6::numeric IS NULL THEN materials_price ELSE $8 END,
+                     price_due_at = CASE WHEN $9::float8 IS NULL THEN price_due_at
+                                         ELSE NOW() + $9::float8 * INTERVAL '1 hour' END
+                 WHERE id = $2 AND status = $3
+                   AND (NOT $4::boolean OR master_id IS NULL)
+                 RETURNING *`,
+                [status, id, order.status, assignMaster, userId,
+                    prices?.finalPrice ?? null, prices?.laborPrice ?? null, prices?.materialsPrice ?? 0, priceDueHours]
+            );
+            const row = result.rows[0];
+            if (!row || !prices) return { updated: row, accrued: null };
+            const accrued = await accrueCommission(client, row);
+            if (accrued && isOverLimit(accrued.due)) {
+                await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [row.master_id]);
+            }
+            return { updated: row, accrued };
+        });
 
-        if (result.rows.length === 0) {
+        if (!outcome.updated) {
             return res.status(409).json({
                 success: false,
                 message: 'Buyurtma holati allaqachon o\'zgargan. Sahifani yangilang',
             });
         }
 
-        const updated = result.rows[0];
+        const updated = outcome.updated;
         emitOrderUpdate(updated, { actor });
+        if (outcome.accrued) afterAccrual(updated.master_id, outcome.accrued);
         if (actor === 'admin') {
             await logAdminAction(req, {
                 action: 'order.status',
@@ -461,19 +525,7 @@ const updateInstantStatus = async (req, res, order, status) => {
         });
     }
 
-    // Yakuniy summa = ish haqi (chiqish narxi bilan) + material. Komissiya faqat ish haqidan.
-    // Eski ilova faqat final_price yuboradi - u ish haqi hisoblanadi
-    let finalPrice = null;
-    let laborPrice = null;
-    let materialsPrice = 0;
-    if (status === 'completed') {
-        laborPrice = optionalNumber(req.body.labor_price ?? req.body.final_price, { min: 0, max: 10000000000, field: 'Ish haqi' });
-        if (laborPrice === null) {
-            throw new HttpError(400, 'Ish haqini kiriting (chiqish narxi bilan birga)');
-        }
-        materialsPrice = optionalNumber(req.body.materials_price, { min: 0, max: 10000000000, field: 'Material summasi' }) || 0;
-        finalPrice = laborPrice + materialsPrice;
-    }
+    const { finalPrice = null, laborPrice = null, materialsPrice = 0 } = status === 'completed' ? parseFinalPrices(req.body) : {};
 
     // Yakunlashda holat va komissiya yozuvi bitta tranzaksiyada (biri yozilib, ikkinchisi qolib ketmasin)
     const outcome = await withTransaction(async (client) => {
@@ -514,7 +566,51 @@ const updateInstantStatus = async (req, res, order, status) => {
 };
 
 /**
- * Mijoz to'lovni tasdiqlaydi (tezkor chaqiruv yakunlangach)
+ * Usta mijoz (yoki admin) yakunlagan oddiy buyurtmaning yakuniy summasini kiritadi - bir marta.
+ * Komissiya yoziladi, mijozdan to'lovni tasdiqlash so'raladi
+ * PUT /api/orders/:id/final-price
+ * Body: { labor_price, materials_price? }
+ */
+const setFinalPrice = async (req, res, next) => {
+    try {
+        const id = assertUuid(req.params.id, 'Buyurtma topilmadi');
+        const prices = parseFinalPrices(req.body);
+        const outcome = await withTransaction(async (client) => {
+            const found = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [id]);
+            const order = found.rows[0];
+            if (!order) throw new HttpError(404, 'Buyurtma topilmadi');
+            if (order.master_id !== req.user.id) throw new HttpError(403, 'Yakuniy summani faqat buyurtmani bajargan usta kiritadi');
+            if (order.final_price !== null) throw new HttpError(409, 'Yakuniy summa allaqachon kiritilgan');
+            if (order.status !== 'completed' || order.mode !== 'catalog') {
+                throw new HttpError(400, 'Yakuniy summa faqat yakunlangan buyurtmaga kiritiladi');
+            }
+            const result = await client.query(
+                `UPDATE orders SET final_price = $2, labor_price = $3, materials_price = $4, price_due_at = NULL
+                 WHERE id = $1 RETURNING *`,
+                [id, prices.finalPrice, prices.laborPrice, prices.materialsPrice]
+            );
+            const updated = result.rows[0];
+            const accrued = await accrueCommission(client, updated);
+            if (accrued && isOverLimit(accrued.due)) {
+                await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [updated.master_id]);
+            }
+            return { updated, accrued };
+        });
+
+        if (outcome.accrued) afterAccrual(outcome.updated.master_id, outcome.accrued);
+        notifyFinalPrice(outcome.updated);
+        res.status(200).json({
+            success: true,
+            message: 'Yakuniy summa saqlandi',
+            data: paymentView(outcome.updated, req.user),
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Mijoz to'lovni tasdiqlaydi (yakuniy summasi bor buyurtma yakunlangach)
  * POST /api/orders/:id/payment
  * Body: {} - usta yozgan summa to'g'ri; { amount } - boshqa summa to'langan
  */
@@ -540,6 +636,7 @@ const confirmOrderPayment = async (req, res, next) => {
 
 module.exports = {
     confirmOrderPayment,
+    setFinalPrice,
     createOrder,
     getOrders,
     getOpenOrders,

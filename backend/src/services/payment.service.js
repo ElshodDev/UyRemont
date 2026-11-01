@@ -1,5 +1,5 @@
 // =============================================
-// UyRemont - Mijoz to'langan summani tasdiqlaydi (tezkor chaqiruv yakunlangach).
+// UyRemont - Mijoz to'langan summani tasdiqlaydi (yakuniy summasi bor buyurtma yakunlangach).
 // Usta yakuniy summani kam yozsa (komissiya kamroq bo'lishi uchun), mijozning javobi farqni ko'rsatadi:
 // buyurtma admin tekshiruviga tushadi va admin farqdan komissiya yozishi mumkin.
 // =============================================
@@ -22,8 +22,8 @@ const isUnderreported = (statedPrice, paidAmount) => {
     return Number(paidAmount) - stated > Math.max(TOLERANCE_MIN, (stated * TOLERANCE_PERCENT) / 100);
 };
 
-const awaitsConfirmation = (order) => order.mode === 'instant'
-    && order.status === 'completed'
+// Yakuniy summasi bor (tezkor chaqiruv yoki usta summani kiritgan oddiy buyurtma) va hali tasdiqlanmagan
+const awaitsConfirmation = (order) => order.status === 'completed'
     && order.final_price !== null && order.final_price !== undefined
     && !order.payment_confirmed_at;
 

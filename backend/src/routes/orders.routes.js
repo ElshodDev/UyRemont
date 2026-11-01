@@ -7,6 +7,7 @@ const {
     getOrderById,
     updateOrderStatus,
     confirmOrderPayment,
+    setFinalPrice,
 } = require('../controllers/orders.controller');
 const { uploadDraftPhoto, deleteDraftPhoto, getOrderPhoto } = require('../controllers/photos.controller');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -36,6 +37,9 @@ router.get('/:id/photos/:photoId', getOrderPhoto);
 
 // Buyurtma holatini yangilash
 router.put('/:id/status', updateOrderStatus);
+
+// Usta mijoz yakunlagan oddiy buyurtmaning yakuniy summasini kiritadi
+router.put('/:id/final-price', authorize('master'), setFinalPrice);
 
 // Mijoz ustaga to'langan summani tasdiqlaydi
 router.post('/:id/payment', confirmOrderPayment);
