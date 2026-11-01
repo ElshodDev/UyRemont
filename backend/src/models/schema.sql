@@ -731,3 +731,21 @@ ALTER TABLE orders ADD CONSTRAINT orders_payment_review_check
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_reviewed_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_payment_review ON orders(payment_confirmed_at DESC) WHERE payment_review IS NOT NULL;
+
+-- =============================================
+-- 19. Shikoyatlar: murojaat kimga qarshi ekani (usta yoki mijoz).
+-- Buyurtma bo'yicha murojaatda - buyurtmaning ikkinchi tomoni; usta profilidan - shu usta (buyurtmasiz).
+-- Administrator shikoyat qilingan foydalanuvchiga ogohlantirish yuboradi yoki uni bloklaydi
+-- =============================================
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS target_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_support_tickets_target ON support_tickets(target_user_id, created_at DESC) WHERE target_user_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS user_warnings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticket_id UUID REFERENCES support_tickets(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_warnings_user ON user_warnings(user_id, created_at DESC);

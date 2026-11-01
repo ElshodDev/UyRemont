@@ -475,5 +475,22 @@ export default {
   'Yo\'q, boshqa summa': 'Нет, другую сумму',
   'Ustaga qancha to\'ladingiz? (so\'m)': 'Сколько вы заплатили мастеру? (сум)',
   'Javobingiz ustaga ko\'rsatilmaydi. U narxlarning halol bo\'lishiga yordam beradi.': 'Мастер не увидит ваш ответ. Он помогает сохранять цены честными.',
-  'Siz to\'lovni tasdiqladingiz: {sum}': 'Вы подтвердили оплату: {sum}'
+  'Siz to\'lovni tasdiqladingiz: {sum}': 'Вы подтвердили оплату: {sum}',
+  // Shikoyatlar
+  'Saytdan tashqari to\'lov yoki raqam so\'radi': 'Просил оплату или номер в обход сайта',
+  'Firibgarlik yoki oldindan pul so\'radi': 'Мошенничество или просил предоплату',
+  'Soxta profil yoki boshqa odamning rasmi': 'Фейковый профиль или чужое фото',
+  'Noto\'g\'ri ma\'lumot (soha, narx, tajriba)': 'Неверные данные (направление, цена, опыт)',
+  'Nomaqbul rasm yoki matn': 'Недопустимое фото или текст',
+  'Shikoyat qilish': 'Пожаловаться',
+  'Sababi': 'Причина',
+  'Izoh (ixtiyoriy)': 'Комментарий (необязательно)',
+  'Qisqacha yozing: nima bo\'ldi, qachon': 'Кратко опишите: что произошло и когда',
+  'Shikoyat maxfiy: usta kim yuborganini bilmaydi. Administrator ko\'rib chiqadi, natijani «Yordam» sahifasida ko\'rasiz.':
+    'Жалоба анонимна: мастер не узнает, кто её отправил. Администратор рассмотрит её, результат вы увидите на странице «Помощь».',
+  'Shikoyat yuborish': 'Отправить жалобу',
+  'Administrator ogohlantirishlari': 'Предупреждения администратора',
+  'Takrorlansa, hisobingiz bloklanishi mumkin.': 'При повторении ваш аккаунт может быть заблокирован.',
+  'Shikoyat: {name}': 'Жалоба: {name}',
+  'Administrator ogohlantirishi: {message}': 'Предупреждение администратора: {message}'
 };

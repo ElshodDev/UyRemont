@@ -1,17 +1,24 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { t } from '../i18n';
 
 /**
  * Umumiy modal oyna: telefonda pastdan chiqadi, kompyuterda markazda.
  * Fon bosilganda yoki Escape tugmasida yopiladi, yopilgach fokus oldingi elementga qaytadi.
+ * portal - oyna boshqa oyna ichidan ochilsa (masalan, usta profilidan shikoyat), sahifa darajasida chiziladi.
  */
-export default function Modal({ onClose, children, size = 'md', className = '', labelledBy }) {
+export default function Modal({ onClose, children, size = 'md', className = '', labelledBy, portal = false }) {
   const panelRef = useRef(null);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // Ustma-ust oynalarda faqat eng yuqoridagisi yopiladi
+      const open = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (open.length && open[open.length - 1] !== rootRef.current) return;
+      onClose();
     };
     document.addEventListener('keydown', onKey);
     const { overflow } = document.body.style;
@@ -31,8 +38,9 @@ export default function Modal({ onClose, children, size = 'md', className = '', 
 
   const widths = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm:max-w-2xl' };
 
-  return (
+  const dialog = (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -58,4 +66,6 @@ export default function Modal({ onClose, children, size = 'md', className = '', 
       </div>
     </div>
   );
+
+  return portal ? createPortal(dialog, document.body) : dialog;
 }
