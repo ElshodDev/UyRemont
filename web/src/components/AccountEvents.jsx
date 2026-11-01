@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 /**
- * Hisobga oid jonli xabarlar: murojaatga javob, ustani tasdiqlash natijasi
+ * Hisobga oid jonli xabarlar: murojaatga javob, ustani tasdiqlash natijasi, komissiya hisobi
  */
 export default function AccountEvents() {
   const { user, refresh } = useAuth();
@@ -25,11 +25,18 @@ export default function AccountEvents() {
       refresh();
     };
 
+    const onCommission = ({ message, blocked }) => {
+      if (blocked) toast.error(message);
+      else toast.info(message);
+    };
+
     socket.on('support_updated', onSupport);
     socket.on('verification_updated', onVerification);
+    socket.on('commission_updated', onCommission);
     return () => {
       socket.off('support_updated', onSupport);
       socket.off('verification_updated', onVerification);
+      socket.off('commission_updated', onCommission);
     };
   }, [user?.id, refresh, toast]);
 

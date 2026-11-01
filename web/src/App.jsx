@@ -26,6 +26,7 @@ import FavoritesPage from './pages/FavoritesPage';
 import MasterGuidePage from './pages/MasterGuidePage';
 import RecruitFlyerPage from './pages/RecruitFlyerPage';
 import MasterFlyerPage from './pages/MasterFlyerPage';
+import MasterBalancePage from './pages/MasterBalancePage';
 import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/ustalar" element={<MasterGuidePage />} />
         <Route path="/ustalar/varaqa" element={<RecruitFlyerPage />} />
         <Route path="/master/varaqa" element={<RequireAuth roles={['master']}><MasterFlyerPage /></RequireAuth>} />
+        <Route path="/master/hisob" element={<RequireAuth roles={['master']}><MasterBalancePage /></RequireAuth>} />
         <Route path="/favorites" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
         <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
         <Route path="/terms" element={<TermsPage />} />

@@ -17,6 +17,7 @@ const {
 const verification = require('../controllers/verification.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 const { uploadImage } = require('../middleware/upload');
+const { getMyCommission } = require('../controllers/commission.controller');
 
 // Statik yo'llar :id paramdan oldin turishi shart
 router.get('/specializations', getSpecializations);
@@ -29,6 +30,7 @@ router.get('/', getAllMasters);
 router.get('/u/:slug', getMasterBySlug);
 router.get('/u/:slug/qr', getMasterQr);
 router.get('/me/link', authenticate, authorize('master'), getMyPublicLink);
+router.get('/me/commission', authenticate, authorize('master'), getMyCommission);
 router.put('/me/link', authenticate, authorize('master'), updateMyPublicLink);
 
 // Tasdiqlash: hujjatlar va tekshiruvga yuborish

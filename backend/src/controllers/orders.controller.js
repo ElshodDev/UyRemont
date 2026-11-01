@@ -7,6 +7,7 @@ const { query, withTransaction } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { emitOrderUpdate } = require('../services/dispatch.service');
 const { logAdminAction } = require('../services/audit.service');
+const { accrueCommission, afterAccrual, isOverLimit } = require('../services/commission.service');
 const { parsePhotoIds, attachPhotos, listPhotoIds } = require('./photos.controller');
 const { notifyNewOrderForMaster } = require('../services/telegram/notify');
 const {
@@ -464,27 +465,39 @@ const updateInstantStatus = async (req, res, order, status) => {
         }
     }
 
-    const result = await query(
-        `UPDATE orders
-         SET status = $1, ${STATUS_TIMESTAMPS[status]} = NOW(),
-             final_price = COALESCE($4, final_price)
-         WHERE id = $2 AND status = $3
-         RETURNING *`,
-        [status, order.id, order.status, finalPrice]
-    );
+    // Yakunlashda holat va komissiya yozuvi bitta tranzaksiyada (biri yozilib, ikkinchisi qolib ketmasin)
+    const outcome = await withTransaction(async (client) => {
+        const result = await client.query(
+            `UPDATE orders
+             SET status = $1, ${STATUS_TIMESTAMPS[status]} = NOW(),
+                 final_price = COALESCE($4, final_price)
+             WHERE id = $2 AND status = $3
+             RETURNING *`,
+            [status, order.id, order.status, finalPrice]
+        );
+        const updated = result.rows[0];
+        if (!updated || status !== 'completed') return { updated, accrued: null };
 
-    if (result.rows.length === 0) {
+        const accrued = await accrueCommission(client, updated);
+        // Qarz limitdan oshdi: ish rejimi o'chadi, to'lamaguncha yangi takliflar kelmaydi
+        if (accrued && isOverLimit(accrued.due)) {
+            await client.query('UPDATE master_profiles SET is_online = FALSE WHERE user_id = $1', [updated.master_id]);
+        }
+        return { updated, accrued };
+    });
+
+    if (!outcome.updated) {
         return res.status(409).json({
             success: false,
             message: 'Buyurtma holati allaqachon o\'zgargan. Sahifani yangilang',
         });
     }
-
-    emitOrderUpdate(result.rows[0]);
+    emitOrderUpdate(outcome.updated);
+    if (outcome.accrued) afterAccrual(outcome.updated.master_id, outcome.accrued);
     res.status(200).json({
         success: true,
         message: 'Buyurtma holati yangilandi',
-        data: result.rows[0],
+        data: outcome.updated,
     });
 };
 

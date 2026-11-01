@@ -11,6 +11,9 @@ const {
 const {
     listVerifications, getDocument, approveMaster, rejectMaster,
 } = require('../controllers/verification.controller');
+const {
+    listCommission, getMasterCommission, recordPayment, recordAdjustment,
+} = require('../controllers/commission.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Faqat administratorlar uchun
@@ -39,6 +42,12 @@ router.post('/verifications/:userId/reject', rejectMaster);
 router.get('/documents/:id', getDocument);
 
 // MVP o'lchovlari va xatolar jurnali
+// Komissiya hisobi: ustalar qarzi, to'lovlarni qabul qilish
+router.get('/commission', listCommission);
+router.get('/commission/:masterId', getMasterCommission);
+router.post('/commission/:masterId/payments', recordPayment);
+router.post('/commission/:masterId/adjustments', recordAdjustment);
+
 router.get('/analytics', getAnalytics);
 router.get('/queues', getQueues);
 router.get('/errors', listErrors);

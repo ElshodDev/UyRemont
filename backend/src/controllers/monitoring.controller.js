@@ -77,7 +77,7 @@ const getAnalytics = async (req, res, next) => {
         const days = Math.min(90, Math.max(7, Number.parseInt(req.query.days, 10) || 14));
         const since = `CURRENT_DATE - (${days - 1} * INTERVAL '1 day')`;
 
-        const [daily, kpi, bySpec, hourly, support] = await Promise.all([
+        const [daily, kpi, bySpec, hourly, support, ledger] = await Promise.all([
             query(
                 `SELECT d::date as day,
                     (SELECT COUNT(*)::int FROM orders o WHERE o.created_at::date = d::date AND o.mode = 'instant') as instant,
@@ -142,6 +142,13 @@ const getAnalytics = async (req, res, next) => {
                         COUNT(*) FILTER (WHERE created_at >= ${since})::int as period
                  FROM support_tickets`
             ),
+            // Komissiya hisobi: davr ichida yozilgan va ustalardan qabul qilingan
+            query(
+                `SELECT COALESCE(SUM(amount) FILTER (WHERE kind = 'commission'), 0) as accrued,
+                        COALESCE(-SUM(amount) FILTER (WHERE kind = 'payment'), 0) as paid,
+                        (SELECT COALESCE(SUM(commission_due), 0) FROM master_profiles WHERE commission_due > 0) as outstanding
+                 FROM master_ledger WHERE created_at >= ${since}`
+            ),
         ]);
 
         const k = kpi.rows[0];
@@ -163,7 +170,9 @@ const getAnalytics = async (req, res, next) => {
                     cancelled_by_master: k.cancelled_by_master,
                     late_cancels: k.late_cancels,
                     revenue,
-                    commission: Math.round((revenue * config.COMMISSION_PERCENT) / 100),
+                    commission: Number(ledger.rows[0].accrued),
+                    commission_paid: Number(ledger.rows[0].paid),
+                    commission_outstanding: Number(ledger.rows[0].outstanding),
                     commission_percent: config.COMMISSION_PERCENT,
                     paying_clients: k.paying_clients,
                     repeat_clients: k.repeat_clients,
@@ -193,7 +202,11 @@ const getQueues = async (req, res, next) => {
                    WHERE u.role = 'master' AND u.is_active = TRUE AND mp.is_verified = FALSE
                      AND mp.verification_requested_at IS NOT NULL
                      AND (mp.verification_rejected_at IS NULL OR mp.verification_rejected_at < mp.verification_requested_at)) as verifications,
-                (SELECT COUNT(*)::int FROM error_logs WHERE resolved = FALSE) as errors`
+                (SELECT COUNT(*)::int FROM error_logs WHERE resolved = FALSE) as errors,
+                (SELECT COUNT(*)::int FROM master_profiles mp JOIN users u ON u.id = mp.user_id
+                   WHERE u.role = 'master' AND u.deleted_at IS NULL
+                     AND $1::numeric > 0 AND mp.commission_due > $1::numeric) as commission`,
+            [config.COMMISSION_DEBT_LIMIT]
         );
         res.status(200).json({ success: true, data: result.rows[0] });
     } catch (error) {

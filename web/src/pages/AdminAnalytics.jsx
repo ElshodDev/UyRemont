@@ -5,6 +5,7 @@ import { ErrorState } from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import { api } from '../lib/api';
 import { formatPrice } from '../lib/format';
+import { formatSum } from '../lib/commission';
 
 const PERIODS = [7, 14, 30, 90];
 
@@ -99,7 +100,11 @@ export default function AdminAnalytics() {
           <Tile label="Usta topilish vaqti (mediana)" value={duration(kpi.median_wait_sec)} hint="chaqiruvdan qabulgacha" />
           <Tile label="Yetib kelish vaqti (mediana)" value={duration(kpi.median_arrival_sec)} hint="qabuldan yetib kelguncha" />
           <Tile label="Yakunlangan ishlar" value={kpi.completed} hint={`o'rtacha baho ${kpi.avg_rating.toFixed(1)}`} />
-          <Tile label="Aylanma" value={formatPrice(kpi.revenue)} hint={`komissiya ${kpi.commission_percent}%: ${formatPrice(kpi.commission)}`} />
+          <Tile
+            label="Aylanma"
+            value={formatPrice(kpi.revenue)}
+            hint={`komissiya: ${formatSum(kpi.commission)} · to'landi: ${formatSum(kpi.commission_paid ?? 0)}`}
+          />
           <Tile label="Qayta buyurtma bergan mijozlar" value={`${kpi.repeat_clients} / ${kpi.paying_clients}`} hint="kamida 2 ta yakunlangan buyurtma" />
           <Tile
             label="Bekor qilishlar"

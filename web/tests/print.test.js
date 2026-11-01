@@ -21,3 +21,25 @@ describe('varaqa', () => {
     assert.equal(shortUrl('https://usta24.uz/', '/ustalar'), 'usta24.uz/ustalar');
   });
 });
+
+describe('komissiya', async () => {
+  const { formatSum, debtStatus } = await import('../src/lib/commission.js');
+  const plain = (text) => text.replace(/ /g, ' ');
+
+  it('summa: nol va ishora bilan', () => {
+    assert.equal(plain(formatSum(0)), '0 so\'m');
+    assert.equal(plain(formatSum(15000)), '15 000 so\'m');
+    assert.equal(plain(formatSum(-5000)), '−5 000 so\'m');
+    assert.equal(plain(formatSum(15000, { sign: true })), '+15 000 so\'m');
+    assert.equal(plain(formatSum(-60000, { sign: true })), '−60 000 so\'m');
+  });
+
+  it('qarz holati limitga qarab', () => {
+    assert.equal(debtStatus(0, 200000).tone, 'ok');
+    assert.equal(debtStatus(-1000, 200000).tone, 'ok');
+    assert.equal(debtStatus(50000, 200000).tone, 'normal');
+    assert.equal(debtStatus(170000, 200000).tone, 'warn');
+    assert.equal(debtStatus(200001, 200000).tone, 'blocked');
+    assert.equal(debtStatus(900000, 0).tone, 'normal', 'cheklov o\'chirilgan');
+  });
+});

@@ -56,6 +56,7 @@ const TIPS = [
 const FAQ = (config) => [
   ['Ro\'yxatdan o\'tish pullikmi?', 'Yo\'q. Ro\'yxatdan o\'tish, profil, portfolio va shaxsiy havola bepul.'],
   ['Komissiya qancha?', `Tezkor chaqiruvlar bo'yicha yakuniy summaning ${config.commission_percent}%. Ish uchun to'lovni mijoz sizga to'g'ridan-to'g'ri qiladi.`],
+  ['Komissiyani qanday to\'layman?', `Har bir yakunlangan tezkor ishdan keyin komissiya «Komissiya hisobi» sahifasiga yoziladi. U yerdagi rekvizitlarga o'tkazasiz, administrator qabul qilgach qarz kamayadi.${config.commission_debt_limit > 0 ? ` Qarz ${Number(config.commission_debt_limit).toLocaleString('ru-RU')} so'mdan oshsa, to'lamaguningizcha yangi takliflar kelmaydi.` : ''}`],
   ['Ish narxini kim belgilaydi?', 'Mijoz chiqish narxini oldindan ko\'radi. Ish narxini esa muammoni ko\'rgach, mijoz bilan joyida kelishasiz.'],
   ['Mijozning telefon raqamini qachon ko\'raman?', 'Chaqiruvni qabul qilganingizdan keyin. Ungacha raqamlar ikki tomonga ham ko\'rinmaydi.'],
   ['Bir nechta sohada ishlasam bo\'ladimi?', 'Ha. Profilda bir nechta mutaxassislikni tanlang: takliflar hammasi bo\'yicha keladi.'],
