@@ -72,7 +72,7 @@ export default function Header({ onOpenCalculator }) {
             aria-label={t('Smeta hisoblash')}
           >
             <Calculator className="w-4 h-4 text-amber-600" />
-            <span className="hidden lg:inline">{t('Smeta hisoblash')}</span>
+            <span className="hidden xl:inline">{t('Smeta hisoblash')}</span>
           </button>
 
           {(!user || user.role === 'client') && (
@@ -103,7 +103,7 @@ export default function Header({ onOpenCalculator }) {
           {(!user || user.role === 'client') && (
             <button
               onClick={becomeMaster}
-              className="hidden lg:inline-flex btn btn-primary"
+              className="hidden xl:inline-flex btn btn-primary"
             >
               <PlusCircle className="w-4 h-4" />
               <span>{t('Usta bo\'lib qo\'shilish')}</span>
@@ -121,7 +121,7 @@ export default function Header({ onOpenCalculator }) {
                 <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold">
                   {(user.name || '?').charAt(0).toUpperCase()}
                 </span>
-                <span className="hidden md:block text-left">
+                <span className="hidden lg:block text-left">
                   <span className="block text-xs font-bold text-slate-800 max-w-[120px] truncate">{user.name}</span>
                   <span className="block text-[10px] text-slate-500">{t(ROLE_LABELS[user.role])}</span>
                 </span>
@@ -152,7 +152,7 @@ export default function Header({ onOpenCalculator }) {
                     </NavLink>
                   )}
                   {user.role === 'client' && (
-                    <NavLink to="/master/setup" className={`${menuLink} lg:hidden`}>
+                    <NavLink to="/master/setup" className={`${menuLink} xl:hidden`}>
                       <PlusCircle className="w-4 h-4 text-slate-400" /> {t('Usta bo\'lish')}
                     </NavLink>
                   )}

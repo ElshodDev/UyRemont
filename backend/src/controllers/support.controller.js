@@ -9,6 +9,7 @@ const { emitToUser } = require('../services/dispatch.service');
 const { notifyUser } = require('../services/telegram/notify');
 const { escapeHtml, urlButton, keyboard } = require('../services/telegram/client');
 const { assertUuid, optionalString, requiredString } = require('../utils/validators');
+const { tr } = require('../i18n');
 
 // Kim qaysi turdagi murojaatni yubora oladi
 const CATEGORIES = {
@@ -190,8 +191,9 @@ const updateTicket = async (req, res, next) => {
         emitToUser(ticket.user_id, 'support_updated', { id: ticket.id, number: ticket.number, status });
         notifyUser(
             ticket.user_id,
-            `📨 <b>Murojaat #${ticket.number}</b> ${STATUS_TEXT[status]}${ticket.admin_reply ? `\n\n${escapeHtml(ticket.admin_reply)}` : ''}`,
-            keyboard([[urlButton('Murojaatlarim', '/support')]])
+            (lang) => tr(lang, '📨 <b>Murojaat #{number}</b> {status}', { number: ticket.number, status: tr(lang, STATUS_TEXT[status]) })
+                + (ticket.admin_reply ? `\n\n${escapeHtml(ticket.admin_reply)}` : ''),
+            (lang) => keyboard([[urlButton(tr(lang, 'Murojaatlarim'), '/support')]])
         ).catch(() => {});
 
         res.status(200).json({ success: true, message: 'Murojaat yangilandi', data: ticket });
