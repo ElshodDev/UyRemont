@@ -114,7 +114,8 @@ const query = async (text, params) => {
         }
         return res;
     } catch (error) {
-        if (!isConnectionError(error) && !isSchemaMissingError(error)) {
+        // Takroriy qiymat (23505) chaqiruvchi tomonda qayta ishlanadi (masalan, "bu havola band")
+        if (!isConnectionError(error) && !isSchemaMissingError(error) && error.code !== '23505') {
             console.error('❌ So\'rov xatosi:', describeDbError(error));
         }
         throw error;

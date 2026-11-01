@@ -12,6 +12,7 @@ const path = require('path');
 const { randomUUID: uuidv4 } = require('crypto');
 const { pool, describeDbError, describeTarget } = require('../src/config/database');
 const { normalizePhone } = require('../src/utils/validators');
+const { backfillPublicSlugs } = require('../src/services/publicLink.service');
 
 const MODELS_DIR = path.join(__dirname, '..', 'src', 'models');
 
@@ -60,6 +61,8 @@ const main = async () => {
         if (withSeed) await runSqlFile(client, 'seed.sql');
         await ensureAdmin(client);
         await client.query('COMMIT');
+        const links = await backfillPublicSlugs();
+        if (links > 0) console.log(`🔗 ${links} ta ustaga ommaviy havola yaratildi`);
         console.log('🎉 Ma\'lumotlar bazasi tayyor');
     } catch (error) {
         await client.query('ROLLBACK');

@@ -4,6 +4,10 @@ const {
     getAllMasters,
     getVerticalStats,
     getMasterById,
+    getMasterBySlug,
+    getMasterQr,
+    getMyPublicLink,
+    updateMyPublicLink,
     updateProfile,
     getMyPortfolio,
     uploadPortfolio,
@@ -19,6 +23,12 @@ router.get('/verticals', getVerticalStats);
 
 // Barcha ustalarni olish (filtr va qidiruv bilan)
 router.get('/', getAllMasters);
+
+// Ommaviy havola: usta24.uz/u/<slug> va uning QR kodi
+router.get('/u/:slug', getMasterBySlug);
+router.get('/u/:slug/qr', getMasterQr);
+router.get('/me/link', authenticate, authorize('master'), getMyPublicLink);
+router.put('/me/link', authenticate, authorize('master'), updateMyPublicLink);
 
 // Usta o'z profilini yangilashi
 router.put('/profile', authenticate, authorize('master'), updateProfile);

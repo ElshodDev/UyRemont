@@ -532,6 +532,8 @@ const deleteMe = async (req, res, next) => {
             await client.query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
             await client.query('DELETE FROM telegram_links WHERE user_id = $1 OR phone = $2', [userId, phone]);
             await client.query('DELETE FROM telegram_auth_requests WHERE user_id = $1 OR phone = $2', [userId, phone]);
+            await client.query('DELETE FROM saved_addresses WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM favorite_masters WHERE user_id = $1 OR master_user_id = $1', [userId]);
             await client.query('UPDATE reviews SET comment = NULL WHERE client_id = $1', [userId]);
             // Telefon o'rniga noyob belgi: shu raqam bilan keyin yangi hisob ochish mumkin
             await client.query(

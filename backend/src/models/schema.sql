@@ -517,3 +517,33 @@ CREATE INDEX IF NOT EXISTS idx_telegram_requests_phone ON telegram_auth_requests
 -- Ustaga Telegram orqali yuborilgan taklif xabari (taklif yopilganda xabar tahrirlanadi)
 ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT;
 ALTER TABLE dispatch_offers ADD COLUMN IF NOT EXISTS telegram_message_id BIGINT;
+
+-- =============================================
+-- 14. QULAYLIKLAR: saqlangan manzillar, sevimli ustalar, ustaning ommaviy havolasi
+-- =============================================
+
+-- "Uy", "Ish" kabi manzillar: usta chaqirishda bir bosishda tanlanadi
+CREATE TABLE IF NOT EXISTS saved_addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(40) NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    district VARCHAR(100),
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_saved_addresses_user ON saved_addresses(user_id, created_at);
+
+-- Mijozning sevimli ustalari (tezkor chaqiruvda yaqin atrofda bo'lsa birinchi taklif ularga)
+CREATE TABLE IF NOT EXISTS favorite_masters (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    master_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_id, master_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_favorite_masters_master ON favorite_masters(master_user_id);
+
+-- Ustaning ommaviy havolasi: usta24.uz/u/<public_slug>
+ALTER TABLE master_profiles ADD COLUMN IF NOT EXISTS public_slug VARCHAR(40);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_master_profiles_public_slug ON master_profiles(public_slug);

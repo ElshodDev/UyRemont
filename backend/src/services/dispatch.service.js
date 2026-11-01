@@ -86,11 +86,15 @@ const ELIGIBLE_MASTERS_SQL = `
 const findCandidate = async (client, order, radiusKm) => {
     const result = await client.query(
         `SELECT * FROM (
-            SELECT u.id, u.name, mp.rating, ${distanceSql('$1', '$2')} as distance_km
+            SELECT u.id, u.name, mp.rating, ${distanceSql('$1', '$2')} as distance_km,
+                   EXISTS (
+                       SELECT 1 FROM favorite_masters f WHERE f.user_id = $5 AND f.master_user_id = u.id
+                   ) as is_favorite
             ${ELIGIBLE_MASTERS_SQL}
          ) c
          WHERE c.distance_km <= $6
-         ORDER BY c.distance_km ASC, c.rating DESC
+         -- Joriy qidiruv radiusida mijozning sevimli ustasi bo'lsa, taklif birinchi unga
+         ORDER BY c.is_favorite DESC, c.distance_km ASC, c.rating DESC
          LIMIT 1`,
         [order.lat, order.lng, order.specialization_id, order.id, order.client_id, radiusKm]
     );

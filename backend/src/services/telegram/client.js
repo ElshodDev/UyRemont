@@ -4,6 +4,7 @@
 // =============================================
 
 const crypto = require('crypto');
+const { appUrl } = require('../../config/app');
 
 const TOKEN_PATTERN = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
 let botUsername = process.env.TELEGRAM_BOT_USERNAME || null;
@@ -50,15 +51,6 @@ const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-
-/**
- * Sayt manzili (xabardagi havolalar uchun): PUBLIC_APP_URL yoki CLIENT_URL dagi birinchi manzil
- */
-const appUrl = (pathname = '/') => {
-    const base = (process.env.PUBLIC_APP_URL || (process.env.CLIENT_URL || 'http://localhost:3000').split(',')[0])
-        .trim().replace(/\/$/, '');
-    return `${base}${pathname}`;
-};
 
 // Telegram tugmalarida localhost va ichki tarmoq manzillari qabul qilinmaydi
 const isPublicUrl = (url) => {
