@@ -1,11 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api, tokenStorage } from '../lib/api';
 import { disconnectSocket } from '../lib/socket';
+import { getLang, hasSavedLang } from '../i18n';
+import { useLanguage } from '../i18n/LanguageContext';
 import AuthModal from '../components/AuthModal';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const { setLang } = useLanguage();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(Boolean(tokenStorage.get()));
   const [authOpen, setAuthOpen] = useState(false);
@@ -28,6 +31,11 @@ export function AuthProvider({ children }) {
       return null;
     }
   }, []);
+
+  // Hisobda saqlangan til (boshqa qurilmada tanlangan) - bu qurilmada tanlanmagan bo'lsa qo'llanadi
+  useEffect(() => {
+    if (user?.language && !hasSavedLang() && user.language !== getLang()) setLang(user.language);
+  }, [user?.language, setLang]);
 
   useEffect(() => {
     refresh().finally(() => setLoading(false));
