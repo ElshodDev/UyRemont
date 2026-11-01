@@ -20,6 +20,8 @@ const totp = require('../utils/totp');
 const { deleteUserPhotos, removeFiles } = require('./photos.controller');
 const { attachLinkToUser } = require('../services/telegram/links');
 const { deleteUserDocuments, removeDocumentFiles } = require('./verification.controller');
+const { isLanguage, DEFAULT_LANGUAGE } = require('../i18n');
+const { setUserSocketsLanguage } = require('../socket/language');
 
 const OTP_MAX_ATTEMPTS = 5;            // Bitta kod uchun maksimal urinishlar
 const TWO_FACTOR_TTL = '5m';           // 2FA bosqichi uchun vaqtinchalik token muddati
@@ -49,7 +51,7 @@ const loadUserProfile = async (userId) => {
     const result = await query(
         `SELECT
             u.id, u.phone, u.role, u.name, u.avatar_url, u.created_at,
-            u.totp_enabled, u.terms_accepted_at,
+            u.totp_enabled, u.terms_accepted_at, u.language,
             (SELECT JSON_BUILD_OBJECT('username', t.username, 'first_name', t.first_name, 'notifications', t.notifications)
              FROM telegram_links t WHERE t.user_id = u.id) as telegram,
             mp.id as master_profile_id, mp.bio, mp.experience_years,
@@ -199,11 +201,12 @@ const verifyOTP = async (req, res, next) => {
                 return { user: upd.rows[0], isNewUser: false };
             }
 
+            // Yangi hisob tili - ro'yxatdan o'tilgan sayt tili (Telegram xabarlari shu tilda keladi)
             const created = await client.query(
-                `INSERT INTO users (id, phone, role, name, is_active, terms_accepted_at, terms_version)
-                 VALUES ($1, $2, 'client', $3, TRUE, NOW(), $4)
+                `INSERT INTO users (id, phone, role, name, is_active, terms_accepted_at, terms_version, language)
+                 VALUES ($1, $2, 'client', $3, TRUE, NOW(), $4, $5)
                  RETURNING *`,
-                [uuidv4(), phone, name, TERMS_VERSION]
+                [uuidv4(), phone, name, TERMS_VERSION, req.headerLanguage || DEFAULT_LANGUAGE]
             );
             return { user: created.rows[0], isNewUser: true };
         });
@@ -276,13 +279,23 @@ const getMe = async (req, res, next) => {
 /**
  * Shaxsiy ma'lumotlarni yangilash
  * PUT /api/auth/me
- * Body: { name }
+ * Body: { name?, language? } - faqat til yuborilsa (til almashtirgich) ism majburiy emas
  */
 const updateMe = async (req, res, next) => {
     try {
-        const name = requiredString(req.body.name, { min: 2, max: 100, field: 'Ism' });
+        const { language } = req.body;
+        const hasLanguage = language !== undefined;
+        if (hasLanguage && !isLanguage(language)) throw new HttpError(400, 'Noto\'g\'ri til. uz yoki ru ni tanlang');
+        const name = !hasLanguage || req.body.name !== undefined
+            ? requiredString(req.body.name, { min: 2, max: 100, field: 'Ism' })
+            : null;
 
-        await query('UPDATE users SET name = $1 WHERE id = $2', [name, req.user.id]);
+        await query(
+            'UPDATE users SET name = COALESCE($1, name), language = COALESCE($2, language) WHERE id = $3',
+            [name, hasLanguage ? language : null, req.user.id]
+        );
+        // Ochiq socket ulanishlari ham yangi tilda xabar oladi (Telegram xabarlari tilni har safar bazadan o'qiydi)
+        if (hasLanguage) setUserSocketsLanguage(req.app.get('io'), req.user.id, language);
 
         res.status(200).json({
             success: true,

@@ -8,6 +8,8 @@ const { randomUUID: uuidv4 } = require('crypto');
 const { query, withTransaction, describeDbError } = require('../config/database');
 const config = require('../config/dispatch');
 const { notifyOffer, syncOfferMessage, notifyOrderEvent } = require('./telegram/notify');
+const { tr, translate } = require('../i18n');
+const { emitLocalized } = require('../socket/language');
 
 let io = null;
 let timer = null;
@@ -36,16 +38,23 @@ const distanceSql = (latParam, lngParam) => `(
 
 const etaMinutes = (distanceKm) => Math.max(3, Math.round((Number(distanceKm) / config.CITY_SPEED_KMH) * 60));
 
+/**
+ * Foydalanuvchiga hodisa. payload (lang) => object bo'lsa matn qabul qiluvchining tilida tuziladi
+ */
 const emitToUser = (userId, event, payload) => {
-    if (io && userId) io.to(`user_${userId}`).emit(event, payload);
+    if (io && userId) emitLocalized(io.to(`user_${userId}`), event, payload);
 };
 
 const emitOrderUpdate = (order, extra = {}) => {
     // Telegram: tomonlarga holat haqida xabar (ilova yopiq bo'lsa ham)
     notifyOrderEvent(order, extra);
     if (!io) return;
-    const payload = { order_id: order.id, status: order.status, ...extra };
-    io.to(`order_${order.id}`).emit('order_updated', payload);
+    const base = { order_id: order.id, status: order.status, ...extra };
+    // Matnli xabar ("Usta topildi va yo'lga chiqdi") har bir qabul qiluvchining tilida
+    const payload = typeof extra.message === 'string'
+        ? (lang) => ({ ...base, message: translate(lang, extra.message) })
+        : base;
+    emitLocalized(io.to(`order_${order.id}`), 'order_updated', payload);
     emitToUser(order.client_id, 'order_updated', payload);
     if (order.master_id) emitToUser(order.master_id, 'order_updated', payload);
 };
@@ -130,7 +139,7 @@ const buildOfferPayload = async (offerId) => {
     const result = await query(
         `SELECT d.id as offer_id, d.order_id, d.expires_at, d.distance_km,
                 o.title, o.description, o.address, o.district, o.lat, o.lng, o.call_fee,
-                s.name_uz as specialization_name, s.icon as specialization_icon,
+                s.name_uz as specialization_name, s.name_ru as specialization_name_ru, s.icon as specialization_icon,
                 c.name as client_name, c.client_rating, c.client_ratings_count,
                 COALESCE((SELECT array_agg(p.id ORDER BY p.created_at) FROM order_photos p WHERE p.order_id = o.id), '{}') as photos
          FROM dispatch_offers d
@@ -280,9 +289,11 @@ const tick = async ({ force = false } = {}) => {
                 emitToUser(masterId, 'offer_closed', { offer_id: id, reason: 'expired' });
                 syncOfferMessage(id);
                 if (forcedOffline) {
-                    emitToUser(masterId, 'dispatch_offline', {
-                        reason: `Ketma-ket ${config.MAX_MISSED_OFFERS} ta buyurtmaga javob bermaganingiz uchun ish rejimingiz o'chirildi`,
-                    });
+                    emitToUser(masterId, 'dispatch_offline', (lang) => ({
+                        reason: tr(lang, 'Ketma-ket {n} ta buyurtmaga javob bermaganingiz uchun ish rejimingiz o\'chirildi', {
+                            n: config.MAX_MISSED_OFFERS,
+                        }),
+                    }));
                 }
             } else if (item.offerId) {
                 const payload = await buildOfferPayload(item.offerId);

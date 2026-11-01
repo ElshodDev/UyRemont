@@ -196,7 +196,8 @@ export default function Header({ onOpenCalculator }) {
               onClick={() => requireAuth()}
               className="btn btn-secondary px-3 sm:px-3.5"
             >
-              <LogIn className="w-4 h-4" />
+              {/* Tor telefonda (360px) til almashtirgichga joy qolishi uchun ikonka yashiriladi */}
+              <LogIn className="w-4 h-4 hidden min-[400px]:block" />
               <span>{t('Kirish')}</span>
             </button>
           )}
