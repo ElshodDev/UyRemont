@@ -68,6 +68,7 @@ module.exports = {
     'Muammo tavsifi': 'Описание проблемы',
     'Javob': 'Ответ',
     'Ish nomi': 'Название работы',
+    'Ruscha nomi': 'Название на русском',
     'Eng kam narx': 'Минимальная цена',
     'Eng ko\'p narx': 'Максимальная цена',
     'Tartib': 'Порядок',

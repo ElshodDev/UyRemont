@@ -107,6 +107,11 @@ export function t(text, params) {
 export const specName = (spec) => (current === 'ru' && spec?.name_ru ? spec.name_ru : spec?.name_uz || '');
 
 /**
+ * Bazadagi nom joriy tilda: obj.name_ru (bo'lsa) yoki obj.name (masalan, narxlar ro'yxatidagi ish nomi)
+ */
+export const localizedName = (obj) => (current === 'ru' && obj?.name_ru ? obj.name_ru : obj?.name || '');
+
+/**
  * Sana va son formatlari uchun locale
  */
 export const locale = () => (current === 'ru' ? 'ru-RU' : 'uz-UZ');

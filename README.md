@@ -265,7 +265,11 @@ SMS o'rniga bepul kirish kodi, ustaga takliflar (ilova yopiq bo'lsa ham) va mijo
 
 ## 🌐 Til / Язык
 
-Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Server matnlari kodda **o'zbekcha** yoziladi; o'zbekcha matnning o'zi kalit, ruscha tarjimasi `backend/src/i18n/ru.js` da (qoidalar: `backend/src/i18n/index.js`).
+Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ | RU) sarlavhada va profil sahifasida turadi, tanlov brauzerda va hisobda saqlanadi. Admin panel faqat o'zbekcha.
+
+- **Sayt:** matnlar kodda o'zbekcha yoziladi va `t('...')` ga o'raladi. Ruscha tarjimalar `web/src/i18n/ru/*.js` da. Qoidalar va atamalar lug'ati: `web/src/i18n/README.md`. `npm test` (web) koddagi har bir `t()` matnining tarjimasi borligini tekshiradi.
+- **Bazadagi nomlar:** mutaxassisliklar — `specializations.name_ru`; narxlar ro'yxatidagi ishlar — `price_items.name_ru` (standart ishlar tarjima qilingan, yangilarini admin «Narxlar» bo'limida yozadi).
+- **Server:** matnlar kodda o'zbekcha yoziladi, o'zbekcha matnning o'zi kalit. Ruscha tarjimasi `backend/src/i18n/ru.js` da (qoidalar: `backend/src/i18n/index.js`).
 
 - **API javoblari:** sayt har so'rovda `Accept-Language: uz|ru` yuboradi. `backend/src/middleware/language.js` `res.json` ni o'raydi va javobdagi faqat `message` maydonini tarjima qiladi (xatolar, `errorHandler`, avtorizatsiya, so'rovlar cheklovi ham). Sarlavha bo'lmasa yoki tanilmasa — kirgan foydalanuvchining saqlangan tili, aks holda o'zbekcha. Ma'lumotlar (`data`) tarjima qilinmaydi.
 - **Foydalanuvchi tili:** `users.language` (`uz` | `ru`, sukut bo'yicha `uz`; ruscha saytda ro'yxatdan o'tganda `ru`). Til almashtirilganda sayt `PUT /api/auth/me { language }` yuboradi, `GET /api/auth/me` uni qaytaradi.

@@ -6,7 +6,7 @@
 const { query } = require('../config/database');
 const { HttpError } = require('../middleware/errorHandler');
 const { logAdminAction } = require('../services/audit.service');
-const { optionalNumber, requiredString } = require('../utils/validators');
+const { optionalNumber, optionalString, requiredString } = require('../utils/validators');
 
 const UNITS = ['ish', 'dona', 'kv.m', 'metr', 'komplekt', 'detal', 'soat'];
 const MAX_PRICE = 1000000000;
@@ -17,10 +17,10 @@ const MAX_PRICE = 1000000000;
  */
 const loadPriceList = async ({ includeInactive = false } = {}) => {
     const result = await query(
-        `SELECT s.id, s.slug, s.vertical, s.name_uz, s.icon, s.call_fee,
+        `SELECT s.id, s.slug, s.vertical, s.name_uz, s.name_ru, s.icon, s.call_fee,
                 COALESCE(
                     json_agg(json_build_object(
-                        'id', p.id, 'name', p.name, 'price_min', p.price_min, 'price_max', p.price_max,
+                        'id', p.id, 'name', p.name, 'name_ru', p.name_ru, 'price_min', p.price_min, 'price_max', p.price_max,
                         'unit', p.unit, 'sort_order', p.sort_order, 'is_active', p.is_active
                     ) ORDER BY p.sort_order, p.id) FILTER (WHERE p.id IS NOT NULL),
                     '[]'
@@ -61,6 +61,7 @@ const getAdminPrices = async (req, res, next) => {
 
 const parsePriceItem = (body) => {
     const name = requiredString(body.name, { min: 2, max: 200, field: 'Ish nomi' });
+    const nameRu = optionalString(body.name_ru, { max: 200, field: 'Ruscha nomi' });
     const priceMin = optionalNumber(body.price_min, { min: 0, max: MAX_PRICE, integer: true, field: 'Eng kam narx' });
     if (priceMin === null) throw new HttpError(400, 'Eng kam narxni kiriting');
     const priceMax = optionalNumber(body.price_max, { min: 0, max: MAX_PRICE, integer: true, field: 'Eng ko\'p narx' });
@@ -70,7 +71,7 @@ const parsePriceItem = (body) => {
     const unit = UNITS.includes(body.unit) ? body.unit : 'ish';
     const sortOrder = optionalNumber(body.sort_order, { min: 0, max: 1000, integer: true, field: 'Tartib' }) ?? 0;
     const isActive = body.is_active === undefined ? true : body.is_active === true;
-    return { name, priceMin, priceMax, unit, sortOrder, isActive };
+    return { name, nameRu, priceMin, priceMax, unit, sortOrder, isActive };
 };
 
 /**
@@ -86,9 +87,9 @@ const createPriceItem = async (req, res, next) => {
         const item = parsePriceItem(req.body);
 
         const result = await query(
-            `INSERT INTO price_items (specialization_id, name, price_min, price_max, unit, sort_order, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [specializationId, item.name, item.priceMin, item.priceMax, item.unit, item.sortOrder, item.isActive]
+            `INSERT INTO price_items (specialization_id, name, price_min, price_max, unit, sort_order, is_active, name_ru)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [specializationId, item.name, item.priceMin, item.priceMax, item.unit, item.sortOrder, item.isActive, item.nameRu]
         );
         await logAdminAction(req, { action: 'price.create', details: { id: result.rows[0].id, name: item.name } });
         res.status(201).json({ success: true, message: 'Narx qo\'shildi', data: result.rows[0] });
@@ -109,9 +110,9 @@ const updatePriceItem = async (req, res, next) => {
 
         const result = await query(
             `UPDATE price_items
-             SET name = $2, price_min = $3, price_max = $4, unit = $5, sort_order = $6, is_active = $7, updated_at = NOW()
+             SET name = $2, price_min = $3, price_max = $4, unit = $5, sort_order = $6, is_active = $7, name_ru = $8, updated_at = NOW()
              WHERE id = $1 RETURNING *`,
-            [id, item.name, item.priceMin, item.priceMax, item.unit, item.sortOrder, item.isActive]
+            [id, item.name, item.priceMin, item.priceMax, item.unit, item.sortOrder, item.isActive, item.nameRu]
         );
         const old = before.rows[0];
         await logAdminAction(req, {

@@ -21,7 +21,7 @@ const listFavorites = async (req, res, next) => {
                 mp.rating, mp.reviews_count, mp.is_available, mp.public_slug,
                 COALESCE(
                     (SELECT JSON_AGG(jsonb_build_object(
-                        'id', s.id, 'slug', s.slug, 'name_uz', s.name_uz,
+                        'id', s.id, 'slug', s.slug, 'name_uz', s.name_uz, 'name_ru', s.name_ru,
                         'icon', s.icon, 'vertical', s.vertical
                     ) ORDER BY s.id)
                      FROM master_specializations ms

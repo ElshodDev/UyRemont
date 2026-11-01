@@ -84,7 +84,7 @@ const getAllMasters = async (req, res, next) => {
                 OR EXISTS (
                     SELECT 1 FROM master_specializations msq
                     JOIN specializations sq ON sq.id = msq.specialization_id
-                    WHERE msq.master_id = mp.id AND sq.name_uz ILIKE ${pattern}
+                    WHERE msq.master_id = mp.id AND (sq.name_uz ILIKE ${pattern} OR sq.name_ru ILIKE ${pattern})
                 )
             )`);
         }
@@ -123,7 +123,7 @@ const getAllMasters = async (req, res, next) => {
                 mp.rating, mp.reviews_count, mp.is_available,
                 COALESCE(
                     (SELECT JSON_AGG(jsonb_build_object(
-                        'id', s.id, 'slug', s.slug, 'name_uz', s.name_uz,
+                        'id', s.id, 'slug', s.slug, 'name_uz', s.name_uz, 'name_ru', s.name_ru,
                         'icon', s.icon, 'vertical', s.vertical
                     ) ORDER BY s.id)
                      FROM master_specializations ms

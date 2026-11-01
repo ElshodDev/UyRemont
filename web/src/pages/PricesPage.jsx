@@ -7,7 +7,7 @@ import { formatPrice, formatPriceRange, PRICE_UNITS } from '../lib/format';
 import { useCallMaster } from '../lib/useCallMaster';
 import { useSpecializations } from '../lib/useSpecializations';
 import { mainVerticals } from '../data/catalog';
-import { t, specName } from '../i18n';
+import { t, specName, localizedName } from '../i18n';
 
 function PriceSkeleton() {
   return (
@@ -63,7 +63,7 @@ export default function PricesPage() {
       .filter((g) => vertical === 'all' || g.vertical === vertical)
       .map((g) => {
         if (!q || g.name_uz.toLowerCase().includes(q) || groupName(g).toLowerCase().includes(q)) return g;
-        return { ...g, items: g.items.filter((item) => item.name.toLowerCase().includes(q)) };
+        return { ...g, items: g.items.filter((item) => item.name.toLowerCase().includes(q) || localizedName(item).toLowerCase().includes(q)) };
       })
       .filter((g) => g.items.length > 0);
   }, [groups, vertical, search, specializations]);
@@ -137,7 +137,7 @@ export default function PricesPage() {
               <ul className="divide-y divide-slate-100">
                 {group.items.map((item) => (
                   <li key={item.id} className="px-4 py-3 flex items-baseline justify-between gap-3 text-sm">
-                    <span className="text-slate-700">{item.name}</span>
+                    <span className="text-slate-700">{localizedName(item)}</span>
                     <span className="text-right whitespace-nowrap">
                       <span className="font-bold text-slate-900 tabular-nums">{formatPriceRange(item.price_min, item.price_max)}</span>
                       {PRICE_UNITS[item.unit] && <span className="block text-[11px] text-slate-400">{t('{unit} uchun', { unit: t(PRICE_UNITS[item.unit]) })}</span>}
