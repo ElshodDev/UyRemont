@@ -34,7 +34,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom" aria-label="Asosiy menyu">
+    <nav className="md:hidden print:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom" aria-label="Asosiy menyu">
       <div className="grid grid-cols-5 h-16">
         {items.map(({ to, label, icon: Icon, end, center: isCenter, className }) => (
           <NavLink

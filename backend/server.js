@@ -8,7 +8,7 @@ const { Server } = require('socket.io');
 const routes = require('./src/routes');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
 const { apiLimiter, previewLimiter } = require('./src/middleware/rateLimit');
-const { getPublicMasterPage, getMasterOgImage } = require('./src/controllers/og.controller');
+const { getPublicMasterPage, getMasterOgImage, getGuidePage } = require('./src/controllers/og.controller');
 const { initChatSocket } = require('./src/socket/chat.socket');
 const { startDispatcher, stopDispatcher } = require('./src/services/dispatch.service');
 const { UPLOAD_DIR } = require('./src/middleware/upload');
@@ -60,8 +60,9 @@ app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 app.post('/api/telegram/webhook', telegramWebhook);
 
 // Ustaning ommaviy sahifasi va havola kartochkasi (Telegram/WhatsApp ko'rinishi uchun).
-// Production'da proksi /u/* so'rovlarini shu yerga yuboradi (deploy/Caddyfile)
+// Production'da proksi /u/* va /ustalar so'rovlarini shu yerga yuboradi (deploy/Caddyfile)
 app.get('/u/:slug', previewLimiter, getPublicMasterPage);
+app.get('/ustalar', previewLimiter, getGuidePage);
 app.get('/api/masters/u/:slug/og.png', previewLimiter, getMasterOgImage);
 
 // Asosiy API yo'nalishi

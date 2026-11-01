@@ -33,7 +33,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={toast}>
       {children}
       {/* Telefonda yuqorida: pastki panel va taklif oynasi tugmalarini yopmasligi uchun */}
-      <div className="fixed top-[calc(env(safe-area-inset-top)+0.75rem)] md:top-auto md:bottom-4 right-4 left-4 sm:left-auto z-[60] flex flex-col gap-2 sm:w-96" aria-live="polite">
+      <div className="print:hidden fixed top-[calc(env(safe-area-inset-top)+0.75rem)] md:top-auto md:bottom-4 right-4 left-4 sm:left-auto z-[60] flex flex-col gap-2 sm:w-96" aria-live="polite">
         {toasts.map((t) => {
           const style = TOAST_STYLES[t.type] || TOAST_STYLES.info;
           const Icon = style.icon;

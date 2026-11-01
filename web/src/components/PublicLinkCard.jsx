@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link2, Copy, Send, QrCode, Pencil, Share2, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Link2, Copy, Send, QrCode, Pencil, Share2, ExternalLink, Printer } from 'lucide-react';
 import Spinner from './Spinner';
 import { api, BACKEND_URL } from '../lib/api';
 import { copyText, shareLink, telegramShareUrl } from '../lib/share';
@@ -99,7 +100,7 @@ export default function PublicLinkCard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <a href={telegramShareUrl(url, SHARE_TEXT)} target="_blank" rel="noreferrer" className="btn text-white bg-[#229ED9] hover:bg-[#1c8cc2]">
           <Send className="w-4 h-4" /> Telegram'da ulashish
         </a>
@@ -108,8 +109,11 @@ export default function PublicLinkCard() {
             <Share2 className="w-4 h-4" /> Boshqa ilovada
           </button>
         )}
+        <Link to="/master/varaqa" className="btn btn-secondary">
+          <Printer className="w-4 h-4" /> Varaqa va vizitka
+        </Link>
         <a href={qrUrl} target="_blank" rel="noreferrer" className="btn btn-secondary">
-          <QrCode className="w-4 h-4" /> QR kod (chop etish)
+          <QrCode className="w-4 h-4" /> QR kod (rasm)
         </a>
         <a href={url} target="_blank" rel="noreferrer" className="btn btn-ghost sm:hidden">
           <ExternalLink className="w-4 h-4" /> Ko'rish

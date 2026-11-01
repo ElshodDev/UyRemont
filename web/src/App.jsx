@@ -23,6 +23,9 @@ import RulesPage from './pages/RulesPage';
 import PricesPage from './pages/PricesPage';
 import PublicMasterPage from './pages/PublicMasterPage';
 import FavoritesPage from './pages/FavoritesPage';
+import MasterGuidePage from './pages/MasterGuidePage';
+import RecruitFlyerPage from './pages/RecruitFlyerPage';
+import MasterFlyerPage from './pages/MasterFlyerPage';
 import { TermsPage, PrivacyPage } from './pages/LegalPage';
 
 export default function App() {
@@ -39,7 +42,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col pb-bottom-nav">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col pb-bottom-nav print:pb-0 print:min-h-0 print:bg-snow">
       <Header onOpenCalculator={() => setShowCalcModal(true)} />
 
       <ErrorBoundary key={location.pathname}>
@@ -50,6 +53,9 @@ export default function App() {
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/prices" element={<PricesPage />} />
         <Route path="/u/:slug" element={<PublicMasterPage />} />
+        <Route path="/ustalar" element={<MasterGuidePage />} />
+        <Route path="/ustalar/varaqa" element={<RecruitFlyerPage />} />
+        <Route path="/master/varaqa" element={<RequireAuth roles={['master']}><MasterFlyerPage /></RequireAuth>} />
         <Route path="/favorites" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
         <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
         <Route path="/terms" element={<TermsPage />} />

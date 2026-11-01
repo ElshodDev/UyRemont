@@ -4,7 +4,15 @@
 
 const { HttpError } = require('../middleware/errorHandler');
 const { isValidSlug } = require('../utils/slug');
-const { loadPublicMaster, renderMasterPage, renderNotFoundPage, renderCardPng } = require('../services/og.service');
+const { loadPublicMaster, renderMasterPage, renderNotFoundPage, renderGuidePage, renderCardPng } = require('../services/og.service');
+const { appUrl } = require('../config/app');
+const { sendQr } = require('../utils/qr');
+
+// Chop etiladigan varaqalardagi QR kodlar faqat shu sahifalarga olib boradi
+const QR_PAGES = {
+    ustalar: '/ustalar',
+    sayt: '/',
+};
 
 const findMaster = async (slug) => (isValidSlug(String(slug || '')) ? loadPublicMaster(slug) : null);
 
@@ -46,4 +54,24 @@ const getMasterOgImage = async (req, res, next) => {
     }
 };
 
-module.exports = { getPublicMasterPage, getMasterOgImage };
+/**
+ * Ustalar uchun qo'llanma + havola ko'rinishi
+ * GET /ustalar
+ */
+const getGuidePage = (req, res) => sendHtml(res, 200, renderGuidePage());
+
+/**
+ * Sayt sahifasiga olib boruvchi QR kod (usta jalb qilish varaqasi uchun)
+ * GET /api/qr/:page  (?format=svg)
+ */
+const getPageQr = async (req, res, next) => {
+    try {
+        const pathname = Object.prototype.hasOwnProperty.call(QR_PAGES, req.params.page) ? QR_PAGES[req.params.page] : null;
+        if (!pathname) throw new HttpError(404, 'Sahifa topilmadi');
+        await sendQr(res, appUrl(pathname), { format: req.query.format, filename: `usta24-${req.params.page}` });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { getPublicMasterPage, getMasterOgImage, getGuidePage, getPageQr };

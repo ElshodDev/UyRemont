@@ -120,6 +120,41 @@ describe('havola ko\'rinishi (Open Graph)', () => {
         assert.equal((await fetch(`${app.url}/api/masters/u/bunday-usta-yoq-123/og.png`)).status, 404);
     });
 
+    it('ustalar uchun qo\'llanma: o\'z sarlavhasi va kartochkasi', async () => {
+        const res = await page(app, '/ustalar');
+        assert.equal(res.status, 200);
+        assert.match(res.html, /<title>Ustalar uchun: yangi mijozlar toping \| Usta24<\/title>/);
+        assert.equal(meta(res.html, 'og:url'), 'https://usta24.example.uz/ustalar');
+        assert.equal(meta(res.html, 'og:image'), 'https://usta24.example.uz/og-ustalar.png');
+        assert.ok(res.html.includes('<script type="module" crossorigin src="/assets/index-test.js"></script>'));
+    });
+
+    it('varaqa QR kodlari: SVG ichida aynan kerakli manzil', async () => {
+        const QRCode = require('qrcode');
+        const expected = async (url) => QRCode.toString(url, {
+            type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0f172a', light: '#ffffff' },
+        });
+
+        const guide = await fetch(`${app.url}/api/qr/ustalar?format=svg`);
+        assert.equal(guide.status, 200);
+        assert.match(guide.headers.get('content-type'), /^image\/svg\+xml/);
+        assert.equal(await guide.text(), await expected('https://usta24.example.uz/ustalar'));
+
+        const masterQr = await fetch(`${app.url}/api/masters/u/${slug}/qr?format=svg`);
+        assert.equal(masterQr.status, 200);
+        assert.equal(await masterQr.text(), await expected(`https://usta24.example.uz/u/${slug}`));
+
+        const png = await fetch(`${app.url}/api/qr/ustalar`);
+        assert.equal(png.headers.get('content-type'), 'image/png');
+        assert.equal((await sharp(Buffer.from(await png.arrayBuffer())).metadata()).width, 600);
+    });
+
+    it('boshqa manzillar uchun QR berilmaydi', async () => {
+        for (const name of ['admin', 'constructor', '__proto__', 'toString']) {
+            assert.equal((await fetch(`${app.url}/api/qr/${name}?format=svg`)).status, 404, name);
+        }
+    });
+
     it('bloklangan usta ko\'rsatilmaydi', async () => {
         await app.db('UPDATE users SET is_active = FALSE WHERE id = $1', [master.id]);
         try {

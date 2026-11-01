@@ -155,6 +155,20 @@ const renderMasterPage = (master) => {
     return renderPage({ title, description, url: appUrl(`/u/${master.slug}`), image: masterImageUrl(master), type: 'profile' });
 };
 
+// Ustalar uchun qo'llanma (/ustalar): usta jalb qilish uchun Telegram guruhlarda ulashiladi
+const GUIDE_CARD = {
+    title: 'Ustamisiz? Mijozlar sizni o\'zi topadi',
+    lines: ['Yaqin atrofdagi buyurtmalar telefoningizga keladi', 'Ro\'yxatdan o\'tish bepul'],
+};
+
+const renderGuidePage = () => renderPage({
+    title: `Ustalar uchun: yangi mijozlar toping | ${SITE_NAME}`,
+    description: 'Ish rejimini yoqing — eng yaqin mijozlarning chaqiruvlari telefoningizga keladi. '
+        + 'Ro\'yxatdan o\'tish bepul, komissiya faqat bajarilgan ishdan. Qanday boshlash va ishlash qoidalari.',
+    url: appUrl('/ustalar'),
+    image: appUrl('/og-ustalar.png'),
+});
+
 const renderNotFoundPage = () => renderPage({
     title: `Usta topilmadi | ${SITE_NAME}`,
     description: DEFAULT_DESCRIPTION,
@@ -180,6 +194,27 @@ const fitText = (text, maxWidth, maxSize, minSize, ratio = 0.58) => {
 };
 
 /**
+ * Matnni so'zlar bo'yicha qatorlarga bo'lish (ortig'i oxirgi qatorda "…" bilan)
+ */
+const wrapWords = (text, maxChars, maxLines) => {
+    const lines = [];
+    let current = '';
+    for (const word of String(text).split(/\s+/)) {
+        if (current && `${current} ${word}`.length > maxChars) {
+            lines.push(current);
+            current = word;
+        } else {
+            current = current ? `${current} ${word}` : word;
+        }
+    }
+    if (current) lines.push(current);
+    if (lines.length <= maxLines) return lines;
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = `${kept[maxLines - 1].slice(0, maxChars - 1).trimEnd()}…`;
+    return kept;
+};
+
+/**
  * Ro'yxatni bir qatorga sig'dirish: sig'maganlari "+N" bo'ladi
  */
 const fitList = (items, maxWidth, size, ratio) => {
@@ -202,9 +237,9 @@ const ICON_PIN = 'M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12zm0-9.5a2.5 2.
 const ICON_CHECK = 'M5 12.5l4.5 4.5L19 7.5';
 
 /**
- * Kartochka SVG'si. master bo'lmasa - saytning umumiy kartochkasi
+ * Kartochka SVG'si. master bo'lmasa - saytning umumiy kartochkasi (site: { title, lines } bilan boshqa sahifa uchun)
  */
-const buildCardSvg = (master, { host } = {}) => {
+const buildCardSvg = (master, { host, site } = {}) => {
     const e = escapeHtml;
     const brand = `
       <rect x="80" y="64" width="64" height="64" rx="16" fill="#ffffff" fill-opacity="0.16"/>
@@ -221,11 +256,16 @@ const buildCardSvg = (master, { host } = {}) => {
       <circle cx="1180" cy="640" r="200" fill="#ffffff" fill-opacity="0.05"/>`;
 
     if (!master) {
+        const card = site || { title: 'Usta topish endi oson', lines: ['Uy, avto va texnika ustalari', 'Eng yaqin ustani bir tugma bilan chaqiring'] };
+        // Sarlavha sig'masa ikki qatorga bo'linadi
+        const titleLines = wrapWords(card.title, Math.floor((OG_WIDTH - 160) / (72 * 0.58)), 2);
+        const titleSize = titleLines.length > 1 ? 68 : 76;
+        const titleTop = titleLines.length > 1 ? 250 : 300;
+        const linesTop = titleTop + (titleLines.length - 1) * 80 + 72;
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_WIDTH}" height="${OG_HEIGHT}" viewBox="0 0 ${OG_WIDTH} ${OG_HEIGHT}">
       ${background}${brand}
-      <text x="80" y="300" font-family="${FONT}" font-size="76" font-weight="800" fill="#ffffff">Usta topish endi oson</text>
-      <text x="80" y="372" font-family="${FONT}" font-size="36" font-weight="500" fill="#ffffff" fill-opacity="0.88">Uy, avto va texnika ustalari</text>
-      <text x="80" y="420" font-family="${FONT}" font-size="36" font-weight="500" fill="#ffffff" fill-opacity="0.88">Eng yaqin ustani bir tugma bilan chaqiring</text>
+      ${titleLines.map((line, i) => `<text x="80" y="${titleTop + i * 80}" font-family="${FONT}" font-size="${titleSize}" font-weight="800" fill="#ffffff">${e(line)}</text>`).join('\n      ')}
+      ${card.lines.map((line, i) => `<text x="80" y="${linesTop + i * 48}" font-family="${FONT}" font-size="34" font-weight="500" fill="#ffffff" fill-opacity="0.88">${e(line)}</text>`).join('\n      ')}
       ${host ? `<text x="80" y="566" font-family="${FONT}" font-size="30" font-weight="600" fill="#ffffff" fill-opacity="0.75">${e(host)}</text>` : ''}
     </svg>`;
     }
@@ -314,7 +354,9 @@ module.exports = {
     loadPublicMaster,
     renderMasterPage,
     renderNotFoundPage,
+    renderGuidePage,
     renderCardPng,
+    GUIDE_CARD,
     buildCardSvg,
     describeMaster,
     escapeHtml,

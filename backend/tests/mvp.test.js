@@ -21,6 +21,8 @@ describe('MVP', () => {
         client = await app.tokenFor(randomPhone(), { name: 'Murojaat Mijoz' });
         stranger = await app.tokenFor(randomPhone(), { name: 'Begona' });
         master = await app.tokenFor('+998902223344');
+        // Doimiy (seed) usta: oldingi ishga tushirishlardan qolgan murojaatlar limitga (5 ochiq / kuniga 10) urilmasin
+        await app.db('DELETE FROM support_tickets WHERE user_id = $1', [master.id]);
     });
     after(() => app.close());
 
