@@ -58,7 +58,10 @@ module.exports = {
             warnings.push('ADMIN_REQUIRE_2FA o\'chiq: administratorlar uchun ikki bosqichli kirishni yoqish tavsiya etiladi');
         }
         if (isProduction && !process.env.DATA_ENCRYPTION_KEY) {
-            warnings.push('DATA_ENCRYPTION_KEY o\'rnatilmagan: 2FA kalitlari JWT_SECRET asosida shifrlanadi (JWT_SECRET almashtirilsa 2FA qayta sozlanishi kerak bo\'ladi)');
+            warnings.push('DATA_ENCRYPTION_KEY o\'rnatilmagan: 2FA kalitlari va ustalarning pasport raqamlari JWT_SECRET asosida shifrlanadi (JWT_SECRET almashtirilsa ularni ochib bo\'lmay qoladi)');
+        }
+        if (process.env.DISPATCH_REQUIRE_VERIFIED !== undefined) {
+            warnings.push('DISPATCH_REQUIRE_VERIFIED endi ishlatilmaydi: ustalar pasport ma\'lumotlarini kiritishi bilan ishga chiqadi. Admin tasdiqlashini majburiy qilish uchun DISPATCH_REQUIRE_ADMIN_APPROVAL=true qo\'ying');
         }
 
         return { errors, warnings };

@@ -454,5 +454,35 @@ export default {
   'Ishga chiqish uchun pasportingizni yuboring': 'Чтобы выйти на линию, отправьте паспорт',
   'Sabab: {note}': 'Причина: {note}',
   'Pasport seriya-raqami va rasmini yuklang, administrator tekshiradi.':
-    'Загрузите серию-номер и фото паспорта, администратор проверит.'
+    'Загрузите серию-номер и фото паспорта, администратор проверит.',
+
+  // Admin tasdiqlashini kutmasdan ishga chiqish
+  'Pasportingiz tasdiqlandi: profilingizda ✓ «Tasdiqlangan» belgisi paydo bo\'ldi':
+    'Паспорт подтверждён: в профиле появилась отметка ✓ «Проверен»',
+  'Pasport rasmini yuklab tekshiruvga yuboring: tasdiqlangach profilingizda ✓ belgisi chiqadi va mijozlar sizni ko\'proq tanlaydi.':
+    'Загрузите фото паспорта и отправьте на проверку: после подтверждения в профиле появится отметка ✓, и клиенты будут выбирать вас чаще.',
+  'Mijozlar profilingizda ✓ belgisini ko\'radi.': 'Клиенты видят отметку ✓ в вашем профиле.',
+  'Tezkor chaqiruvlar ish rejimini yoqqan va pasport ma\'lumotlarini kiritgan ustalarga yuboriladi. Administrator pasportni rad etsa, qayta yubormaguncha ishga chiqib bo\'lmaydi.':
+    'Срочные вызовы получают мастера на линии, указавшие паспортные данные. Если администратор отклонит паспорт, выйти на линию можно будет только после повторной отправки.',
+  'Ro\'yxatdan o\'ting — 3 qadam': 'Зарегистрируйтесь — 3 шага',
+  'Telefon raqamingiz bilan kiring (kod SMS yoki Telegram orqali keladi), ism, familiya va pasport seriya-raqamini yozib, pasport rasmini yuklang, so\'ng sohangiz va tumaningizni tanlang. Shu zahoti katalogga qo\'shilasiz.':
+    'Войдите по номеру телефона (код придёт по SMS или в Telegram), укажите имя, фамилию и серию-номер паспорта, загрузите фото паспорта, затем выберите специализацию и район. Вы сразу появитесь в каталоге.',
+  'Administrator pasportingizni tasdiqlagach (odatda 24 soat ichida) «Ish rejimi» sahifasida «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering. Shundan keyin takliflar kela boshlaydi.':
+    'После того как администратор подтвердит паспорт (обычно в течение 24 часов), нажмите «Выйти на линию» на странице «Рабочий режим» и разрешите доступ к геолокации. После этого начнут приходить предложения.',
+  'Ro\'yxatdan o\'tishingiz bilan «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering — tekshiruvni kutish shart emas. Takliflar darhol kela boshlaydi.':
+    'Сразу после регистрации нажмите «Выйти на линию» и разрешите доступ к геолокации — ждать проверки не нужно. Предложения начнут приходить сразу.',
+  '✓ belgisini oling': 'Получите отметку ✓',
+  'Administrator pasportingizni tekshiradi (odatda 24 soat ichida) va profilingizda ✓ «Tasdiqlangan» belgisi chiqadi — mijozlar bunday ustalarni ko\'proq tanlaydi. Pasport rad etilsa, qayta yubormaguningizcha ishga chiqa olmaysiz.':
+    'Администратор проверит паспорт (обычно в течение 24 часов), и в профиле появится отметка ✓ «Проверен» — клиенты чаще выбирают таких мастеров. Если паспорт отклонят, выйти на линию можно будет только после повторной отправки.',
+  'Profilingiz katalogga qo\'shildi. Endi «Ishga chiqish» tugmasini bosing — yaqin atrofdagi chaqiruvlar sizga keladi.':
+    'Ваш профиль добавлен в каталог. Теперь нажмите «Выйти на линию» — вам начнут приходить вызовы поблизости.',
+  'Bemalol ishlashingiz mumkin. Tasdiqlangach profilingizda ✓ «Tasdiqlangan» belgisi chiqadi, natija Telegram\'da ham keladi.':
+    'Можете спокойно работать. После подтверждения в профиле появится отметка ✓ «Проверен», результат придёт и в Telegram.',
+  'Pasport rasmini yuklab tekshiruvga yuboring — mijozlar tasdiqlangan ustalarni ko\'proq tanlaydi.':
+    'Загрузите фото паспорта и отправьте на проверку — клиенты чаще выбирают проверенных мастеров.',
+  'Sabab: {note}. Qayta yubormaguningizcha ishga chiqa olmaysiz.': 'Причина: {note}. Пока вы не отправите паспорт повторно, выйти на линию нельзя.',
+  'Qayta yubormaguningizcha ishga chiqa olmaysiz.': 'Пока вы не отправите паспорт повторно, выйти на линию нельзя.',
+  'Ism, familiya va pasport seriya-raqamini kiriting — shundan keyin darhol ishga chiqasiz.':
+    'Укажите имя, фамилию и серию-номер паспорта — после этого сразу сможете выйти на линию.',
+  'Ism, familiya va pasport ma\'lumotlari kiritilgan': 'Указаны имя, фамилия и паспортные данные'
 };

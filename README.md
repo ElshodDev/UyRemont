@@ -129,7 +129,9 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
   1. **Telefon** - raqam bilan kirish (SMS yoki Telegram kodi). Bu yerda ism alohida so'ralmaydi.
   2. **Shaxsiy ma'lumot** - ism, familiya, pasport (ID karta) seriya-raqami (`AA 1234567`) va pasport rasmi (telefonda kamera ochiladi).
   3. **Ish turi** - soha (bir nechta) va tuman. Tanlov sahifa yangilansa ham saqlanadi.
-  - Yakunlanganda profil katalogga qo'shiladi, pasport rasmi tekshiruvga yuboriladi va usta **«Ish rejimi»** sahifasiga o'tadi: katta **«Ishga chiqish»** va **«Dam olish»** tugmalari, «Pasportingiz tekshirilmoqda» kartasi. Administrator tasdiqlagach «Ishga chiqish» ochiladi (`DISPATCH_REQUIRE_VERIFIED=false` bo'lsa - darhol).
+  - Yakunlanganda profil katalogga qo'shiladi, pasport rasmi tekshiruvga yuboriladi va usta **«Ish rejimi»** sahifasiga o'tadi: katta **«Ishga chiqish»** va **«Dam olish»** tugmalari. **Admin tasdiqlashini kutish shart emas** — usta darhol ishga chiqib, chaqiruv oladi.
+  - Administrator pasportni keyin tekshiradi: tasdiqlasa profilda ✓ «Tasdiqlangan» belgisi chiqadi; **rad etsa** usta ish rejimidan chiqariladi va pasportni qayta yubormaguncha ishga chiqa olmaydi (sabab saytda va Telegram'da ko'rinadi).
+  - Eski qoida (faqat admin tasdiqlagan ustalar ishga chiqadi) kerak bo'lsa: `DISPATCH_REQUIRE_ADMIN_APPROVAL=true`.
   - Usta kirganda bosh sahifaning eng yuqorisida ham shu ikki tugma turadi.
   - **Pasport ma'lumoti:** raqam AES-256-GCM bilan shifrlanadi (`DATA_ENCRYPTION_KEY`), mijozlarga ko'rinmaydi, ustaga faqat yashirilgan holda (`AA*****67`), administratorga tekshiruv navbatida to'liq ko'rinadi. Bitta pasport - bitta hisob. Tasdiqlangandan keyin pasportni faqat administrator orqali almashtirish mumkin. Hisob o'chirilsa, pasport ma'lumoti ham o'chadi.
   - Mijozlarga mo'ljallangan tanishtiruv ekranlari ustalar sahifalarida va usta/administrator hisobida o'zi ochilmaydi.
@@ -184,7 +186,7 @@ Yandex Taxi kabi ishlaydi: mijoz usta chaqiradi, tizim eng yaqin bo'sh ustani o'
 | Qabuldan keyin bepul bekor qilish | 3 daqiqa (keyin «kech bekor qilish» qayd etiladi) |
 | Ish boshlangandan keyin mijoz bekor qila olmaydi | — |
 | Usta voz kechsa chaqiruv qayta qidiruvga qaytadi | o'sha ustaga qayta taklif qilinmaydi |
-| Ishga chiqish: tasdiqlangan profil, mutaxassislik, reyting ≥ 4.0 | `DISPATCH_REQUIRE_VERIFIED` |
+| Ishga chiqish: ism, familiya va pasport kiritilgan (rad etilmagan), mutaxassislik, reyting ≥ 4.0 | `DISPATCH_REQUIRE_ADMIN_APPROVAL=true` — faqat admin tasdiqlaganlar |
 | Joylashuvi eskirgan ustaga taklif yuborilmaydi | 10 daqiqa |
 | Platforma komissiyasi | 10% (`PLATFORM_COMMISSION_PERCENT`) |
 | Ikki tomonlama reyting | mijoz ↔ usta |
@@ -396,7 +398,7 @@ Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ |
 | `COMMISSION_DEBT_LIMIT` | Komissiya qarzi limiti, so'm (standart: 200 000; `0` — cheklov yo'q) |
 | `COMMISSION_PAYMENT_INFO` | Ustalarga ko'rsatiladigan to'lov rekvizitlari |
 | `DISPATCH_OFFER_TIMEOUT_SEC`, `DISPATCH_SEARCH_TIMEOUT_MIN` | Taklif va qidiruv vaqtlari |
-| `DISPATCH_REQUIRE_VERIFIED` | `false` bo'lsa tasdiqlanmagan ustalar ham tezkor chaqiruv oladi |
+| `DISPATCH_REQUIRE_ADMIN_APPROVAL` | `true` bo'lsa faqat administrator tasdiqlagan ustalar ishga chiqadi. Standart `false`: pasport kiritgan usta darhol ishlaydi. (Eski `DISPATCH_REQUIRE_VERIFIED` endi o'qilmaydi) |
 
 `web/.env` (production): `VITE_BACKEND_URL=https://api.sizning-domen.uz`
 

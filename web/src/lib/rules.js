@@ -25,7 +25,7 @@ export const buildClientRules = (config) => [
 export const buildMasterRules = (config) => [
   config.require_verified
     ? t('Tezkor chaqiruvlar faqat ish rejimini yoqqan, administrator tasdiqlagan ustalarga yuboriladi.')
-    : t('Tezkor chaqiruvlar faqat ish rejimini yoqqan ustalarga yuboriladi.'),
+    : t('Tezkor chaqiruvlar ish rejimini yoqqan va pasport ma\'lumotlarini kiritgan ustalarga yuboriladi. Administrator pasportni rad etsa, qayta yubormaguncha ishga chiqib bo\'lmaydi.'),
   t('Reyting {rating} dan past bo\'lsa (kamida {reviews} ta sharhdan keyin) ishga chiqib bo\'lmaydi.', { rating: config.min_rating, reviews: config.min_reviews_for_rating }),
   t('Taklifga javob berish uchun {sec} soniya beriladi. Ketma-ket {max} ta taklifga javob bermasangiz, ish rejimingiz avtomatik o\'chiriladi.', { sec: config.offer_timeout_sec, max: config.max_missed_offers }),
   t('Rad etish ham javob hisoblanadi, lekin qabul qilish foizingizga ta\'sir qiladi.'),

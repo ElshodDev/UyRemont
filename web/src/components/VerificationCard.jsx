@@ -18,10 +18,10 @@ const KINDS = () => [
 ];
 
 const STATUS_VIEW = () => ({
-  none: { icon: ShieldQuestion, title: t('Profil tasdiqlanmagan'), text: t('Tezkor buyurtmalar faqat tasdiqlangan ustalarga yuboriladi. Hujjat yuklab, tekshiruvga yuboring.'), tone: 'bg-slate-50 border-slate-200 text-slate-700' },
+  none: { icon: ShieldQuestion, title: t('Profil tasdiqlanmagan'), text: t('Pasport rasmini yuklab tekshiruvga yuboring: tasdiqlangach profilingizda ✓ belgisi chiqadi va mijozlar sizni ko\'proq tanlaydi.'), tone: 'bg-slate-50 border-slate-200 text-slate-700' },
   pending: { icon: Clock, title: t('Tekshirilmoqda'), text: t('Odatda 24 soat ichida ko\'rib chiqiladi. Natija shu yerda va Telegram\'da chiqadi.'), tone: 'bg-blue-50 border-blue-200 text-blue-800' },
   rejected: { icon: AlertTriangle, title: t('Tasdiqlanmadi'), text: '', tone: 'bg-amber-50 border-amber-200 text-amber-800' },
-  verified: { icon: BadgeCheck, title: t('Profil tasdiqlangan'), text: t('Mijozlar profilingizda ✓ belgisini ko\'radi va siz tezkor buyurtmalar olasiz.'), tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' }
+  verified: { icon: BadgeCheck, title: t('Profil tasdiqlangan'), text: t('Mijozlar profilingizda ✓ belgisini ko\'radi.'), tone: 'bg-emerald-50 border-emerald-200 text-emerald-800' }
 });
 
 /**

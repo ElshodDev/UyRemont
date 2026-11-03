@@ -171,6 +171,8 @@ module.exports = {
     'Ishga chiqib bo\'lmaydi: {reasons:list}': 'Невозможно выйти на линию: {reasons}',
     'profilingiz administrator tomonidan tasdiqlanmagan': 'профиль не подтверждён администратором',
     'mutaxassislik tanlanmagan': 'не выбрана специализация',
+    'pasportingiz tasdiqlanmadi — qayta yuboring': 'паспорт не подтверждён — отправьте его повторно',
+    'ism, familiya va pasport ma\'lumotlari kiritilmagan': 'не указаны имя, фамилия и паспортные данные',
     'reytingingiz {n:num} dan past': 'рейтинг ниже {n}',
     'komissiya qarzingiz {due} — limitdan ({limit}) oshgan, avval to\'lang': 'долг по комиссии {due} превышает лимит ({limit}), сначала оплатите его',
     'yakunlangan buyurtmalarning summasi kiritilmagan': 'не указана итоговая сумма по завершённым заказам',
@@ -308,8 +310,10 @@ module.exports = {
     '✅ <b>Profilingiz tasdiqlandi!</b>\n{name}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.':
         '✅ <b>Ваш профиль подтверждён!</b>\n{name}, теперь вы можете нажать «Выйти на линию» и получать срочные заказы.',
     'Ishga chiqish': 'Выйти на линию',
-    '⚠️ <b>Profilingiz hali tasdiqlanmadi</b>\nSabab: {note}\n\nKamchilikni tuzatib, qayta yuboring.':
-        '⚠️ <b>Ваш профиль пока не подтверждён</b>\nПричина: {note}\n\nИсправьте недочёты и отправьте заявку повторно.',
+    '✅ <b>Pasportingiz tasdiqlandi!</b>\n{name}, profilingizda endi ✓ «Tasdiqlangan» belgisi bor — mijozlar sizga ko\'proq ishonadi.':
+        '✅ <b>Ваш паспорт подтверждён!</b>\n{name}, теперь в вашем профиле есть отметка ✓ «Проверен» — клиенты будут доверять вам больше.',
+    '⚠️ <b>Pasportingiz tasdiqlanmadi</b>\nSabab: {note}\n\nQayta yubormaguningizcha ishga chiqa olmaysiz. Kamchilikni tuzatib, qayta yuboring.':
+        '⚠️ <b>Ваш паспорт не подтверждён</b>\nПричина: {note}\n\nПока вы не отправите его повторно, выйти на линию нельзя. Исправьте недочёты и отправьте заявку ещё раз.',
     'Profilni ochish': 'Открыть профиль',
 
     // ---------- Komissiya hisobi ----------

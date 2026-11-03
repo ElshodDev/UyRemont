@@ -36,8 +36,10 @@ module.exports = {
     // Liniyaga chiqish uchun minimal reyting (kamida MIN_REVIEWS_FOR_RATING ta sharh bo'lganda)
     MIN_RATING: 4.0,
     MIN_REVIEWS_FOR_RATING: 5,
-    // Tezkor buyurtmalar faqat admin tasdiqlagan ustalarga
-    REQUIRE_VERIFIED: process.env.DISPATCH_REQUIRE_VERIFIED !== 'false',
+    // Standart: usta ro'yxatdan o'tib, pasport ma'lumotlarini kiritishi bilan ishga chiqadi (admin keyin tekshiradi,
+    // rad etsa - qayta yubormaguncha ishga chiqa olmaydi). DISPATCH_REQUIRE_ADMIN_APPROVAL=true - faqat admin tasdiqlagan ustalar.
+    // Eski DISPATCH_REQUIRE_VERIFIED ataylab o'qilmaydi: u .env namunasida "true" turgan, endi standart o'zgardi
+    REQUIRE_VERIFIED: process.env.DISPATCH_REQUIRE_ADMIN_APPROVAL === 'true',
     // Yetib kelish vaqtini taxminlash uchun shahar ichidagi o'rtacha tezlik
     CITY_SPEED_KMH: 25,
     // Dispetcher qadami (faqat qidiruvdagi chaqiruv yoki faol taklif bo'lganda)
