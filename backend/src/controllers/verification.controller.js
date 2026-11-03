@@ -13,6 +13,10 @@ const { emitToUser, triggerDispatch } = require('../services/dispatch.service');
 const { notifyUser } = require('../services/telegram/notify');
 const { escapeHtml, urlButton, keyboard } = require('../services/telegram/client');
 const { assertUuid, requiredString } = require('../utils/validators');
+const { containsContact } = require('../utils/contacts');
+const {
+    encryptPii, decryptPii, hashPii, normalizePassport, isValidPassport, maskPassport,
+} = require('../utils/pii');
 const { tr } = require('../i18n');
 
 const DOCUMENT_KINDS = ['passport', 'selfie', 'certificate'];
@@ -59,6 +63,75 @@ const sendDocument = (res, next, fileName) => {
     });
 };
 
+// ---------- Shaxs: ism, familiya, pasport ----------
+
+// Lotin/kirill harflari, tutuq belgisi (ʻ ' ‘ ’), chiziqcha va bo'shliq
+const NAME_PATTERN = /^[\p{L}ʻ'‘’`\- ]{2,60}$/u;
+
+const parseName = (value, field, invalidMessage) => {
+    const name = requiredString(value, { min: 2, max: 60, field }).replace(/\s+/g, ' ');
+    if (!NAME_PATTERN.test(name) || containsContact(name)) throw new HttpError(400, invalidMessage);
+    return name;
+};
+
+const loadIdentity = async (userId) => (await query('SELECT * FROM master_identity WHERE user_id = $1', [userId])).rows[0] || null;
+
+// Ustaga faqat yashirilgan pasport ko'rsatiladi
+const identityView = (row) => (row
+    ? { first_name: row.first_name, last_name: row.last_name, passport_masked: maskPassport(decryptPii(row.passport_encrypted)) }
+    : null);
+
+/**
+ * GET /api/masters/me/identity
+ */
+const getMyIdentity = async (req, res, next) => {
+    try {
+        res.status(200).json({ success: true, data: identityView(await loadIdentity(req.user.id)) });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Usta bo'lishda shaxsiy ma'lumotlar (mijoz hisobidan ham - usta profili keyin yaratiladi)
+ * PUT /api/masters/me/identity
+ * Body: { first_name, last_name, passport } - passport: AA1234567 (bo'shliq va chiziqcha mumkin)
+ */
+const saveMyIdentity = async (req, res, next) => {
+    try {
+        if (req.user.role === 'admin') throw new HttpError(400, 'Administrator hisobi usta profiliga ega bo\'la olmaydi');
+        const firstName = parseName(req.body.first_name, 'Ism', 'Ismni to\'g\'ri yozing (faqat harflar)');
+        const lastName = parseName(req.body.last_name, 'Familiya', 'Familiyani to\'g\'ri yozing (faqat harflar)');
+        const passport = normalizePassport(req.body.passport);
+        if (!isValidPassport(passport)) {
+            throw new HttpError(400, 'Pasport seriyasi va raqamini to\'g\'ri kiriting: 2 ta harf va 7 ta raqam (masalan, AA1234567)');
+        }
+        const hash = hashPii(passport);
+
+        const existing = await loadIdentity(req.user.id);
+        const verified = (await query('SELECT is_verified FROM master_profiles WHERE user_id = $1', [req.user.id])).rows[0]?.is_verified;
+        if (verified && existing && existing.passport_hash !== hash) {
+            throw new HttpError(400, 'Tasdiqlangan profilda pasportni o\'zgartirib bo\'lmaydi. Administratorga murojaat qiling');
+        }
+        const taken = await query('SELECT 1 FROM master_identity WHERE passport_hash = $1 AND user_id <> $2', [hash, req.user.id]);
+        if (taken.rows[0]) throw new HttpError(409, 'Bu pasport boshqa hisobga biriktirilgan. Yordam xizmatiga murojaat qiling');
+
+        const saved = await query(
+            `INSERT INTO master_identity (user_id, first_name, last_name, passport_encrypted, passport_hash)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (user_id) DO UPDATE SET first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name,
+                 passport_encrypted = EXCLUDED.passport_encrypted, passport_hash = EXCLUDED.passport_hash, updated_at = NOW()
+             RETURNING *`,
+            [req.user.id, firstName, lastName, encryptPii(passport), hash]
+        );
+        // Profilda va katalogda "Ism Familiya"
+        await query('UPDATE users SET name = $2 WHERE id = $1', [req.user.id, `${firstName} ${lastName}`]);
+        res.status(200).json({ success: true, message: 'Ma\'lumotlar saqlandi', data: identityView(saved.rows[0]) });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // ---------- Usta ----------
 
 /**
@@ -77,6 +150,7 @@ const getMyVerification = async (req, res, next) => {
                 documents,
                 requirements: {
                     has_name: Boolean(profile.name),
+                    has_identity: Boolean(await loadIdentity(req.user.id)),
                     has_specializations: profile.specializations_count > 0,
                     has_passport: documents.some((d) => d.kind === 'passport'),
                 },
@@ -160,6 +234,7 @@ const submitVerification = async (req, res, next) => {
         const documents = await listDocuments(req.user.id);
         const missing = [];
         if (!profile.name) missing.push('ism');
+        if (!(await loadIdentity(req.user.id))) missing.push('pasport seriya va raqami');
         if (profile.specializations_count === 0) missing.push('mutaxassislik');
         if (!documents.some((d) => d.kind === 'passport')) missing.push('pasport (ID karta) rasmi');
         if (missing.length) throw new HttpError(400, `Yuborishdan oldin qo'shing: ${missing.join(', ')}`);
@@ -199,13 +274,20 @@ const listVerifications = async (req, res, next) => {
                               FROM master_specializations ms JOIN specializations s ON s.id = ms.specialization_id
                               WHERE ms.master_id = mp.id), '[]') as specializations,
                     COALESCE((SELECT JSON_AGG(jsonb_build_object('id', d.id, 'kind', d.kind) ORDER BY d.created_at)
-                              FROM master_documents d WHERE d.user_id = u.id), '[]') as documents
+                              FROM master_documents d WHERE d.user_id = u.id), '[]') as documents,
+                    mi.first_name as identity_first_name, mi.last_name as identity_last_name, mi.passport_encrypted
              FROM master_profiles mp JOIN users u ON u.id = mp.user_id
+             LEFT JOIN master_identity mi ON mi.user_id = u.id
              WHERE u.role = 'master' AND u.is_active = TRUE AND mp.is_verified = FALSE
              ORDER BY mp.verification_requested_at ASC NULLS LAST, u.created_at DESC
              LIMIT 200`
         );
-        const rows = result.rows.map((row) => ({ ...row, status: verificationStatus(row) }));
+        // Administrator pasport raqamini hujjat rasmi bilan solishtiradi (to'liq ko'rinadi)
+        const rows = result.rows.map(({ passport_encrypted: encrypted, ...row }) => ({
+            ...row,
+            status: verificationStatus(row),
+            passport_number: encrypted ? decryptPii(encrypted) : null,
+        }));
         const counts = rows.reduce((acc, row) => ({ ...acc, [row.status]: (acc[row.status] || 0) + 1 }), {});
         res.status(200).json({ success: true, data: rows.filter((row) => row.status === status), counts });
     } catch (error) {
@@ -319,4 +401,6 @@ module.exports = {
     rejectMaster,
     deleteUserDocuments,
     removeDocumentFiles,
+    getMyIdentity,
+    saveMyIdentity,
 };

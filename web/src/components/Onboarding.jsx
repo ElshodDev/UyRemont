@@ -7,8 +7,9 @@ import { t } from '../i18n';
 
 const STORAGE_KEY = 'usta24_onboarded';
 const OPEN_EVENT = 'usta24:onboarding';
-// Huquqiy sahifalar va ustaning ommaviy havolasi (/u/...) orqali kelganlarga xalaqit bermaslik uchun
-const SKIP_PATHS = ['/terms', '/privacy'];
+// Huquqiy sahifalar, ustalar uchun sahifalar va ustaning ommaviy havolasi (/u/...) orqali kelganlarga xalaqit bermaslik uchun
+// (mijozga mo'ljallangan tanishtiruv usta bo'lmoqchi bo'lgan odamni chalg'itadi)
+const SKIP_PATHS = ['/terms', '/privacy', '/usta-bolish', '/ustalar'];
 const shouldSkip = (pathname) => SKIP_PATHS.includes(pathname) || pathname.startsWith('/u/');
 
 // Matnlar ko'rsatish paytida tarjima qilinadi (til almashganda yangilanishi uchun)
@@ -51,16 +52,19 @@ export const openOnboarding = () => window.dispatchEvent(new Event(OPEN_EVENT));
 export default function Onboarding() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const callMaster = useCallMaster();
   const [open, setOpen] = useState(() => !wasSeen() && !shouldSkip(window.location.pathname));
   const [index, setIndex] = useState(0);
+  // Qo'lda ochilgan ("Qisqa tanishtiruv" tugmasi) - har qanday foydalanuvchiga ko'rsatiladi
+  const [manual, setManual] = useState(false);
   const touchX = useRef(null);
   const dialogRef = useRef(null);
 
   useEffect(() => {
     const show = () => {
       setIndex(0);
+      setManual(true);
       setOpen(true);
     };
     window.addEventListener(OPEN_EVENT, show);
@@ -69,6 +73,7 @@ export default function Onboarding() {
 
   const close = () => {
     setOpen(false);
+    setManual(false);
     try {
       localStorage.setItem(STORAGE_KEY, '1');
     } catch {
@@ -78,8 +83,11 @@ export default function Onboarding() {
 
   const go = (next) => setIndex(Math.max(0, Math.min(SLIDE_COUNT - 1, next)));
 
+  // Mijozga mo'ljallangan tanishtiruv ustaga va administratorga o'zi ochilmaydi (kirish tekshirilguncha kutiladi)
+  const visible = open && (manual || (!shouldSkip(location.pathname) && !loading && (!user || user.role === 'client')));
+
   useEffect(() => {
-    if (!open) return undefined;
+    if (!visible) return undefined;
     dialogRef.current?.focus();
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
@@ -93,9 +101,9 @@ export default function Onboarding() {
       document.body.style.overflow = overflow;
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [visible]);
 
-  if (!open || shouldSkip(location.pathname)) return null;
+  if (!visible) return null;
 
   const slides = getSlides();
   const slide = slides[index];

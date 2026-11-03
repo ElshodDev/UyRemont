@@ -35,6 +35,9 @@ router.get('/me/commission', authenticate, authorize('master'), getMyCommission)
 router.put('/me/link', authenticate, authorize('master'), updateMyPublicLink);
 
 // Tasdiqlash: hujjatlar va tekshiruvga yuborish
+// Usta bo'lishda ism, familiya va pasport (mijoz hisobidan ham)
+router.get('/me/identity', authenticate, verification.getMyIdentity);
+router.put('/me/identity', authenticate, verification.saveMyIdentity);
 router.get('/me/verification', authenticate, authorize('master'), verification.getMyVerification);
 router.post('/me/verification', authenticate, authorize('master'), verification.submitVerification);
 router.post('/me/documents', authenticate, authorize('master'), uploadImage.single('image'), verification.uploadDocument);

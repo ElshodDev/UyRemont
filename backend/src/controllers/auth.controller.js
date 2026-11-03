@@ -547,6 +547,7 @@ const deleteMe = async (req, res, next) => {
             const documents = await deleteUserDocuments(client, userId);
             await client.query('DELETE FROM support_tickets WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM master_profiles WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM master_identity WHERE user_id = $1', [userId]);
             await client.query('DELETE FROM messages WHERE sender_id = $1', [userId]);
             await client.query('DELETE FROM otp_codes WHERE phone = $1', [phone]);
             await client.query('DELETE FROM telegram_links WHERE user_id = $1 OR phone = $2', [userId, phone]);

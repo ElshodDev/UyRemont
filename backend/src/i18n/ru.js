@@ -332,6 +332,18 @@ module.exports = {
     'Komissiya yozildi: {amount}': 'Начислена комиссия: {amount}',
     'Komissiya hisobi': 'Счёт комиссии',
 
+    // ---------- Usta shaxsi: ism, familiya, pasport ----------
+    'Familiya': 'Фамилия',
+    'Ismni to\'g\'ri yozing (faqat harflar)': 'Введите имя правильно (только буквы)',
+    'Familiyani to\'g\'ri yozing (faqat harflar)': 'Введите фамилию правильно (только буквы)',
+    'Pasport seriyasi va raqamini to\'g\'ri kiriting: 2 ta harf va 7 ta raqam (masalan, AA1234567)':
+        'Введите серию и номер паспорта правильно: 2 буквы и 7 цифр (например, AA1234567)',
+    'Tasdiqlangan profilda pasportni o\'zgartirib bo\'lmaydi. Administratorga murojaat qiling':
+        'В подтверждённом профиле нельзя изменить паспорт. Обратитесь к администратору',
+    'Bu pasport boshqa hisobga biriktirilgan. Yordam xizmatiga murojaat qiling':
+        'Этот паспорт привязан к другому аккаунту. Обратитесь в службу поддержки',
+    'pasport seriya va raqami': 'серия и номер паспорта',
+
     // ---------- Referal dasturi ----------
     'Taklif havolasi topilmadi': 'Пригласительная ссылка не найдена',
     '🎁 Siz taklif qilgan usta {name:raw} birinchi ishini bajardi. Komissiya hisobingizga {amount} bonus yozildi':

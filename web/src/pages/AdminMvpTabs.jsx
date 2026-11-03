@@ -110,6 +110,14 @@ export function VerificationsTab({ onChanged }) {
               <p className="text-xs text-slate-500 mt-0.5">
                 {m.district || 'Tuman yo\'q'} · {m.experience_years || 0} yil tajriba · {formatPrice(m.hourly_rate)} · portfolio: {m.portfolio_count}
               </p>
+              {m.passport_number ? (
+                <p className="text-sm text-slate-800 mt-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 inline-block">
+                  Pasport: <span className="font-mono font-bold tracking-wider">{m.passport_number}</span>
+                  {' · '}{m.identity_last_name} {m.identity_first_name}
+                </p>
+              ) : (
+                <p className="text-xs text-red-600 mt-1">Pasport seriya-raqami kiritilmagan</p>
+              )}
               {m.verification_requested_at && <p className="text-[11px] text-slate-400 mt-0.5">Yuborgan: {formatDate(m.verification_requested_at)}</p>}
               {m.verification_note && <p className="text-[11px] text-amber-700 mt-0.5">Oldingi rad sababi: {m.verification_note}</p>}
             </div>
