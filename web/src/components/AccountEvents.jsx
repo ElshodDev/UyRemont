@@ -22,7 +22,7 @@ export default function AccountEvents() {
       toast.info(t('Murojaat #{number}: {status}', { number, status: label ? t(label).toLowerCase() : status }));
     };
     const onVerification = ({ status, note }) => {
-      if (status === 'verified') toast.success(t('Profilingiz tasdiqlandi! Endi ishga chiqishingiz mumkin'));
+      if (status === 'verified') toast.success(t('Pasportingiz tasdiqlandi: profilingizda ✓ «Tasdiqlangan» belgisi paydo bo\'ldi'));
       else toast.error(t('Profilingiz hali tasdiqlanmadi: {note}', { note: note || '' }));
       refresh();
     };

@@ -70,7 +70,11 @@ const ELIGIBLE_MASTERS_SQL = `
       AND mp.is_online = TRUE AND mp.is_available = TRUE
       AND mp.lat IS NOT NULL AND mp.lng IS NOT NULL
       AND mp.location_updated_at > NOW() - (${config.LOCATION_STALE_MIN} * INTERVAL '1 minute')
-      ${config.REQUIRE_VERIFIED ? 'AND mp.is_verified = TRUE' : ''}
+      AND ${config.REQUIRE_VERIFIED ? 'mp.is_verified = TRUE' : `(mp.is_verified = TRUE OR (
+          EXISTS (SELECT 1 FROM master_identity mi WHERE mi.user_id = u.id)
+          AND NOT (mp.verification_rejected_at IS NOT NULL
+                   AND (mp.verification_requested_at IS NULL OR mp.verification_requested_at <= mp.verification_rejected_at))
+      ))`}
       ${config.COMMISSION_DEBT_LIMIT > 0 ? `AND mp.commission_due <= ${Number(config.COMMISSION_DEBT_LIMIT)}` : ''}
       AND u.id <> $5
       AND EXISTS (

@@ -52,8 +52,14 @@ const parseLocation = (body) => {
 const getRequirements = (profile) => {
     const ratingOk = profile.reviews_count < config.MIN_REVIEWS_FOR_RATING
         || Number(profile.rating) >= config.MIN_RATING;
+    // Pasport admin tomonidan rad etilgan va qayta yuborilmagan
+    const rejected = Boolean(profile.verification_rejected_at) && !profile.is_verified
+        && (!profile.verification_requested_at
+            || new Date(profile.verification_requested_at) <= new Date(profile.verification_rejected_at));
     const requirements = {
-        verified: !config.REQUIRE_VERIFIED || profile.is_verified,
+        // Standart: ism, familiya va pasport kiritilgan va rad etilmagan; REQUIRE_VERIFIED - faqat admin tasdiqlagan
+        identity_ok: Boolean(profile.is_verified)
+            || (!config.REQUIRE_VERIFIED && Boolean(profile.has_identity) && !rejected),
         has_specializations: profile.specializations_count > 0,
         rating_ok: ratingOk,
         active: profile.is_active,
@@ -62,12 +68,19 @@ const getRequirements = (profile) => {
         // Mijoz yakunlagan oddiy buyurtmalarning yakuniy summasi muddatida kiritilgan
         prices_ok: !(Number(profile.overdue_prices) > 0),
     };
-    return { ...requirements, can_go_online: Object.values(requirements).every(Boolean) };
+    return {
+        ...requirements,
+        can_go_online: Object.values(requirements).every(Boolean),
+        // Ma'lumot uchun (shart emas): ✓ belgisi va rad etilganlik
+        verified: Boolean(profile.is_verified),
+        rejected,
+    };
 };
 
 const loadMasterProfile = async (userId) => {
     const result = await query(
         `SELECT mp.*, u.is_active,
+                EXISTS (SELECT 1 FROM master_identity mi WHERE mi.user_id = mp.user_id) as has_identity,
                 (SELECT COUNT(*)::int FROM master_specializations ms WHERE ms.master_id = mp.id) as specializations_count,
                 (SELECT COUNT(*)::int FROM orders o
                  WHERE o.master_id = mp.user_id AND o.final_price IS NULL AND o.price_due_at < NOW()) as overdue_prices
@@ -419,7 +432,11 @@ const setOnline = async (req, res, next) => {
             const requirements = getRequirements(profile);
             if (!requirements.can_go_online) {
                 const reasons = [];
-                if (!requirements.verified) reasons.push('profilingiz administrator tomonidan tasdiqlanmagan');
+                if (!requirements.identity_ok) {
+                    if (config.REQUIRE_VERIFIED) reasons.push('profilingiz administrator tomonidan tasdiqlanmagan');
+                    else if (requirements.rejected) reasons.push('pasportingiz tasdiqlanmadi — qayta yuboring');
+                    else reasons.push('ism, familiya va pasport ma\'lumotlari kiritilmagan');
+                }
                 if (!requirements.has_specializations) reasons.push('mutaxassislik tanlanmagan');
                 if (!requirements.rating_ok) reasons.push(`reytingingiz ${config.MIN_RATING} dan past`);
                 if (!requirements.prices_ok) reasons.push('yakunlangan buyurtmalarning summasi kiritilmagan');

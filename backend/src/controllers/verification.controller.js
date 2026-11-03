@@ -18,6 +18,7 @@ const {
     encryptPii, decryptPii, hashPii, normalizePassport, isValidPassport, maskPassport,
 } = require('../utils/pii');
 const { tr } = require('../i18n');
+const dispatchConfig = require('../config/dispatch');
 
 const DOCUMENT_KINDS = ['passport', 'selfie', 'certificate'];
 const MAX_DOCUMENTS = 6;
@@ -337,7 +338,9 @@ const approveMaster = async (req, res, next) => {
             userId,
             (lang) => tr(
                 lang,
-                '✅ <b>Profilingiz tasdiqlandi!</b>\n{name}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.',
+                dispatchConfig.REQUIRE_VERIFIED
+                    ? '✅ <b>Profilingiz tasdiqlandi!</b>\n{name}, endi «Ishga chiqish» tugmasini bosib tezkor buyurtmalar olishingiz mumkin.'
+                    : '✅ <b>Pasportingiz tasdiqlandi!</b>\n{name}, profilingizda endi ✓ «Tasdiqlangan» belgisi bor — mijozlar sizga ko\'proq ishonadi.',
                 { name: escapeHtml(master.name || '') }
             ),
             (lang) => keyboard([[urlButton(tr(lang, 'Ishga chiqish'), '/master/work')]])
@@ -358,8 +361,9 @@ const rejectMaster = async (req, res, next) => {
         const userId = assertUuid(req.params.userId, 'Usta topilmadi');
         const note = requiredString(req.body.note, { min: 5, max: 500, field: 'Sabab' });
         await loadMasterForDecision(userId);
+        // Rad etilgan usta qayta yubormaguncha ishga chiqa olmaydi: ish rejimi o'chiriladi
         await query(
-            `UPDATE master_profiles SET is_verified = FALSE, verification_rejected_at = NOW(), verification_note = $2
+            `UPDATE master_profiles SET is_verified = FALSE, is_online = FALSE, verification_rejected_at = NOW(), verification_note = $2
              WHERE user_id = $1`,
             [userId, note]
         );
@@ -369,7 +373,7 @@ const rejectMaster = async (req, res, next) => {
             userId,
             (lang) => tr(
                 lang,
-                '⚠️ <b>Profilingiz hali tasdiqlanmadi</b>\nSabab: {note}\n\nKamchilikni tuzatib, qayta yuboring.',
+                '⚠️ <b>Pasportingiz tasdiqlanmadi</b>\nSabab: {note}\n\nQayta yubormaguningizcha ishga chiqa olmaysiz. Kamchilikni tuzatib, qayta yuboring.',
                 { note: escapeHtml(note) }
             ),
             (lang) => keyboard([[urlButton(tr(lang, 'Profilni ochish'), '/master/profile')]])

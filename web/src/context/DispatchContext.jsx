@@ -97,7 +97,10 @@ export function DispatchProvider({ children }) {
     socket.on('order_updated', onOrderUpdated);
     // Komissiya qarzi limitdan oshsa ish rejimi o'chadi, to'lovdan keyin yana yoqish mumkin
     socket.on('commission_updated', onOrderUpdated);
+    // Admin pasportni tasdiqlasa yoki rad etsa ishga chiqish shartlari o'zgaradi
+    socket.on('verification_updated', onOrderUpdated);
     return () => {
+      socket.off('verification_updated', onOrderUpdated);
       socket.off('commission_updated', onOrderUpdated);
       socket.off('order_offer', onOffer);
       socket.off('offer_closed', onClosed);

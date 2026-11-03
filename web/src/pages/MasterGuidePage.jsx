@@ -22,8 +22,20 @@ const BENEFITS = (config) => [
 const STEPS = (config) => [
   {
     icon: UserPlus,
-    title: t('Ro\'yxatdan o\'ting — 1 daqiqa'),
-    text: t('«1 daqiqada usta bo\'lish» ni bosing: sohangizni va tumaningizni tanlang, telefon raqamingizni tasdiqlang (kod SMS yoki Telegram orqali keladi). Shu zahoti katalogga qo\'shilasiz.')
+    title: t('Ro\'yxatdan o\'ting — 3 qadam'),
+    text: t('Telefon raqamingiz bilan kiring (kod SMS yoki Telegram orqali keladi), ism, familiya va pasport seriya-raqamini yozib, pasport rasmini yuklang, so\'ng sohangiz va tumaningizni tanlang. Shu zahoti katalogga qo\'shilasiz.')
+  },
+  {
+    icon: Power,
+    title: t('Ishga chiqing'),
+    text: config.require_verified
+      ? t('Administrator pasportingizni tasdiqlagach (odatda 24 soat ichida) «Ish rejimi» sahifasida «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering. Shundan keyin takliflar kela boshlaydi.')
+      : t('Ro\'yxatdan o\'tishingiz bilan «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering — tekshiruvni kutish shart emas. Takliflar darhol kela boshlaydi.')
+  },
+  {
+    icon: CheckCircle,
+    title: t('Buyurtmani bajaring'),
+    text: t('Taklif kelganda {sec} soniya ichida qabul qiling → Navigator bilan boring → «Yetib keldim» → narxni mijoz bilan kelishib «Ishni boshlash» → «Yakunlash» (ish haqi va material alohida) → mijozni baholang.', { sec: config.offer_timeout_sec })
   },
   {
     icon: ClipboardList,
@@ -32,18 +44,8 @@ const STEPS = (config) => [
   },
   {
     icon: ShieldCheck,
-    title: t('Hujjat yuklang'),
-    text: t('Profil sahifasidagi tasdiqlash bo\'limiga pasport yoki ID karta rasmini (majburiy) va hujjat bilan selfi yuklab, tekshiruvga yuboring. Odatda 24 soat ichida ko\'rib chiqiladi, natija saytda keladi.')
-  },
-  {
-    icon: Power,
-    title: t('Ishga chiqing'),
-    text: t('«Ish rejimi» sahifasida «Ishga chiqish» tugmasini bosing va joylashuvga ruxsat bering. Shundan keyin takliflar kela boshlaydi.')
-  },
-  {
-    icon: CheckCircle,
-    title: t('Buyurtmani bajaring'),
-    text: t('Taklif kelganda {sec} soniya ichida qabul qiling → Navigator bilan boring → «Yetib keldim» → narxni mijoz bilan kelishib «Ishni boshlash» → «Yakunlash» (ish haqi va material alohida) → mijozni baholang.', { sec: config.offer_timeout_sec })
+    title: t('✓ belgisini oling'),
+    text: t('Administrator pasportingizni tekshiradi (odatda 24 soat ichida) va profilingizda ✓ «Tasdiqlangan» belgisi chiqadi — mijozlar bunday ustalarni ko\'proq tanlaydi. Pasport rad etilsa, qayta yubormaguningizcha ishga chiqa olmaysiz.')
   }
 ];
 
