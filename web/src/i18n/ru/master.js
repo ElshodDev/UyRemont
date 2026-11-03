@@ -408,5 +408,51 @@ export default {
     'Срок истёк. Пока вы не укажете сумму, вы не сможете брать новые заказы и выходить на линию.',
   'Mijoz ishni yakunlandi deb belgiladi. Summani {date} gacha kiriting, aks holda yangi buyurtma ololmaysiz.':
     'Клиент отметил работу как завершённую. Укажите сумму до {date}, иначе вы не сможете брать новые заказы.',
-  'Summani kiritish': 'Указать сумму'
+  'Summani kiritish': 'Указать сумму',
+
+  // Oddiy ro'yxatdan o'tish: telefon -> shaxsiy ma'lumot -> ish turi; ish rejimi tugmalari
+  'Ism': 'Имя',
+  'Masalan: Alisher': 'Например: Алишер',
+  'Familiya': 'Фамилия',
+  'Masalan: Valiyev': 'Например: Валиев',
+  'Pasport (ID karta) seriyasi va raqami': 'Серия и номер паспорта (ID-карты)',
+  'Shifrlangan holda saqlanadi va faqat administratorga ko\'rinadi. Mijozlar ko\'rmaydi.':
+    'Хранится в зашифрованном виде и виден только администратору. Клиенты его не видят.',
+  'Ism, familiya va pasport seriya-raqami kiritilgan': 'Указаны имя, фамилия и серия-номер паспорта',
+  'Shaxsiy ma\'lumot': 'Личные данные',
+  'Pasport ma\'lumotlarini o\'zgartirish': 'Изменить паспортные данные',
+  'Dam olish': 'Отдыхать',
+  'Ish turi': 'Вид работы',
+  'Pasport (ID karta) rasmi': 'Фото паспорта (ID-карты)',
+  'Pasport rasmi': 'Фото паспорта',
+  'Rasm tanlandi — almashtirish': 'Фото выбрано — заменить',
+  'Suratga olish yoki rasm tanlash': 'Сфотографировать или выбрать фото',
+  'Ism va rasm aniq ko\'rinsin. Administrator 24 soat ichida tekshiradi.':
+    'Имя и фото должны быть хорошо видны. Администратор проверит в течение 24 часов.',
+  '3 ta oddiy qadam. Ro\'yxatdan o\'tish bepul.': '3 простых шага. Регистрация бесплатная.',
+  'Telefon raqamingiz': 'Ваш номер телефона',
+  'Raqamingizga kod keladi (SMS yoki Telegram). Mijozlar raqamingizni faqat buyurtmani qabul qilganingizda ko\'radi.':
+    'На номер придёт код (SMS или Telegram). Клиенты увидят ваш номер, только когда вы примете заказ.',
+  'Telefon raqam bilan kirish': 'Войти по номеру телефона',
+  'Shaxsiy ma\'lumotlar': 'Личные данные',
+  'Pasportdagidek yozing. Bu mijozlar ishonchi uchun kerak.': 'Укажите как в паспорте. Это нужно для доверия клиентов.',
+  'Shu sohalar bo\'yicha buyurtmalar keladi. Bir nechtasini tanlashingiz mumkin.':
+    'Заказы будут приходить по этим направлениям. Можно выбрать несколько.',
+  'Qaysi tumanda ishlaysiz?': 'В каком районе вы работаете?',
+  'Tumanni tanlang': 'Выберите район',
+  'Ro\'yxatdan o\'tishni yakunlash': 'Завершить регистрацию',
+  'Salom, {name}!': 'Здравствуйте, {name}!',
+  'usta': 'мастер',
+  'Ish rejimi va statistika': 'Рабочий режим и статистика',
+  'Tabriklaymiz! Siz Usta24 ustasisiz': 'Поздравляем! Вы мастер Usta24',
+  'Profilingiz katalogga qo\'shildi: mijozlar sizga buyurtma bera oladi.':
+    'Ваш профиль добавлен в каталог: клиенты могут заказывать у вас.',
+  'Pasportingiz tekshirilmoqda': 'Ваш паспорт проверяется',
+  'Administrator tasdiqlagach «Ishga chiqish» tugmasi ochiladi. Odatda 24 soat ichida, natija Telegram\'da ham keladi.':
+    'После подтверждения администратором кнопка «Выйти на линию» станет доступна. Обычно в течение 24 часов, результат придёт и в Telegram.',
+  'Pasport tasdiqlanmadi — qayta yuboring': 'Паспорт не подтверждён — отправьте ещё раз',
+  'Ishga chiqish uchun pasportingizni yuboring': 'Чтобы выйти на линию, отправьте паспорт',
+  'Sabab: {note}': 'Причина: {note}',
+  'Pasport seriya-raqami va rasmini yuklang, administrator tekshiradi.':
+    'Загрузите серию-номер и фото паспорта, администратор проверит.'
 };

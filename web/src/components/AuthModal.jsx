@@ -34,7 +34,7 @@ const inputClass = 'input min-h-12';
  * Telefon raqam + kod orqali kirish (3 bosqich: raqam -> kod -> ism).
  * Kod Telegram bot yoki SMS orqali keladi; tasdiqlash ikkalasida bir xil (/auth/verify-otp).
  */
-export default function AuthModal({ onClose, onSuccess }) {
+export default function AuthModal({ onClose, onSuccess, askName = true }) {
   const methods = useLoginMethods();
   const [step, setStep] = useState('phone');
   const [channel, setChannel] = useState('sms');
@@ -138,7 +138,7 @@ export default function AuthModal({ onClose, onSuccess }) {
         // Ikki bosqichli kirish: authenticator ilovasidagi kod
         setChallenge(data.challenge_token);
         setStep('totp');
-      } else if (!data.user.name) {
+      } else if (!data.user.name && askName) {
         // Yangi foydalanuvchidan ism so'raladi (Telegram'dagi ism bilan oldindan to'ldiriladi)
         setSession(data);
         setName(nameHint);

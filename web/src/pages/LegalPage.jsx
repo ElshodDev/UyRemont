@@ -59,7 +59,7 @@ const privacy = () => ({
       t('Joylashuv: mijozda — chaqiruv manzilini belgilashda; ustada — faqat ish rejimi yoqilganda yoki faol ish paytida.'),
       t('Rasmlar: ustaning portfoliosi va mijozning muammo rasmi. Rasmlardagi yashirin ma\'lumotlar (GPS koordinatalar, qurilma modeli) yuklanganda avtomatik o\'chiriladi.'),
       t('Telegram orqali kirsangiz yoki botni ulasangiz: Telegram ID, foydalanuvchi nomi va ism — kirish kodi va buyurtma xabarlarini yuborish uchun. Xabarlarni botda /stop bilan o\'chirish yoki profilda Telegram\'ni uzish mumkin.'),
-      t('Usta tasdiqlanishi uchun: pasport (yoki ID karta) rasmi, ixtiyoriy selfi va sertifikat — faqat shaxsni tekshirish uchun.'),
+      t('Usta tasdiqlanishi uchun: ism-familiya, pasport (yoki ID karta) seriya-raqami va rasmi, ixtiyoriy selfi va sertifikat — faqat shaxsni tekshirish uchun. Pasport raqami shifrlangan holda saqlanadi va faqat administratorga ko\'rinadi.'),
       t('Murojaatlar: siz yozgan muammo tavsifi va administrator javobi.'),
       t('Texnik xatolar: sahifa manzili (so\'rov parametrlarisiz), brauzer turi va xato matni — ilovani tuzatish uchun.')
     ]],

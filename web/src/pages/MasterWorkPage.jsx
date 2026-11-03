@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  Power, MapPin, Star, Percent, Wallet, CheckCircle, XCircle, AlertTriangle, Briefcase, ArrowRight, BookOpen, Send
+  MapPin, Star, Percent, Wallet, CheckCircle, XCircle, AlertTriangle, Briefcase, ArrowRight, BookOpen, Send, Clock, PartyPopper
 } from 'lucide-react';
 import MapView from '../components/MapView';
-import Spinner, { PageLoader } from '../components/Spinner';
+import WorkToggle from '../components/WorkToggle';
+import { PageLoader } from '../components/Spinner';
 import { useDispatch } from '../context/DispatchContext';
 import { formatRating, ORDER_STATUSES } from '../lib/format';
 import { DISTRICT_COORDS, TASHKENT_CENTER } from '../lib/geo';
@@ -36,9 +37,12 @@ export default function MasterWorkPage() {
   const { user } = useAuth();
   const dispatch = useDispatch();
   const { state, isOnline, gps, manualLocation, currentLocation } = dispatch;
-  const [toggling, setToggling] = useState(false);
   const [config, setConfig] = useState(null);
+  const [verification, setVerification] = useState(null);
   const loginMethods = useLoginMethods();
+  const location = useLocation();
+  // Ro'yxatdan o'tgandan keyin birinchi kirish
+  const welcome = Boolean(location.state?.welcome);
 
   // Sahifa ochilganda holatni yangilash
   useEffect(() => {
@@ -46,18 +50,21 @@ export default function MasterWorkPage() {
     api('/dispatch/config').then(({ data }) => setConfig(data)).catch(() => {});
   }, []);
 
-  if (!state) return <PageLoader />;
+  // Tasdiqlanmagan usta: pasport tekshirilmoqdami yoki hali yuborilmaganmi
+  const verified = state?.requirements?.verified;
+  useEffect(() => {
+    if (verified !== false) return;
+    api('/masters/me/verification').then(({ data }) => setVerification(data)).catch(() => {});
+  }, [verified]);
 
-  const toggle = async () => {
-    setToggling(true);
-    if (isOnline) await dispatch.goOffline();
-    else await dispatch.goOnline();
-    setToggling(false);
-  };
+  if (!state) return <PageLoader />;
 
   const req = state.requirements;
   const activeStatus = state.active_job && ORDER_STATUSES[state.active_job.status]?.label;
   const mapCenter = currentLocation || DISTRICT_COORDS[user.district] || TASHKENT_CENTER;
+  // Tasdiqlash holati alohida kartada ko'rsatilsa, ro'yxatda takrorlanmaydi
+  const showVerifiedRow = !(verified === false && verification);
+  const otherBlockers = !req.has_specializations || !req.rating_ok || req.prices_ok === false || req.commission_ok === false;
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full flex-1 space-y-4">
@@ -72,18 +79,8 @@ export default function MasterWorkPage() {
                 : t('«Ishga chiqish» tugmasini bosing — tizim sizga eng yaqin mijozlarning chaqiruvlarini yuboradi.')}
             </p>
           </div>
-          <button
-            onClick={toggle}
-            disabled={toggling || (!isOnline && !req.can_go_online)}
-            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center font-black text-sm shadow-xl transition disabled:opacity-50 flex-shrink-0 ${
-              isOnline ? 'bg-white text-emerald-700 hover:bg-emerald-50' : 'bg-emerald-500 text-white hover:bg-emerald-400'
-            }`}
-            aria-pressed={isOnline}
-          >
-            {toggling ? <Spinner className="w-6 h-6" /> : <Power className="w-8 h-8 mb-1" />}
-            {isOnline ? t('Ishni to\'xtatish') : t('Ishga chiqish')}
-          </button>
         </div>
+        <div className="mt-5"><WorkToggle /></div>
         {state.missed_offers_streak > 0 && config && (
           <p className="mt-4 text-xs font-semibold bg-white/15 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg">
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -92,13 +89,52 @@ export default function MasterWorkPage() {
         )}
       </div>
 
-      {!req.can_go_online && (
+      {welcome && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex gap-3">
+          <PartyPopper className="w-6 h-6 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-bold text-slate-900">{t('Tabriklaymiz! Siz Usta24 ustasisiz')}</p>
+            <p className="text-sm text-slate-600 mt-0.5">{t('Profilingiz katalogga qo\'shildi: mijozlar sizga buyurtma bera oladi.')}</p>
+          </div>
+        </div>
+      )}
+
+      {verified === false && verification && (
+        verification.status === 'pending' ? (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 flex gap-3">
+            <Clock className="w-6 h-6 text-blue-600 flex-shrink-0" aria-hidden="true" />
+            <div>
+              <p className="font-bold text-slate-900">{t('Pasportingiz tekshirilmoqda')}</p>
+              <p className="text-sm text-slate-600 mt-0.5">{t('Administrator tasdiqlagach «Ishga chiqish» tugmasi ochiladi. Odatda 24 soat ichida, natija Telegram\'da ham keladi.')}</p>
+            </div>
+          </div>
+        ) : (
+          <Link to="/master/profile#tasdiqlash" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex gap-3 hover:bg-amber-100 transition">
+            <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0" aria-hidden="true" />
+            <span className="flex-1">
+              <span className="block font-bold text-slate-900">
+                {verification.status === 'rejected' ? t('Pasport tasdiqlanmadi — qayta yuboring') : t('Ishga chiqish uchun pasportingizni yuboring')}
+              </span>
+              <span className="block text-sm text-slate-600 mt-0.5">
+                {verification.status === 'rejected' && verification.note
+                  ? t('Sabab: {note}', { note: verification.note })
+                  : t('Pasport seriya-raqami va rasmini yuklang, administrator tekshiradi.')}
+              </span>
+            </span>
+            <ArrowRight className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          </Link>
+        )
+      )}
+
+      {!req.can_go_online && (showVerifiedRow || otherBlockers) && (
         <div className="bg-white rounded-2xl border border-red-200 p-5">
           <h2 className="font-bold text-slate-900 mb-2">{t('Ishga chiqish uchun:')}</h2>
           <ul className="space-y-1.5">
-            <Requirement ok={req.verified}>
-              {t('Profil administrator tomonidan tasdiqlangan')} — <Link to="/master/profile#tasdiqlash" className="underline">{t('hujjat yuklash')}</Link>
-            </Requirement>
+            {showVerifiedRow && (
+              <Requirement ok={req.verified}>
+                {t('Profil administrator tomonidan tasdiqlangan')} — <Link to="/master/profile#tasdiqlash" className="underline">{t('hujjat yuklash')}</Link>
+              </Requirement>
+            )}
             <Requirement ok={req.has_specializations}>
               {t('Kamida bitta mutaxassislik tanlangan')} — <Link to="/master/profile" className="underline">{t('profilni tahrirlash')}</Link>
             </Requirement>

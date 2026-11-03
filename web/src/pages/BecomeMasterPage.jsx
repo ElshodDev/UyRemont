@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2, MapPin, Send, ShieldCheck, Sparkles, Wrench, BookOpen, Gift
-} from 'lucide-react';
+import { ArrowLeft, Check, Camera, Lock, Phone, Wrench } from 'lucide-react';
 import Spinner, { PageLoader } from '../components/Spinner';
+import IdentityForm from '../components/IdentityForm';
 import { api } from '../lib/api';
+import { downscaleImage } from '../lib/images';
 import { useSpecializations } from '../lib/useSpecializations';
 import { mainVerticals, districtsList, ALL_DISTRICTS } from '../data/catalog';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { t, specName } from '../i18n';
 
-// Tanlov sahifa yangilansa yoki kirish oynasida vaqt o'tsa ham saqlanib turadi
+// Soha va tuman tanlovi sahifa yangilansa ham saqlanadi
 const DRAFT_KEY = 'usta24_become_master';
 const MAX_SPECS = 10;
 
@@ -38,9 +38,9 @@ const clearDraft = () => {
 };
 
 function Stepper({ step }) {
-  const steps = [t('Soha'), t('Tuman'), t('Telefon')];
+  const steps = [t('Telefon'), t('Shaxsiy ma\'lumot'), t('Ish turi')];
   return (
-    <ol className="flex items-center gap-2 text-xs font-bold" aria-label={t('Qadamlar')}>
+    <ol className="flex items-center gap-2 text-xs font-bold flex-wrap" aria-label={t('Qadamlar')}>
       {steps.map((label, index) => {
         const number = index + 1;
         const done = number < step;
@@ -62,21 +62,9 @@ function Stepper({ step }) {
   );
 }
 
-function NextStep({ to, icon: Icon, title, text }) {
-  return (
-    <Link to={to} className="card p-4 flex items-start gap-3 hover:border-blue-300 hover:shadow-sm transition">
-      <span className="p-2 rounded-xl bg-blue-50 text-blue-700 flex-shrink-0"><Icon className="w-5 h-5" aria-hidden="true" /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-bold text-slate-900 text-sm">{title}</span>
-        <span className="block text-xs text-slate-500 mt-0.5">{text}</span>
-      </span>
-      <ArrowRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" aria-hidden="true" />
-    </Link>
-  );
-}
-
 /**
- * 1 daqiqada usta bo'lish: soha -> tuman -> telefon (kirish oynasi). Qolgan ma'lumotlar keyin.
+ * Usta bo'lish - 3 qadam: 1) telefon raqam (kirish), 2) ism, familiya, pasport seriya-raqami va rasmi,
+ * 3) qaysi ish va tuman. So'ng "Ish rejimi" sahifasi: "Ishga chiqish" / "Dam olish".
  */
 export default function BecomeMasterPage() {
   const { user, loading, requireAuth, refresh } = useAuth();
@@ -85,11 +73,14 @@ export default function BecomeMasterPage() {
   const { specializations } = useSpecializations();
 
   const draft = useMemo(readDraft, []);
-  const [step, setStep] = useState(draft.step === 2 ? 2 : 1);
+  const [identity, setIdentity] = useState(undefined); // undefined - yuklanmoqda, null - yo'q
+  const [editIdentity, setEditIdentity] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState('');
   const [vertical, setVertical] = useState(draft.vertical || 'home');
-  const [specs, setSpecs] = useState(() => draft.specs || user?.specialization_ids || []);
-  const [district, setDistrict] = useState(() => draft.district || user?.district || '');
-  const [name, setName] = useState('');
+  const [specs, setSpecs] = useState(() => draft.specs || []);
+  const [district, setDistrict] = useState(() => draft.district || '');
+  const [step, setStep] = useState(2);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -101,18 +92,19 @@ export default function BecomeMasterPage() {
   }, []);
 
   useEffect(() => {
-    if (!done) saveDraft({ step, vertical, specs, district });
-  }, [step, vertical, specs, district, done]);
+    if (!done) saveDraft({ vertical, specs, district });
+  }, [vertical, specs, district, done]);
 
-  // Usta profili avval bo'lgan mijoz: eski tanlovi bilan boshlanadi
+  // Kirgan foydalanuvchining saqlangan ma'lumotlari: shaxs (pasport) va avvalgi usta tanlovi
   useEffect(() => {
-    if (!user || draft.specs) return;
-    if (user.specialization_ids?.length && specs.length === 0) setSpecs(user.specialization_ids);
-    if (user.district && !district) setDistrict(user.district);
-    // faqat foydalanuvchi yuklanganda
-  }, [user]);
+    if (!user) return;
+    api('/masters/me/identity').then(({ data }) => setIdentity(data)).catch(() => setIdentity(null));
+    if (!draft.specs && user.specialization_ids?.length) setSpecs(user.specialization_ids);
+    if (!draft.district && user.district) setDistrict(user.district);
+    // faqat foydalanuvchi o'zgarganda
+  }, [user?.id]);
 
-  // Tanlangan soha bor bo'limni ochish (masalan, Avto ustasi qaytib kelganda)
+  // Tanlangan soha bor bo'limni ochish
   useEffect(() => {
     if (draft.vertical || specs.length === 0 || specializations.length === 0) return;
     const first = specializations.find((s) => specs.includes(s.id));
@@ -120,12 +112,14 @@ export default function BecomeMasterPage() {
     // faqat katalog yuklanganda
   }, [specializations]);
 
+  useEffect(() => () => {
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+  }, [photoUrl]);
+
   const verticalSpecs = useMemo(
     () => specializations.filter((s) => s.vertical === vertical),
     [specializations, vertical]
   );
-  const selectedSpecs = specializations.filter((s) => specs.includes(s.id));
-  const needName = Boolean(user && !user.name);
 
   if (loading) return <PageLoader />;
   if (user?.role === 'admin') {
@@ -135,7 +129,16 @@ export default function BecomeMasterPage() {
       </main>
     );
   }
-  if (user?.role === 'master' && !done) return <Navigate to="/master/profile" replace />;
+  if (user?.role === 'master' && !done) return <Navigate to="/master/work" replace />;
+
+  const currentStep = !user ? 1 : step;
+
+  const pickPhoto = (file) => {
+    if (!file) return;
+    if (photoUrl) URL.revokeObjectURL(photoUrl);
+    setPhoto(file);
+    setPhotoUrl(URL.createObjectURL(file));
+  };
 
   const toggleSpec = (id) => {
     setSpecs((list) => {
@@ -148,94 +151,50 @@ export default function BecomeMasterPage() {
     });
   };
 
-  const submit = () => requireAuth(async (current) => {
-    // Kirish oynasidan keyin ma'lum bo'ldi: bu hisob allaqachon usta
-    if (current.role === 'master') {
-      clearDraft();
-      toast.success(t('Siz allaqachon ustasiz'));
-      navigate('/master/profile', { replace: true });
-      return;
-    }
-    if (current.role === 'admin') {
-      toast.error(t('Administrator hisobi usta profiliga ega bo\'la olmaydi.'));
-      return;
-    }
+  // Oxirgi qadam: usta profili, pasport rasmi va tekshiruvga yuborish - so'ng "Ish rejimi"
+  const finish = async () => {
     setSubmitting(true);
     try {
-      await api('/masters/quick-start', {
-        method: 'POST',
-        body: { specialization_ids: specs, district, ...(name.trim() && { name: name.trim() }) }
-      });
-      clearDraft();
+      await api('/masters/quick-start', { method: 'POST', body: { specialization_ids: specs, district } });
       setDone(true);
-      window.scrollTo({ top: 0 });
+      clearDraft();
+      if (photo) {
+        try {
+          const form = new FormData();
+          form.append('kind', 'passport');
+          form.append('image', await downscaleImage(photo), 'passport.jpg');
+          await api('/masters/me/documents', { method: 'POST', body: form });
+          await api('/masters/me/verification', { method: 'POST' });
+        } catch (err) {
+          // Profil yaratildi; hujjatni "Profilim" sahifasidan qayta yuklash mumkin
+          toast.error(err.message);
+        }
+      }
       await refresh();
+      navigate('/master/work', { replace: true, state: { welcome: true } });
     } catch (err) {
       toast.error(err.message);
+      setDone(false);
     } finally {
       setSubmitting(false);
     }
-  });
+  };
 
-  if (done) {
-    const linked = Boolean(user?.telegram);
-    return (
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1 space-y-5">
-        <section className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <CheckCircle2 className="w-9 h-9" aria-hidden="true" />
-          </div>
-          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold text-slate-900">
-            {user?.name ? t('Tabriklaymiz, {name}!', { name: user.name }) : t('Tabriklaymiz!')}
-          </h1>
-          <p className="mt-2 text-slate-600">
-            {t('Siz endi Usta24 ustasisiz. Profilingiz katalogga qo\'shildi — mijozlar sizga buyurtma bera oladi.')}
-          </p>
-        </section>
-
-        <section aria-labelledby="next-steps-title" className="space-y-2">
-          <h2 id="next-steps-title" className="font-bold text-slate-900">{t('Ko\'proq buyurtma olish uchun')}</h2>
-          {!linked && (
-            <NextStep
-              to="/profile#telegram"
-              icon={Send}
-              title={t('Telegram\'ni ulang')}
-              text={t('Yangi buyurtmalar darhol telefoningizga keladi')}
-            />
-          )}
-          <NextStep
-            to="/master/profile#tasdiqlash"
-            icon={ShieldCheck}
-            title={t('Hujjatlaringizni yuboring')}
-            text={t('«Tasdiqlangan» belgisi va tezkor chaqiruvlar shundan keyin ochiladi')}
-          />
-          <NextStep
-            to="/master/profile#profil-forma"
-            icon={Sparkles}
-            title={t('Narx, tajriba va ish rasmlarini qo\'shing')}
-            text={t('To\'liq profilli ustani mijozlar ko\'proq tanlaydi')}
-          />
-          <NextStep
-            to="/taklif"
-            icon={Gift}
-            title={t('Ustalarni taklif qiling')}
-            text={t('Taklif qilgan ustangiz birinchi ishini bajarganda ikkalangizga bonus')}
-          />
-          <NextStep
-            to="/ustalar"
-            icon={BookOpen}
-            title={t('Qanday ishlaydi')}
-            text={t('Buyurtma, chaqiruv, komissiya va qoidalar — qisqacha')}
-          />
-        </section>
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Link to="/master/profile" className="btn btn-primary btn-lg flex-1">{t('Profilni to\'ldirish')}</Link>
-          <Link to="/" className="btn btn-secondary btn-lg">{t('Bosh sahifa')}</Link>
-        </div>
-      </main>
-    );
-  }
+  const photoField = (
+    <div>
+      <p className="label">{t('Pasport (ID karta) rasmi')}</p>
+      <label className={`flex items-center gap-3 p-3 rounded-xl border-2 border-dashed cursor-pointer transition ${photo ? 'border-emerald-300 bg-emerald-50' : 'border-slate-300 hover:bg-slate-50'}`}>
+        {photoUrl
+          ? <img src={photoUrl} alt={t('Pasport rasmi')} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+          : <span className="w-16 h-16 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"><Camera className="w-7 h-7" aria-hidden="true" /></span>}
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-slate-800">{photo ? t('Rasm tanlandi — almashtirish') : t('Suratga olish yoki rasm tanlash')}</span>
+          <span className="block text-xs text-slate-500">{t('Ism va rasm aniq ko\'rinsin. Administrator 24 soat ichida tekshiradi.')}</span>
+        </span>
+        <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pickPhoto(e.target.files?.[0])} />
+      </label>
+    </div>
+  );
 
   return (
     <main className="w-full flex-1">
@@ -244,19 +203,72 @@ export default function BecomeMasterPage() {
           <p className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wide">
             <Wrench className="w-4 h-4" aria-hidden="true" /> {t('Ustalar uchun')}
           </p>
-          <h1 className="mt-2 text-[1.75rem] leading-tight sm:text-4xl font-extrabold">{t('1 daqiqada usta bo\'ling')}</h1>
-          <p className="mt-2 text-white/85 text-sm sm:text-base">
-            {t('Ro\'yxatdan o\'tish bepul. Buyurtmalar telefoningizga keladi, komissiya faqat bajarilgan ishdan.')}
-          </p>
-          <div className="mt-5"><Stepper step={step} /></div>
+          <h1 className="mt-2 text-[1.75rem] leading-tight sm:text-4xl font-extrabold">{t('Usta bo\'lib ro\'yxatdan o\'tish')}</h1>
+          <p className="mt-2 text-white/85 text-sm sm:text-base">{t('3 ta oddiy qadam. Ro\'yxatdan o\'tish bepul.')}</p>
+          <div className="mt-5"><Stepper step={currentStep} /></div>
         </div>
       </section>
 
       <div className="max-w-2xl mx-auto px-4 -mt-8 pb-10 space-y-4">
-        {step === 1 && (
-          <section className="card shadow-lg p-4 sm:p-6" aria-labelledby="step-specs-title">
-            <h2 id="step-specs-title" className="text-lg font-extrabold text-slate-900">{t('Qanday ish qilasiz?')}</h2>
-            <p className="text-xs text-slate-500 mt-0.5 mb-4">{t('Bir nechtasini tanlashingiz mumkin')}</p>
+        {currentStep === 1 && (
+          <section className="card shadow-lg p-5 sm:p-6 text-center space-y-4" aria-labelledby="step-phone-title">
+            <span className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center"><Phone className="w-7 h-7" aria-hidden="true" /></span>
+            <h2 id="step-phone-title" className="text-xl font-extrabold text-slate-900">{t('Telefon raqamingiz')}</h2>
+            <p className="text-sm text-slate-600">{t('Raqamingizga kod keladi (SMS yoki Telegram). Mijozlar raqamingizni faqat buyurtmani qabul qilganingizda ko\'radi.')}</p>
+            <button type="button" onClick={() => requireAuth(() => setStep(2), { askName: false })} className="btn btn-primary btn-lg w-full">
+              {t('Telefon raqam bilan kirish')}
+            </button>
+          </section>
+        )}
+
+        {currentStep === 2 && (
+          <section className="card shadow-lg p-5 sm:p-6 space-y-4" aria-labelledby="step-identity-title">
+            <div>
+              <h2 id="step-identity-title" className="text-xl font-extrabold text-slate-900">{t('Shaxsiy ma\'lumotlar')}</h2>
+              <p className="text-sm text-slate-600 mt-0.5">{t('Pasportdagidek yozing. Bu mijozlar ishonchi uchun kerak.')}</p>
+            </div>
+            {identity === undefined && <Spinner className="w-5 h-5" />}
+            {identity && !editIdentity && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <Lock className="w-5 h-5 text-emerald-700 flex-shrink-0" aria-hidden="true" />
+                  <div className="flex-1 min-w-0 text-sm">
+                    <p className="font-bold text-slate-900">{identity.first_name} {identity.last_name}</p>
+                    <p className="text-slate-600 tracking-widest">{identity.passport_masked}</p>
+                  </div>
+                  <button type="button" onClick={() => setEditIdentity(true)} className="text-xs font-bold text-blue-600 hover:underline min-h-9 px-1">
+                    {t('O\'zgartirish')}
+                  </button>
+                </div>
+                {photoField}
+                <button type="button" onClick={() => setStep(3)} disabled={!photo} className="btn btn-primary btn-lg w-full">
+                  {t('Davom etish')}
+                </button>
+              </div>
+            )}
+            {(identity === null || editIdentity) && (
+              <IdentityForm
+                defaultName={identity ? `${identity.first_name} ${identity.last_name}` : user?.name}
+                submitLabel={t('Davom etish')}
+                canSubmit={Boolean(photo)}
+                onSaved={(saved) => {
+                  setIdentity(saved);
+                  setEditIdentity(false);
+                  setStep(3);
+                }}
+              >
+                {photoField}
+              </IdentityForm>
+            )}
+          </section>
+        )}
+
+        {currentStep === 3 && (
+          <section className="card shadow-lg p-5 sm:p-6 space-y-4" aria-labelledby="step-work-title">
+            <div>
+              <h2 id="step-work-title" className="text-xl font-extrabold text-slate-900">{t('Qanday ish qilasiz?')}</h2>
+              <p className="text-sm text-slate-600 mt-0.5">{t('Shu sohalar bo\'yicha buyurtmalar keladi. Bir nechtasini tanlashingiz mumkin.')}</p>
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100">
               {mainVerticals.map((v) => {
@@ -279,7 +291,7 @@ export default function BecomeMasterPage() {
               })}
             </div>
 
-            <div className="mt-3 grid gap-2 grid-cols-[repeat(auto-fill,minmax(92px,1fr))]">
+            <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(92px,1fr))]">
               {specializations.length === 0 && <Spinner className="w-5 h-5" />}
               {verticalSpecs.map((s) => {
                 const selected = specs.includes(s.id);
@@ -290,9 +302,7 @@ export default function BecomeMasterPage() {
                     onClick={() => toggleSpec(s.id)}
                     aria-pressed={selected}
                     className={`relative flex flex-col items-center gap-1 px-1.5 pt-3 pb-2 min-h-[88px] rounded-xl border text-center transition ${
-                      selected
-                        ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-500'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      selected ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     {selected && (
@@ -307,80 +317,22 @@ export default function BecomeMasterPage() {
               })}
             </div>
 
-            <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-4 mt-5 -mx-1 flex items-center gap-3 rounded-2xl bg-white/95 backdrop-blur p-1">
-              <p className="flex-1 text-xs text-slate-500" aria-live="polite">
-                {specs.length > 0 ? t('Tanlandi: {n} ta', { n: specs.length }) : t('Kamida bitta sohani tanlang')}
-              </p>
-              <button type="button" onClick={() => setStep(2)} disabled={specs.length === 0} className="btn btn-primary btn-lg px-6">
-                {t('Davom etish')} <ArrowRight className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
-          <section className="card shadow-lg p-4 sm:p-6" aria-labelledby="step-district-title">
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {selectedSpecs.map((s) => (
-                <span key={s.id} className="text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg px-2 py-1">{s.icon} {specName(s)}</span>
-              ))}
-              <button type="button" onClick={() => setStep(1)} className="text-xs font-bold text-blue-600 hover:underline px-1 min-h-7">
-                {t('O\'zgartirish')}
-              </button>
+            <div>
+              <label className="label" htmlFor="master-district">{t('Qaysi tumanda ishlaysiz?')}</label>
+              <select id="master-district" className="input text-base" value={district} onChange={(e) => setDistrict(e.target.value)}>
+                <option value="">{t('Tumanni tanlang')}</option>
+                {districtsList.filter((d) => d !== ALL_DISTRICTS).map((d) => <option key={d} value={d}>{t(d)}</option>)}
+              </select>
             </div>
 
-            <h2 id="step-district-title" className="text-lg font-extrabold text-slate-900">{t('Qayerda ishlaysiz?')}</h2>
-            <p className="text-xs text-slate-500 mt-0.5 mb-4">{t('Asosiy tumaningiz. Mijozlar katalogda tuman bo\'yicha qidiradi.')}</p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="radiogroup" aria-labelledby="step-district-title">
-              {districtsList.filter((d) => d !== ALL_DISTRICTS).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  role="radio"
-                  aria-checked={district === d}
-                  onClick={() => setDistrict(d)}
-                  className={`flex items-center gap-2 px-3 min-h-12 rounded-xl border text-sm font-semibold text-left transition ${
-                    district === d ? 'border-blue-500 bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <MapPin className={`w-4 h-4 flex-shrink-0 ${district === d ? 'text-blue-600' : 'text-slate-400'}`} aria-hidden="true" />
-                  {t(d)}
-                </button>
-              ))}
-            </div>
-
-            {needName && (
-              <div className="mt-4">
-                <label className="label" htmlFor="master-name">{t('Ism va familiyangiz')}</label>
-                <input
-                  id="master-name"
-                  className="input"
-                  maxLength={100}
-                  autoComplete="name"
-                  placeholder={t('Masalan: Davronbek Aliyev')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-            )}
-
-            <div className="mt-5 flex items-center gap-2">
-              <button type="button" onClick={() => setStep(1)} className="btn btn-secondary btn-lg px-4" aria-label={t('Ortga')}>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setStep(2)} className="btn btn-secondary btn-lg px-4" aria-label={t('Ortga')}>
                 <ArrowLeft className="w-5 h-5" aria-hidden="true" />
               </button>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={!district || submitting || (needName && name.trim().length < 2)}
-                className="btn btn-primary btn-lg flex-1"
-              >
-                {submitting ? <Spinner className="w-5 h-5 text-white" /> : user ? t('Usta bo\'lish') : t('Telefon raqamni tasdiqlash')}
+              <button type="button" onClick={finish} disabled={specs.length === 0 || !district || submitting} className="btn btn-primary btn-lg flex-1">
+                {submitting ? <Spinner className="w-5 h-5 text-white" /> : t('Ro\'yxatdan o\'tishni yakunlash')}
               </button>
             </div>
-            {!user && (
-              <p className="hint mt-2 text-center">{t('Kod SMS yoki Telegram orqali keladi. Raqamingiz mijozlarga faqat buyurtma qabul qilganingizda ko\'rinadi.')}</p>
-            )}
           </section>
         )}
 

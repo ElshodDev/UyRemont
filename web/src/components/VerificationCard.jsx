@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Clock, AlertTriangle, ShieldQuestion, Upload, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import ProtectedImage from './ProtectedImage';
+import IdentityForm from './IdentityForm';
 import Spinner from './Spinner';
 import { api } from '../lib/api';
 import { downscaleImage } from '../lib/images';
 import { getSocket } from '../lib/socket';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { t } from '../i18n';
 
 // Matnlar ko'rsatish paytida joriy tilda olinadi (modul darajasida t() chaqirilmaydi)
@@ -27,8 +29,10 @@ const STATUS_VIEW = () => ({
  */
 export default function VerificationCard() {
   const toast = useToast();
+  const { user, refresh } = useAuth();
   const [state, setState] = useState(null);
   const [busy, setBusy] = useState(null);
+  const [editIdentity, setEditIdentity] = useState(false);
   const inputs = useRef({});
 
   const load = () => api('/masters/me/verification').then(({ data }) => setState(data)).catch(() => setState(false));
@@ -112,7 +116,7 @@ export default function VerificationCard() {
         <>
           <ul className="space-y-1.5 text-sm">
             {[
-              [req.has_name, t('Ism kiritilgan')],
+              [req.has_identity, t('Ism, familiya va pasport seriya-raqami kiritilgan')],
               [req.has_specializations, t('Kamida bitta mutaxassislik tanlangan (pastdagi formada)')],
               [req.has_passport, t('Pasport yoki ID karta rasmi yuklangan')]
             ].map(([ok, text]) => (
@@ -121,6 +125,22 @@ export default function VerificationCard() {
               </li>
             ))}
           </ul>
+
+          {editable && (!req.has_identity || editIdentity) && (
+            <div className="p-4 rounded-xl border border-slate-200">
+              <p className="text-sm font-bold text-slate-800 mb-3">{t('Shaxsiy ma\'lumot')}</p>
+              <IdentityForm
+                defaultName={user?.name}
+                submitLabel={t('Saqlash')}
+                onSaved={async () => { setEditIdentity(false); await Promise.all([load(), refresh()]); }}
+              />
+            </div>
+          )}
+          {editable && req.has_identity && !editIdentity && (
+            <button type="button" onClick={() => setEditIdentity(true)} className="text-sm font-semibold text-blue-600 hover:underline">
+              {t('Pasport ma\'lumotlarini o\'zgartirish')}
+            </button>
+          )}
 
           <div className="space-y-3">
             {KINDS().map((kind) => {
@@ -176,7 +196,7 @@ export default function VerificationCard() {
             <button
               type="button"
               onClick={submit}
-              disabled={Boolean(busy) || !req.has_passport || !req.has_specializations || !req.has_name}
+              disabled={Boolean(busy) || !req.has_passport || !req.has_specializations || !req.has_name || !req.has_identity}
               className="btn btn-primary w-full min-h-12 font-bold"
             >
               {busy === 'submit' ? <Spinner className="w-4 h-4 text-white" /> : t('Tekshiruvga yuborish')}

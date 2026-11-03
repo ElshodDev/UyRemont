@@ -66,14 +66,15 @@ export function AuthProvider({ children }) {
   /**
    * Amalni faqat tizimga kirgan foydalanuvchi uchun bajarish.
    * Kirmagan bo'lsa avval kirish oynasi ochiladi, so'ng amal davom etadi.
+   * askName: false - yangi foydalanuvchidan ism so'ralmaydi (masalan, usta bo'lishda ism-familiya keyingi qadamda so'raladi)
    */
-  const requireAuth = useCallback((action) => {
+  const requireAuth = useCallback((action, { askName = true } = {}) => {
     if (user) {
       action?.(user);
       return;
     }
     pendingAction.current = action || null;
-    setAuthOpen(true);
+    setAuthOpen({ askName });
   }, [user]);
 
   const value = useMemo(() => ({
@@ -95,6 +96,7 @@ export function AuthProvider({ children }) {
             pendingAction.current = null;
             setAuthOpen(false);
           }}
+          askName={authOpen.askName !== false}
           onSuccess={completeLogin}
         />
       )}

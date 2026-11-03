@@ -4,6 +4,7 @@ import { Search, Megaphone, Wrench, Zap, Tag, X, SlidersHorizontal } from 'lucid
 import MasterCard, { MasterCardSkeleton } from '../components/MasterCard';
 import MasterProfileModal from '../components/MasterProfileModal';
 import FavoritesStrip from '../components/FavoritesStrip';
+import WorkToggle from '../components/WorkToggle';
 import OrderModal from '../components/OrderModal';
 import EmptyState, { ErrorState } from '../components/EmptyState';
 import Spinner from '../components/Spinner';
@@ -198,6 +199,19 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Usta kirganda: ish rejimi tugmalari darhol ko'rinadi */}
+      {user?.role === 'master' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full">
+          <section aria-label={t('Ish rejimi')} className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-slate-900">{t('Salom, {name}!', { name: (user.name || '').split(' ')[0] || t('usta') })}</p>
+              <Link to="/master/work" className="text-sm text-blue-600 font-semibold hover:underline">{t('Ish rejimi va statistika')}</Link>
+            </div>
+            <div className="sm:w-80"><WorkToggle size="sm" /></div>
+          </section>
+        </div>
+      )}
+
       {/* 1. QIDIRUV VA ASOSIY HARAKAT */}
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white px-4 pt-8 pb-16 sm:pt-12 sm:pb-20">
         <div className="max-w-3xl mx-auto text-center">

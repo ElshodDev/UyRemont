@@ -123,7 +123,7 @@ describe('MVP', () => {
         it('holat: hujjatsiz "none", talablar ko\'rsatiladi', async () => {
             const res = await app.api('/masters/me/verification', { token: newMaster.token });
             assert.equal(res.data.data.status, 'none');
-            assert.deepEqual(res.data.data.requirements, { has_name: true, has_specializations: false, has_passport: false });
+            assert.deepEqual(res.data.data.requirements, { has_name: true, has_identity: false, has_specializations: false, has_passport: false });
             assert.equal((await app.api('/masters/me/verification', { token: client.token })).status, 403);
         });
 
@@ -158,6 +158,12 @@ describe('MVP', () => {
 
         it('yuborilgach admin navbatida chiqadi', async () => {
             await app.db('INSERT INTO master_specializations (master_id, specialization_id) VALUES ($1, 1)', [newMaster.profileId]);
+            // Pasport seriya-raqami ham kerak (usta bo'lishda so'raladi)
+            const identity = await app.api('/masters/me/identity', {
+                method: 'PUT', token: newMaster.token,
+                body: { first_name: 'Yangi', last_name: 'Usta', passport: `AC${String(Math.floor(1000000 + Math.random() * 8999999))}` },
+            });
+            assert.equal(identity.status, 200, identity.data?.message);
             const sent = await app.api('/masters/me/verification', { method: 'POST', token: newMaster.token });
             assert.equal(sent.status, 200, sent.data?.message);
             assert.equal((await app.api('/masters/me/verification', { method: 'POST', token: newMaster.token })).status, 400, 'ikki marta yuborilmaydi');

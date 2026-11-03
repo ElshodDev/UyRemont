@@ -784,3 +784,17 @@ CREATE TABLE IF NOT EXISTS referral_rewards (
     UNIQUE (referee_id, event)
 );
 CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer ON referral_rewards(referrer_id, created_at DESC);
+
+-- =============================================
+-- 22. Usta shaxsi: ism, familiya va pasport (ID karta) seriya-raqami. Pasport AES-256-GCM bilan shifrlanadi,
+-- takrorlanishini tekshirish uchun faqat HMAC izi saqlanadi (bitta pasport - bitta hisob). Faqat administrator ko'radi
+-- =============================================
+CREATE TABLE IF NOT EXISTS master_identity (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    first_name VARCHAR(60) NOT NULL,
+    last_name VARCHAR(60) NOT NULL,
+    passport_encrypted TEXT NOT NULL,
+    passport_hash CHAR(64) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

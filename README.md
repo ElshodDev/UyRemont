@@ -99,7 +99,8 @@ Eskiz SMS sozlanmagan bo'lsa, OTP kod backend konsoliga chiqadi va kirish oynasi
 | `GET/PUT /api/masters/me/link` | Ustaning o'z havolasi (nomini o'zgartirish) |
 | `GET/POST/PUT/DELETE /api/admin/prices`, `PUT /api/admin/specializations/:id/call-fee` | Narxlar va chiqish narxlarini tahrirlash (jurnalga yoziladi) |
 | `GET /api/support/contacts`, `POST /api/support`, `GET /api/support/my` | Qo'llab-quvvatlash kontaktlari, murojaat yoki shikoyat yuborish (`order_id` yoki `target_user_id` bilan), o'z murojaatlari va ogohlantirishlari |
-| `GET/POST /api/masters/me/verification`, `POST/GET/DELETE /api/masters/me/documents` | Ustaning tasdiqlash holati, hujjat yuklash va tekshiruvga yuborish |
+| `GET/POST /api/masters/me/verification`, `POST/GET/DELETE /api/masters/me/documents` | Ustaning tasdiqlash holati, hujjat yuklash va tekshiruvga yuborish (ism, familiya va pasport raqami kiritilgan bo'lishi shart) |
+| `GET/PUT /api/masters/me/identity` | Ism, familiya va pasport seriya-raqami `{ first_name, last_name, passport }`: shifrlab saqlanadi, javobda faqat yashirilgan raqam |
 | `GET /api/admin/support?kind=complaint`, `PUT /api/admin/support/:id` | Murojaatlar navbati (yoki faqat shikoyatlar), holat va javob |
 | `POST /api/admin/users/:id/warnings` | Shikoyat qilingan foydalanuvchiga ogohlantirish (saytda, Telegram'da va «Yordam» sahifasida) |
 | `GET /api/admin/verifications`, `POST /api/admin/verifications/:userId/approve\|reject`, `GET /api/admin/documents/:id` | Ustalarni tekshirish navbati va hujjatlar |
@@ -124,7 +125,14 @@ Telefon raqamlar faqat buyurtma qabul qilingandan keyin tomonlarga ko'rinadi.
   - Qidiruvda soha tanlanmagan bo'lsa, hamma bo'limlar bo'yicha qidiriladi. Barcha tanlovlar URL da saqlanadi (havolani ulashish mumkin).
 - **Telefon + SMS kod orqali kirish**, yangi foydalanuvchidan ism so'raladi.
 - **Usta profili:** portfolio, sharhlar, bajarilgan buyurtmalar soni. Telefon raqami buyurtma qabul qilingach ochiladi.
-- **1 daqiqada usta bo'lish (`/usta-bolish`):** 3 qadam - soha (bir nechta), tuman, telefon raqamni tasdiqlash (kirish oynasi oxirida ochiladi). Tanlov sahifa yangilansa ham saqlanadi. Shu zahoti katalogga qo'shiladi, tabrik sahifasida keyingi qadamlar: Telegram'ni ulash, hujjat yuborish, narx, tajriba va ish rasmlarini qo'shish.
+- **Usta bo'lish (`/usta-bolish`), 3 oddiy qadam:**
+  1. **Telefon** - raqam bilan kirish (SMS yoki Telegram kodi). Bu yerda ism alohida so'ralmaydi.
+  2. **Shaxsiy ma'lumot** - ism, familiya, pasport (ID karta) seriya-raqami (`AA 1234567`) va pasport rasmi (telefonda kamera ochiladi).
+  3. **Ish turi** - soha (bir nechta) va tuman. Tanlov sahifa yangilansa ham saqlanadi.
+  - Yakunlanganda profil katalogga qo'shiladi, pasport rasmi tekshiruvga yuboriladi va usta **«Ish rejimi»** sahifasiga o'tadi: katta **«Ishga chiqish»** va **«Dam olish»** tugmalari, «Pasportingiz tekshirilmoqda» kartasi. Administrator tasdiqlagach «Ishga chiqish» ochiladi (`DISPATCH_REQUIRE_VERIFIED=false` bo'lsa - darhol).
+  - Usta kirganda bosh sahifaning eng yuqorisida ham shu ikki tugma turadi.
+  - **Pasport ma'lumoti:** raqam AES-256-GCM bilan shifrlanadi (`DATA_ENCRYPTION_KEY`), mijozlarga ko'rinmaydi, ustaga faqat yashirilgan holda (`AA*****67`), administratorga tekshiruv navbatida to'liq ko'rinadi. Bitta pasport - bitta hisob. Tasdiqlangandan keyin pasportni faqat administrator orqali almashtirish mumkin. Hisob o'chirilsa, pasport ma'lumoti ham o'chadi.
+  - Mijozlarga mo'ljallangan tanishtiruv ekranlari ustalar sahifalarida va usta/administrator hisobida o'zi ochilmaydi.
   - Hamma "usta bo'lish" tugmalari (sarlavha menyusi, bosh sahifa, `/ustalar`, onboarding, profil) shu sahifaga olib boradi. `/master/setup` usta bo'lmaganlarni ham shu yerga yo'naltiradi.
   - Usta profilida **«Profilni to'ldiring»** ro'yxati va foiz ko'rsatkichi bor: narx, tajriba, o'zi haqida (30+ belgi), 3+ ish rasmi, hujjatlar, Telegram. Hammasi bajarilsa ro'yxat yo'qoladi.
   - Narx va tajriba ixtiyoriy: bo'sh bo'lsa katalogda «Narx kelishiladi» va «Yangi usta» ko'rinadi.
@@ -368,6 +376,7 @@ Sayt va server o'zbek (lotin) va rus tillarida ishlaydi. Til almashtirgich (UZ |
 | `DATABASE_URL` | PostgreSQL ulanish qatori |
 | `DATABASE_SSL` | Ixtiyoriy: `true`/`false` (Supabase/Neon uchun avtomatik yoqiladi) |
 | `JWT_SECRET`, `JWT_EXPIRES_IN` | Token imzosi va muddati |
+| `DATA_ENCRYPTION_KEY` | 2FA kalitlari va pasport raqamlarini shifrlash kaliti (32+ tasodifiy belgi). Bo'sh bo'lsa `JWT_SECRET` ishlatiladi. O'rnatilgach almashtirmang |
 | `CLIENT_URL` | Frontend manzili (CORS), vergul bilan bir nechta |
 | `ADMIN_PHONE`, `ADMIN_NAME` | `db:setup` paytida administrator qilinadigan raqam |
 | `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` | Eskiz.uz SMS (bo'sh bo'lsa kod faqat `OTP_DEV_MODE=true` da ko'rinadi) |
